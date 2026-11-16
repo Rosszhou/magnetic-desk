@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>magnetic-desk.Tests</AssemblyName>
+    <WindowsAppSdkBootstrapInitialize>false</WindowsAppSdkBootstrapInitialize>
+    <WindowsAppSdkUndockedRegFreeWinRTInitialize>false</WindowsAppSdkUndockedRegFreeWinRTInitialize>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <Using Include="Xunit" />
+    <ProjectReference Include="../../src/magnetic-desk/magnetic-desk.csproj"
+                      AdditionalProperties="MagneticDeskShellThumbnailProxy=false;WindowsAppSDKSelfContained=true" />
+    <Compile Include="../magnetic-desk.Tests/WidgetMagnetic*Tests.cs" Link="WidgetMagnetic*Tests.cs" />
+    <Compile Include="../magnetic-desk.Tests/LocalizationServiceLanguageTests.cs" Link="LocalizationServiceLanguageTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/LocalizationResourceContractTests.cs" Link="LocalizationResourceContractTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/MagneticDeskBrandAndDragTests.cs" Link="MagneticDeskBrandAndDragTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/TestPaths.cs" Link="TestPaths.cs" />
+    <Compile Include="../magnetic-desk.Tests/WidgetCoordinatedMoveCalculatorTests.cs" Link="WidgetCoordinatedMoveCalculatorTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/WidgetSnapCalculatorTests.cs" Link="WidgetSnapCalculatorTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/QuickCaptureSettingsCoordinatorTests.cs" Link="QuickCaptureSettingsCoordinatorTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/QuickCaptureClipboardServiceTests.cs" Link="QuickCaptureClipboardServiceTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/WidgetRegistryTests.cs" Link="WidgetRegistryTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/QuickCaptureSettingsEditorTests.cs" Link="QuickCaptureSettingsEditorTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/BackupRuntimeTests.cs" Link="BackupRuntimeTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/DataBackupSettingsPolicyTests.cs" Link="DataBackupSettingsPolicyTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/MagneticDeskDataBackupServiceTests.cs" Link="MagneticDeskDataBackupServiceTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/CompactPresentationRefreshTests.cs" Link="CompactPresentationRefreshTests.cs" />
+    <Compile Include="../magnetic-desk.Tests/WindowsCompatibilityServiceTests.cs" Link="WindowsCompatibilityServiceTests.cs" />
+  </ItemGroup>
+</Project>

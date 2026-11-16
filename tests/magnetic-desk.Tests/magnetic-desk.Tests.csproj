@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <MagneticDeskNativeTestPlatform Condition="'$(Platform)' == 'ARM64' Or '$(RuntimeIdentifier)' == 'win-arm64'">ARM64</MagneticDeskNativeTestPlatform>
+    <MagneticDeskNativeTestPlatform Condition="'$(MagneticDeskNativeTestPlatform)' == ''">x64</MagneticDeskNativeTestPlatform>
+    <MagneticDeskRustCrtLinkage Condition="'$(MagneticDeskRustCrtLinkage)' == ''">Static</MagneticDeskRustCrtLinkage>
+    <MagneticDeskNativeTestIntermediateDir>$(MSBuildProjectDirectory)\obj\rust-native\$(Configuration)\$(Platform)\$(RuntimeIdentifier)\$(MagneticDeskRustCrtLinkage)</MagneticDeskNativeTestIntermediateDir>
+    <MagneticDeskNativeTestCargoTargetDir>$(MagneticDeskNativeTestIntermediateDir)\cargo-target</MagneticDeskNativeTestCargoTargetDir>
+    <MagneticDeskNativeTestDll>$(MagneticDeskNativeTestIntermediateDir)\magnetic_desk_native.dll</MagneticDeskNativeTestDll>
+    <MagneticDeskNativeTestPdb>$(MagneticDeskNativeTestIntermediateDir)\magnetic_desk_native.pdb</MagneticDeskNativeTestPdb>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\rust-toolchain.toml" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\native\Cargo.toml" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\native\Cargo.lock" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\native\magnetic-desk-native\Cargo.toml" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\native\magnetic-desk-native\src\**\*" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\native\include\magnetic_desk_native.h" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\scripts\build-rust-native.ps1" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\scripts\native-pe-contract.ps1" />
+    <MagneticDeskNativeTestInput Include="$(MSBuildProjectDirectory)\..\..\scripts\rust-arm64-msvc-environment.ps1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\magnetic-desk\magnetic-desk.csproj" />
+    <ProjectReference Include="..\..\src\magnetic-desk.Updater\magnetic-desk.Updater.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="MagneticDesk.Platform" />
+  </ItemGroup>
+
+  <Target
+    Name="BuildMagneticDeskNativeTestModule"
+    BeforeTargets="CoreCompile"
+    Inputs="@(MagneticDeskNativeTestInput)"
+    Outputs="$(MagneticDeskNativeTestDll);$(MagneticDeskNativeTestPdb)">
+    <Error
+      Condition="'$(MagneticDeskRustCrtLinkage)' != 'Dynamic' and '$(MagneticDeskRustCrtLinkage)' != 'Static'"
+      Text="MagneticDesk test Rust CRT linkage must be Dynamic or Static." />
+    <Exec
+      Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\build-rust-native.ps1&quot; -Platform $(MagneticDeskNativeTestPlatform) -Configuration $(Configuration) -CrtLinkage $(MagneticDeskRustCrtLinkage) -OutputDirectory &quot;$(MagneticDeskNativeTestIntermediateDir)&quot; -CargoTargetDirectory &quot;$(MagneticDeskNativeTestCargoTargetDir)&quot;" />
+  </Target>
+
+  <Target
+    Name="CopyMagneticDeskNativeTestModule"
+    AfterTargets="Build"
+    DependsOnTargets="BuildMagneticDeskNativeTestModule">
+    <Copy
+      SourceFiles="$(MagneticDeskNativeTestDll);$(MagneticDeskNativeTestPdb)"
+      DestinationFolder="$(OutDir)"
+      SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

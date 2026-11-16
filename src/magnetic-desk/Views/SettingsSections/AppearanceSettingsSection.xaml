@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="MagneticDesk.Views.SettingsSections.AppearanceSettingsSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:MagneticDesk.Controls"
+    xmlns:svc="using:MagneticDesk.Services"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="ms-appx:///Styles/SettingsOverviewResources.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+            <controls:SettingsBoolToVisibilityConverter x:Key="SettingsBoolToVisibilityConverter" />
+            <controls:SettingsColorStringConverter x:Key="SettingsColorStringConverter" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel Style="{StaticResource SectionPanelStyle}">
+        <TextBlock Style="{StaticResource SectionTitleTextStyle}" AutomationProperties.HeadingLevel="Level1" svc:Localized.Key="Settings.Section.Appearance" />
+        <StackPanel Margin="0,8,0,0" Spacing="4">
+
+            <toolkit:SettingsCard
+                Click="NestedSettingsButton_Click"
+                Description="{Binding LayoutDensityText}"
+                HorizontalContentAlignment="Right"
+                IsClickEnabled="True"
+                Tag="AppearanceDensitySettings"
+                svc:Localized.HeaderKey="Settings.Density.Title">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE8A5;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox svc:Localized.AutomationNameKey="Settings.Density.Title"
+                    MinWidth="{StaticResource SettingsControlMinWidth}"
+                    ItemsSource="{Binding AvailableLayoutDensityOptions}"
+                    controls:SettingsComboBox.Value="{Binding LayoutDensity, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+
+        </StackPanel>
+    </StackPanel>
+</UserControl>
