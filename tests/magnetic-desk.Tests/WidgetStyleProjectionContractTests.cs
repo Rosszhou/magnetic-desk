@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -88,6 +88,10 @@ public sealed class WidgetStyleProjectionContractTests
         "screenBindingMode", "boundScreenId", "boundScreenLabel",
         "disconnectCollapsedForScreenId",
         "compactPlacement",
+        // Magnetic relationships, positions, shared collapse and pinning remain local.
+        "magneticGroupId", "magneticCollapseLinked", "isAlwaysOnTop",
+        "magneticExpandedPlacement", "magneticAttachmentPlacement",
+        "magneticCompactPlacement", "magneticAttachmentAnchor",
         "lastUserPlacementUtc",
         // file bindings + item payloads
         "mappedFolderPath", "followsDefaultStoragePath", "managedFolderName",

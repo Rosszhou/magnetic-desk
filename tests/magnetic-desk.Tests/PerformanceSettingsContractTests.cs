@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class PerformanceSettingsContractTests
 {
@@ -100,10 +100,6 @@ public sealed class PerformanceSettingsContractTests
             "src/magnetic-desk/Controls/WidgetShell.xaml.cs");
         string collapse = ReadRepositoryFile(
             "src/magnetic-desk/Views/WidgetWindowBase.Collapse.cs");
-        string musicAdapter = ReadRepositoryFile(
-            "src/magnetic-desk/Controls/WidgetContents/MusicWidgetContentAdapter.cs");
-        string glance = ReadRepositoryFile(
-            "src/magnetic-desk/ViewModels/GlanceWidgetViewModel.cs");
 
         Assert.Contains(
             "PerformanceSettingsPolicy.Resolve(app.SettingsService.Settings)",
@@ -156,12 +152,6 @@ public sealed class PerformanceSettingsContractTests
         Assert.Contains("TextMarqueeAnimationsEnabled()", shell, StringComparison.Ordinal);
         Assert.Contains("VinylRotationAnimationsEnabled()", shell, StringComparison.Ordinal);
         Assert.Contains("CompactAmbientAnimationsEnabled()", shell, StringComparison.Ordinal);
-        Assert.Contains("AllowGlanceImageAutoRotation", glance, StringComparison.Ordinal);
-        Assert.Contains("UpdateRotationTimer();", glance, StringComparison.Ordinal);
-        Assert.Contains(
-            "IWidgetPerformanceAwareContent",
-            musicAdapter,
-            StringComparison.Ordinal);
 
         Assert.Contains(
             "WidgetCompactTransitionVisualProfile.Resolve(",

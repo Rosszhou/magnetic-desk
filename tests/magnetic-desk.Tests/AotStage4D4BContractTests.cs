@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Helpers;
+using MagneticDesk.Helpers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 

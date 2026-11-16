@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
 using Microsoft.UI.Xaml;
@@ -70,8 +70,6 @@ public sealed class ContentWidgetWindowFactorySurfaceTests
     [InlineData(WidgetKind.File)]
     [InlineData(WidgetKind.QuickCapture)]
     [InlineData(WidgetKind.Todo)]
-    [InlineData(WidgetKind.Music)]
-    [InlineData(WidgetKind.Weather)]
     [InlineData(WidgetKind.Search)]
     public void EveryCurrentlyAvailableKind_HasUnifiedSurfaceContent(
         WidgetKind kind)

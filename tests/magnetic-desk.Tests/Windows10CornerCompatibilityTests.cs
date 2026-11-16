@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class Windows10CornerCompatibilityTests
 {
@@ -30,48 +30,6 @@ public sealed class Windows10CornerCompatibilityTests
         Assert.Contains(
             "ResolveEffectiveWidgetCornerPreference",
             stackPopover,
-            StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void EffectiveCornerPolicy_IsUsedByMusicWeatherAndGlanceInnerSurfaces()
-    {
-        string musicViewModel = Read("src/magnetic-desk/ViewModels/MusicWidgetViewModel.cs");
-        string musicContent = Read(
-            "src/magnetic-desk/Controls/WidgetContents/MusicWidgetContent.xaml.cs");
-        string weatherViewModel = Read("src/magnetic-desk/ViewModels/WeatherWidgetViewModel.cs");
-        string weatherContent = Read(
-            "src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml");
-        string weatherCodeBehind = Read(
-            "src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml.cs");
-        string weatherAot = Read(
-            "src/magnetic-desk/ViewModels/WeatherViewModels.AotBindableProperties.cs");
-        string glanceViewModel = Read("src/magnetic-desk/ViewModels/GlanceWidgetViewModel.cs");
-
-        Assert.Contains(
-            "ResolveEffectiveWidgetCornerPreference",
-            musicViewModel,
-            StringComparison.Ordinal);
-        Assert.Contains("ApplyAlbumArtCornerRadius", musicContent, StringComparison.Ordinal);
-        Assert.DoesNotContain("Math.Max(8, size * 0.12)", musicContent, StringComparison.Ordinal);
-        Assert.Contains(
-            "ResolveEffectiveWidgetCornerPreference",
-            weatherViewModel,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "CornerRadius=\"{Binding WidgetCornerRadius}\"",
-            weatherContent,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "ApplyRichSkinCornerRadius",
-            weatherCodeBehind,
-            StringComparison.Ordinal);
-        Assert.Contains("RichBackdrop.CornerRadius", weatherCodeBehind, StringComparison.Ordinal);
-        Assert.Contains("LoadingOverlay.CornerRadius", weatherCodeBehind, StringComparison.Ordinal);
-        Assert.Contains("nameof(WidgetCornerRadius)", weatherAot, StringComparison.Ordinal);
-        Assert.Contains(
-            "ResolveEffectiveWidgetCornerPreference",
-            glanceViewModel,
             StringComparison.Ordinal);
     }
 

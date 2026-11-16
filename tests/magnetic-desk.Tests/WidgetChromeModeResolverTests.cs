@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
@@ -6,12 +6,12 @@ namespace MagneticDesk.Tests;
 public sealed class WidgetChromeModeResolverTests
 {
     [Fact]
-    public void Resolve_UsesDisplayGlobalDefaultForMusic()
+    public void Resolve_UsesDisplayGlobalDefaultForSystemMonitor()
     {
         var settingsService = new SettingsService();
         settingsService.Settings.DisplayWidgetChromeMode = SettingsService.WidgetChromeModeHidden;
-        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.Music);
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Music };
+        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.SystemMonitor);
+        var config = new WidgetConfig { WidgetKind = WidgetKind.SystemMonitor };
 
         var mode = new WidgetChromeModeResolver(settingsService).Resolve(config, descriptor);
 
@@ -36,8 +36,8 @@ public sealed class WidgetChromeModeResolverTests
     {
         var settingsService = new SettingsService();
         settingsService.Settings.DisplayWidgetChromeMode = SettingsService.WidgetChromeModeOverlay;
-        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.Music);
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Music };
+        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.SystemMonitor);
+        var config = new WidgetConfig { WidgetKind = WidgetKind.SystemMonitor };
         WidgetChromeModeNames.SetOverrideMode(config, WidgetChromeMode.Standard);
 
         var mode = new WidgetChromeModeResolver(settingsService).Resolve(config, descriptor);

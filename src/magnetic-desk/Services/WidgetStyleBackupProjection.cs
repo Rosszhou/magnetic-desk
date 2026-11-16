@@ -66,6 +66,7 @@ internal static class WidgetStyleBackupProjection
     /// </summary>
     internal static readonly HashSet<string> WidgetKeys = new(StringComparer.Ordinal)
     {
+        "magneticAnimationStyle", "capsuleStyle",
         "name", "isDefaultTitle", "viewMode", "sortMode", "sortDescending"
     };
 

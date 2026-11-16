@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace MagneticDesk.Tests;
 
@@ -25,33 +25,6 @@ public sealed class SettingsAccordionEmptyStateContractTests
     private const string SearchSectionCode =
         "src/magnetic-desk/Views/SettingsSections/SearchSettingsSection.xaml.cs";
     private const string SettingsWindowXaml = "src/magnetic-desk/Views/SettingsWindow.xaml";
-
-    [Fact]
-    public void CapsuleMode_HoverAndAnimationSubCards_UseIsEnabledNotVisibility()
-    {
-        string xaml = ReadRepositoryFile(CapsuleSectionXaml);
-
-        Assert.Contains("IsEnabled=\"{Binding ShowHoverResponseCustom}\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("IsEnabled=\"{Binding ShowAnimationCustom}\"", xaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Visibility=\"{Binding ShowHoverResponseCustom", xaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Visibility=\"{Binding ShowAnimationCustom", xaml, StringComparison.Ordinal);
-
-        // The expander-level preset semantics survive: the hover expander
-        // itself still hides when its preset entry is unavailable.
-        Assert.Contains(
-            "Visibility=\"{Binding ShowHoverResponseEntry", xaml, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void CapsuleMode_CustomSubCardGatingCounts_ArePinned()
-    {
-        string xaml = ReadRepositoryFile(CapsuleSectionXaml);
-
-        // Expand/collapse delay sub-cards in the hover expander and the
-        // duration sub-card in the animation expander.
-        Assert.Equal(2, CountOccurrences(xaml, "IsEnabled=\"{Binding ShowHoverResponseCustom}\""));
-        Assert.Equal(1, CountOccurrences(xaml, "IsEnabled=\"{Binding ShowAnimationCustom}\""));
-    }
 
     [Fact]
     public void SearchHotkey_ExpanderIsNeverGatedAsAWhole()

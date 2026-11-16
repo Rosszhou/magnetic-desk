@@ -7,7 +7,7 @@
 #define MyAppName "magnetic-desk"
 #define MyAppVersion "1.0.0"
 #define MyAppVersionInfo "1.0.0.0"
-#define MyAppPublisher "朱天雨"
+#define MyAppPublisher "Rosszhou"
 #define MyAppExeName "magnetic-desk.exe"
 #define MyAppOutputBaseName "magnetic-desk_Setup"
 #define MyAppRuntimeArchitecture "ARM64"

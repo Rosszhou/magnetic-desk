@@ -214,6 +214,7 @@
 
   <ItemGroup>
     <None Remove="ThirdParty\Everything\Everything64.dll" />
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Remove="ThirdParty\Everything\EverythingARM64.dll" />
     <Content Include="ThirdParty\Everything\Everything64.dll" Condition="'$(EverythingSdkArchitecture)' == 'x64'">
       <Link>EverythingSdk.dll</Link>

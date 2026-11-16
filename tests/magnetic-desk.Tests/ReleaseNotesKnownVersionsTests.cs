@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Services;
+using MagneticDesk.Services;
 using Xunit;
 
 namespace MagneticDesk.Tests;
@@ -26,11 +26,9 @@ public sealed class ReleaseNotesKnownVersionsTests
     }
 
     [Fact]
-    public void KnownReleaseVersions_CoverCurrentAndPreviousRelease()
+    public void KnownReleaseVersions_CoverTheFirstMagneticDeskRelease()
     {
-        Assert.Contains("1.5.9", ReleaseNotesService.KnownReleaseVersions);
-        Assert.Contains("1.5.8", ReleaseNotesService.KnownReleaseVersions);
-        Assert.Contains("1.4.0", ReleaseNotesService.KnownReleaseVersions);
+        Assert.Equal(new[] { "1.0.0" }, ReleaseNotesService.KnownReleaseVersions);
     }
 
     [Fact]

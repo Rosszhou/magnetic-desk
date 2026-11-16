@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Controls.WidgetContents;
+using MagneticDesk.Controls.WidgetContents;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
 
@@ -30,19 +30,16 @@ public sealed class ContentWidgetWindowFactoryTests : IDisposable
         Assert.True(WidgetRegistry.Default.CanCreateWindow(WidgetKind.Todo));
     }
 
-    [Fact]
-    public void CreateContentWindowPlan_ReturnsMusicAdapterForCreatableMusicKind()
+    [Theory]
+    [InlineData(WidgetKind.Music)]
+    [InlineData(WidgetKind.Weather)]
+    [InlineData(WidgetKind.Glance)]
+    public void CreateContentWindowPlan_RejectsRemovedKinds(WidgetKind kind)
     {
-        var config = CreateConfig("music-window", WidgetKind.Music);
         var factory = CreateFactory();
-
-        var plan = factory.CreateContentWindowPlan(config);
-
-        Assert.Equal(config, plan.Config);
-        Assert.Equal(WidgetKind.Music, plan.Descriptor.WidgetKind);
-        Assert.IsType<MusicWidgetContentAdapter>(plan.Content);
-        Assert.True(factory.CanCreateContentWindow(WidgetKind.Music));
-        Assert.True(WidgetRegistry.Default.CanCreateWindow(WidgetKind.Music));
+        Assert.False(factory.CanCreateContentWindow(kind));
+        Assert.False(WidgetRegistry.Default.CanCreateWindow(kind));
+        Assert.Throws<NotSupportedException>(() => factory.CreateContentWindowPlan(CreateConfig("removed", kind)));
     }
 
     [Theory]

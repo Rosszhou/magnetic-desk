@@ -1413,7 +1413,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(newUserDefaults.WidgetBorderColorMode, restoredDefaults.WidgetBorderColorMode);
         Assert.Equal(SettingsService.DefaultWidgetMaterialIntensity, newUserDefaults.WidgetMaterialIntensity);
         Assert.Equal(newUserDefaults.WidgetMaterialIntensity, restoredDefaults.WidgetMaterialIntensity);
-        Assert.True(newUserDefaults.AutoCheckForUpdates);
+        Assert.False(newUserDefaults.AutoCheckForUpdates);
         Assert.Equal(newUserDefaults.AutoCheckForUpdates, restoredDefaults.AutoCheckForUpdates);
         Assert.False(newUserDefaults.QuickCaptureClipboardEnabled);
         Assert.False(newUserDefaults.QuickCaptureImageClipboardEnabled);

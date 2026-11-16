@@ -1,20 +1,7 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage4E2ContractTests
 {
-    [Fact]
-    public void MusicTransportIcon_UsesExactlySevenTypedForegroundBindings()
-    {
-        string xaml = ReadRepositoryFile(
-            "src/magnetic-desk/Controls/WidgetContents/MusicTransportIcon.xaml");
-
-        Assert.Equal(7, CountOccurrences(xaml, "{x:Bind Foreground, Mode=OneWay}"));
-        Assert.DoesNotContain(
-            "{Binding Foreground, ElementName=Root}",
-            xaml,
-            StringComparison.Ordinal);
-    }
-
     [Fact]
     public void WidgetInlineEditor_UsesTypedOneWayBindingsForPresentationProperties()
     {
@@ -49,13 +36,8 @@ public sealed class AotStage4E2ContractTests
     [Fact]
     public void LeafControls_RetainTheirDependencyPropertyAndInteractionContracts()
     {
-        string musicCode = ReadRepositoryFile(
-            "src/magnetic-desk/Controls/WidgetContents/MusicTransportIcon.xaml.cs");
         string editorCode = ReadRepositoryFile("src/magnetic-desk/Controls/WidgetInlineEditor.xaml.cs");
 
-        Assert.Contains("KindProperty", musicCode, StringComparison.Ordinal);
-        Assert.Contains("OnKindChanged", musicCode, StringComparison.Ordinal);
-        Assert.Contains("ApplyKind();", musicCode, StringComparison.Ordinal);
         Assert.Contains("TextProperty", editorCode, StringComparison.Ordinal);
         Assert.Contains("SaveRequested?.Invoke(this, e);", editorCode, StringComparison.Ordinal);
         Assert.Contains("CancelRequested?.Invoke(this, e);", editorCode, StringComparison.Ordinal);

@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage4E0ContractTests
 {

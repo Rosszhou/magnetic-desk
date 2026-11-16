@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Platform;
 using Microsoft.UI.Xaml.Controls;
 using Windows.Graphics;
@@ -28,7 +28,7 @@ public sealed partial class WidgetManager
         if (surface is not null)
         {
             surface.MagneticGroupId = id;
-            foreach (WidgetConfig member in _settingsService.Settings.Widgets.Where(w => surface.MemberIds.Contains(w.Id)))
+            foreach (WidgetConfig member in _settingsService.Settings.WidgetLayout.Widgets.Where(w => surface.MemberIds.Contains(w.Id)))
             {
                 member.MagneticGroupId = id;
                 if (id is null) member.MagneticCollapseLinked = false;
@@ -44,7 +44,7 @@ public sealed partial class WidgetManager
     internal void AppendMagneticGroupMenu(MenuFlyout flyout, WidgetConfig config)
     {
         AppendCapsuleAppearanceMenu(flyout, config);
-        LocalizationService localization = App.Current.LocalizationService;
+        LocalizationService localization = _localizationService;
         string? groupId = GetMagneticGroupId(config);
         var menu = new MenuFlyoutSubItem
         {
@@ -74,7 +74,7 @@ public sealed partial class WidgetManager
             Text = localization.T(groupId is null ? "Magnetic.Free" : "Magnetic.Hint"),
             IsEnabled = false
         });
-        if (WidgetCollapseBehaviorNames.Resolve(config, _settingsService.Settings.WidgetCollapseBehavior) != WidgetCollapseBehavior.Expanded)
+        if (WidgetCollapseBehaviorNames.Resolve(config, _settingsService.Settings.WidgetShell.WidgetCollapseBehavior) != WidgetCollapseBehavior.Expanded)
             menu.Items.Add(new MenuFlyoutItem { Text = localization.T("Magnetic.MouseLeave.Hint"), IsEnabled = false });
         var join = new MenuFlyoutSubItem { Text = localization.T("Magnetic.Join") };
         foreach (IDesktopWidgetWindow target in GetLoadedDesktopWindows())
@@ -132,7 +132,7 @@ public sealed partial class WidgetManager
         string? previous = GetMagneticGroupId(config);
         if (previous is null) return false;
         SetMagneticGroupId(config, null);
-        var remaining = _settingsService.Settings.Widgets.Where(w => !IsDeleted(w.Id) && GetMagneticGroupId(w) == previous)
+        var remaining = _settingsService.Settings.WidgetLayout.Widgets.Where(w => !IsDeleted(w.Id) && GetMagneticGroupId(w) == previous)
             .GroupBy(w => WidgetGroupSettings.FindByMember(_settingsService.Settings, w.Id)?.SurfaceId ?? w.Id)
             .Select(group => group.First()).ToArray();
         if (remaining.Length == 1) SetMagneticGroupId(remaining[0], null);
@@ -153,7 +153,7 @@ public sealed partial class WidgetManager
 
     private void ReplaceMagneticGroupId(string oldId, string? newId)
     {
-        foreach (WidgetConfig widget in _settingsService.Settings.Widgets.Where(w => w.MagneticGroupId == oldId))
+        foreach (WidgetConfig widget in _settingsService.Settings.WidgetLayout.Widgets.Where(w => w.MagneticGroupId == oldId))
         {
             if (newId is null)
             {
@@ -164,7 +164,7 @@ public sealed partial class WidgetManager
             widget.MagneticGroupId = newId;
             if (newId is null) widget.MagneticCollapseLinked = false;
         }
-        foreach (WidgetGroupConfig group in _settingsService.Settings.WidgetGroups.Where(g => g.MagneticGroupId == oldId))
+        foreach (WidgetGroupConfig group in _settingsService.Settings.WidgetLayout.WidgetGroups.Where(g => g.MagneticGroupId == oldId))
         {
             group.MagneticGroupId = newId;
         }
@@ -200,7 +200,7 @@ public sealed partial class WidgetManager
         double dpiScale = Win32Helper.GetDpiScaleForWindow(target.WindowHandle, target.WindowContentRoot?.XamlRoot);
         RectInt32 destination = WidgetMagneticPlacement.SnapBeside(
             bounds, target.CoordinatedMoveBounds,
-            Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetSnapSpacing * dpiScale)));
+            Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * dpiScale)));
         int deltaX = destination.X - bounds.X;
         int deltaY = destination.Y - bounds.Y;
         foreach (IDesktopWidgetWindow window in moving)
@@ -223,13 +223,13 @@ public sealed partial class WidgetManager
         string? sourceGroup = GetMagneticGroupId(source);
         string? targetGroup = GetMagneticGroupId(target);
         var targetMembers = targetGroup is null ? [target] :
-            _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == targetGroup).ToArray();
+            _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == targetGroup).ToArray();
         WidgetConfig collapseTarget = targetMembers.FirstOrDefault(w => w.MagneticCollapseLinked)
             ?? targetMembers.FirstOrDefault(w => WidgetCollapseBehaviorNames.Resolve(
-                w, _settingsService.Settings.WidgetCollapseBehavior) is WidgetCollapseBehavior.Click or WidgetCollapseBehavior.Smart)
+                w, _settingsService.Settings.WidgetShell.WidgetCollapseBehavior) is WidgetCollapseBehavior.Click or WidgetCollapseBehavior.Smart)
             ?? target;
         WidgetCollapseBehavior behavior = WidgetCollapseBehaviorNames.Resolve(
-            collapseTarget, _settingsService.Settings.WidgetCollapseBehavior);
+            collapseTarget, _settingsService.Settings.WidgetShell.WidgetCollapseBehavior);
         bool linked = targetGroup is not null && (collapseTarget.MagneticCollapseLinked ||
             behavior is WidgetCollapseBehavior.Click or WidgetCollapseBehavior.Smart);
         string joinedId = GetMagneticGroupId(target) ?? sourceGroup ?? Guid.NewGuid().ToString();
@@ -251,7 +251,7 @@ public sealed partial class WidgetManager
         if (visibleBounds.Count > 0)
         {
             var origin = WidgetCoordinatedMoveCalculator.GetUnion(visibleBounds.Values);
-            int gap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetSnapSpacing *
+            int gap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing *
                 Win32Helper.GetDpiScaleForWindow(WinRT.Interop.WindowNative.GetWindowHandle(joinedWindows.First(w => w.Config.Id == target.Id)),
                     joinedWindows.First(w => w.Config.Id == target.Id).WindowContentRoot?.XamlRoot)));
             var expandedBounds = WidgetMagneticLayout.Capture(visibleBounds).Arrange(expandedSizes, origin.X, origin.Y, gap);
@@ -271,7 +271,7 @@ public sealed partial class WidgetManager
 
         if (linked)
         {
-            foreach (var member in _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == joinedId))
+            foreach (var member in _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == joinedId))
             {
                 member.MagneticCollapseLinked = true;
                 WidgetCollapseBehaviorNames.SetOverride(member, behavior);

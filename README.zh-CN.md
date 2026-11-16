@@ -4,6 +4,15 @@ Windows 桌面整理工具，支持文件格子、磁吸组合、胶囊收纳、
 
 [English](README.md) | 简体中文
 
+## 下载与安装
+
+在 [Releases 下载页](https://github.com/Rosszhou/magnetic-desk/releases/latest) 下载 `magnetic-desk_Setup_1.0.0_x64.exe`，双击运行安装程序。
+
+- 适用于 Windows 10 2004（内部版本 19041）及更新版本、Windows 11 的 x64 系统。
+- 安装包自带运行组件，支持离线安装。
+- 支持英文和简体中文。可在软件设置的“关于”页面或 Windows“已安装的应用”中卸载。
+- 安装包目前未签名，Windows 可能显示未知发布者。下载页提供对应的 `.sha256` 校验文件。
+
 ## 主要功能
 
 - 映射现有文件夹，或创建以普通文件夹存储内容的文件格子。
@@ -34,13 +43,14 @@ dotnet build src/magnetic-desk/magnetic-desk.csproj -c Debug -p:Platform=x64 -p:
 dotnet test tests/magnetic-desk.ManagedRegression/magnetic-desk.ManagedRegression.csproj -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 ```
 
-继承的完整套件仍包含天气、音乐和时光模块等已移除类型的测试，需要迁移后才能通过完整测试及现有 CI。完整套件的原生阶段还需要 Rust 工具链。完整测试入口为：
+历史测试已按当前功能迁移。完整 Release 套件已通过 5,261 项测试，独立卸载器通过 9 项测试，均无跳过。完整套件的原生阶段需要 Rust 工具链。
 
 ```powershell
-dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -p:Platform=x64 -p:RuntimeIdentifier=win-x64
+dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSDKSelfContained=true -p:WindowsAppSdkBootstrapInitialize=false
+dotnet test tests/magnetic-desk.Uninstaller.Tests/magnetic-desk.Uninstaller.Tests.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 ```
 
-本次检查的执行结果与限制随源码快照一并交付。ARM64 和 Native AOT 发布需单独验证。
+x64 Native AOT 离线安装包已在 Windows 11 上验证安装、首次启动和卸载，并验证额外文件及配置保留。ARM64 发布需要单独验证。
 
 ## 目录
 
@@ -49,5 +59,3 @@ dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -p:Platform=x64
 ## 来源与协议
 
 本项目基于 [Tianyu199509/DeskBox v1.5.9](https://github.com/Tianyu199509/DeskBox/tree/v1.5.9) 修改，保留上游版权和第三方声明，采用 GPL-3.0-only 协议，详见 [LICENSE](LICENSE)。[CHANGELOG.md](CHANGELOG.md) 中较早的条目记录上游历史。
-
-当前源码正在准备上传新仓库，magnetic-desk 的下载入口将在首个版本发布后补充。

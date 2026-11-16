@@ -9,24 +9,25 @@ public sealed partial class SettingsWindow
 {
     internal async Task<AotDeepSettingsSnapshot> ExerciseAotDeepReadOnlySettingsAsync()
     {
+        const string capsuleSection = "CapsuleMode";
+        const string capsuleOverridesSection = "CapsuleOverridesSettings";
+        const string fileStackSection = "FileStackSettings";
+        const string backupSection = "BackupRestoreSettings";
         string[] deepSettingsRoutes =
         [
             "AppearanceDetail",
-            "CapsuleMode",
+            capsuleSection,
             "WidgetGroups",
             "FileDisplaySettings",
             "ManagedStorage",
-            "FileStackSettings",
+            fileStackSection,
             "DesktopOrganizationSettings",
             "QuickCaptureSettings",
             "TodoSettings",
             "SearchSettings",
-            "AppearanceMaterialSettings",
             "AppearanceDensitySettings",
-            "AppearanceWindowSettings",
-            "AppearanceAnimationSettings",
-            "CapsuleOverridesSettings",
-            "BackupRestoreSettings",
+            capsuleOverridesSection,
+            backupSection,
             "DataHealthSettings",
             "CompatibilityDiagnosticsSettings",
             "PerformanceSettings"
@@ -56,7 +57,7 @@ public sealed partial class SettingsWindow
             match.IsPage &&
             string.Equals(
                 match.SectionTag,
-                deepSettingsRoutes[18],
+                backupSection,
                 StringComparison.Ordinal));
         if (exactNestedPage is null ||
             !SettingsSearchBox.IsSuggestionListOpen ||
@@ -68,7 +69,7 @@ public sealed partial class SettingsWindow
 
         ActivateSettingsSearchResult(exactNestedPage, SettingsSearchBox);
         AotDeepSettingsPageSnapshot activatedPage =
-            await WaitForAotDeepSettingsPageAsync(deepSettingsRoutes[18]);
+            await WaitForAotDeepSettingsPageAsync(backupSection);
 
         var pageTransitions = new List<AotDeepSettingsPageSnapshot>(deepSettingsRoutes.Length);
         bool breadcrumbParentReturned = false;
@@ -82,17 +83,17 @@ public sealed partial class SettingsWindow
                 await WaitForAotDeepSettingsPageAsync(sectionTag);
             pageTransitions.Add(page);
 
-            if (string.Equals(sectionTag, deepSettingsRoutes[5], StringComparison.Ordinal))
+            if (string.Equals(sectionTag, fileStackSection, StringComparison.Ordinal))
             {
                 fileStackRuleCount = await WaitForAotFileStackRuleProjectionAsync();
             }
 
-            if (string.Equals(sectionTag, deepSettingsRoutes[18], StringComparison.Ordinal))
+            if (string.Equals(sectionTag, backupSection, StringComparison.Ordinal))
             {
                 backupSnapshotCount = await WaitForAotBackupSnapshotProjectionAsync();
             }
 
-            if (string.Equals(sectionTag, deepSettingsRoutes[17], StringComparison.Ordinal))
+            if (string.Equals(sectionTag, capsuleOverridesSection, StringComparison.Ordinal))
             {
                 List<SettingsBreadcrumbItem> breadcrumbItems =
                     GetAotSettingsBreadcrumbItems();
@@ -104,10 +105,10 @@ public sealed partial class SettingsWindow
 
                 NavigateFromSettingsBreadcrumbItem(breadcrumbItems[0]);
                 AotDeepSettingsPageSnapshot parentPage =
-                    await WaitForAotDeepSettingsPageAsync(deepSettingsRoutes[1]);
+                    await WaitForAotDeepSettingsPageAsync(capsuleSection);
                 breadcrumbParentReturned = string.Equals(
                         parentPage.CurrentSection,
-                        deepSettingsRoutes[1],
+                        capsuleSection,
                         StringComparison.Ordinal) &&
                     parentPage.BreadcrumbItems.Count == 0;
             }

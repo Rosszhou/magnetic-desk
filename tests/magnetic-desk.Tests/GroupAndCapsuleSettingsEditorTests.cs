@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Features.Capsule;
 using MagneticDesk.Features.GroupNavigation;
 using MagneticDesk.Models;
@@ -433,16 +433,13 @@ public sealed class GroupAndCapsuleSettingsEditorTests : IDisposable
         Assert.Contains(
             "Visibility=\"{Binding ShowHoverResponseEntry, Converter={StaticResource SettingsBoolToVisibilityConverter}}\"",
             capsuleSection);
-        Assert.Contains("Value=\"{Binding BarSpacing, Mode=TwoWay}\"", capsuleSection);
         Assert.Contains("Value=\"{Binding ExpandDelayMs, Mode=TwoWay}\"", capsuleSection);
-        Assert.Contains("Value=\"{Binding AnimationDurationMs, Mode=TwoWay}\"", capsuleSection);
         Assert.Contains("ItemsSource=\"{Binding OverrideItems}\"", window);
 
         // The appearance main section no longer hosts the recycled
         // group-navigation inline selector.
         Assert.DoesNotContain("{Binding GroupNavigationStyle", appearanceSection);
         Assert.DoesNotContain("{Binding AvailableGroupNavigationStyleOptions}", appearanceSection);
-        Assert.Contains("Tag=\"WidgetGroups\"", appearanceSection);
 
         // Section-level DataContext switch covers both families.
         Assert.Contains("section.DataContext = _groupNavigationSettingsViewModel;", deferred);

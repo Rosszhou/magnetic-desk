@@ -1,4 +1,4 @@
-﻿using System.Xml.Linq;
+using System.Xml.Linq;
 using MagneticDesk.Helpers;
 using Windows.UI;
 
@@ -211,7 +211,7 @@ public sealed class WidgetTextShadowContractTests
 
         string settingsXaml = File.ReadAllText(TestPaths.FromRepository(
             "src/magnetic-desk/Views/SettingsWindow.xaml"));
-        Assert.Contains(
+        Assert.DoesNotContain(
             "{Binding WidgetTextShadowEnabled, Mode=TwoWay}",
             settingsXaml,
             StringComparison.Ordinal);

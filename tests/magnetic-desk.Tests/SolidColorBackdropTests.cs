@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Services;
+using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
 
@@ -90,34 +90,17 @@ public sealed class SolidColorBackdropTests
     }
 
     [Fact]
-    public void Windows10Appearance_UsesCapabilityFirstAcrylicWithLegacyFallback()
+    public void SurfaceBackdrop_InitializesTransparentHostOnceAndAppliesTheSurfaceStyle()
     {
-        string featureOptions = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/ViewModels/SettingsViewModel.FeatureOptions.cs"));
-        string settingsWindow = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/SettingsWindow.xaml"));
-        string backdrop = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/WidgetWindowBase.Backdrop.cs"));
-        string compatibility = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Services/WindowsCompatibilityService.cs"));
-
-        string appearanceOptions = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/ViewModels/SettingsViewModel.AppearanceOptions.cs"));
-        Assert.Contains("WindowsCompatibilityService.IsWindows11OrLater", appearanceOptions, StringComparison.Ordinal);
-        Assert.Contains("SettingsService.WidgetMaterialTypeSolid", appearanceOptions, StringComparison.Ordinal);
-        Assert.Contains("IsOpen=\"{Binding Windows10Compatibility}\"", settingsWindow, StringComparison.Ordinal);
-        Assert.Contains("IsEnabled=\"{Binding NativeCornersSupported}\"", settingsWindow, StringComparison.Ordinal);
-        Assert.Contains("ResolveWidgetMaterialType", backdrop, StringComparison.Ordinal);
-        Assert.Contains("ApplyAcrylicController", backdrop, StringComparison.Ordinal);
-        Assert.Contains("WindowsCompatibilityService.SupportsDesktopAcrylic", backdrop, StringComparison.Ordinal);
-        Assert.Contains("CalculateLegacyAcrylicOpacity", backdrop, StringComparison.Ordinal);
-        Assert.Contains("LegacyAccentBackdropActive = ApplyLegacyAccentBackdrop", backdrop, StringComparison.Ordinal);
+        string backdrop = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Views/WidgetWindowBase.Backdrop.cs"));
+        Assert.Contains("if (!_surfaceBackdropInitialized)", backdrop, StringComparison.Ordinal);
+        Assert.Contains("new WinUIEx.TransparentTintBackdrop(Colors.Transparent)", backdrop, StringComparison.Ordinal);
+        Assert.Contains("Win32Helper.DisableAccentPolicy(HWnd)", backdrop, StringComparison.Ordinal);
+        Assert.Contains("_surfaceBackdropInitialized = true", backdrop, StringComparison.Ordinal);
+        Assert.Contains("ApplySurfaceStyle();", backdrop, StringComparison.Ordinal);
         Assert.Contains("return Win32Helper.ApplyAccentBlur(HWnd, tintColor, opacity, enabled: true)", backdrop, StringComparison.Ordinal);
-        Assert.Contains("SystemBackdrop = null", backdrop, StringComparison.Ordinal);
-        Assert.DoesNotContain("!WindowsCompatibilityService.UsesLegacyWindowAcrylic)", backdrop, StringComparison.Ordinal);
-        Assert.Contains("DesktopAcrylicController.IsSupported()", compatibility, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsWindows11OrLater && IsSupported(() => DesktopAcrylicController.IsSupported())", compatibility, StringComparison.Ordinal);
     }
+
 
     [Fact]
     public void WidgetWindow_UsesWinUIExTransparentTintBackdropForSolidMaterial()
@@ -132,7 +115,6 @@ public sealed class SolidColorBackdropTests
         Assert.Contains("new WinUIEx.TransparentTintBackdrop(tintColor)", backdrop, StringComparison.Ordinal);
         Assert.Contains("SystemBackdrop = _solidColorBackdrop", backdrop, StringComparison.Ordinal);
         Assert.Contains("ClearSolidColorBackdrop();", baseWindow, StringComparison.Ordinal);
-        Assert.Contains("!IsSolidColorBackdropActive", contentWindow, StringComparison.Ordinal);
         Assert.DoesNotContain("ApplyTransparentAcrylicController", backdrop, StringComparison.Ordinal);
     }
 }

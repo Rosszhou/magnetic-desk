@@ -38,17 +38,21 @@ jobs:
         shell: pwsh
         run: |
           dotnet restore .\magnetic-desk.sln --locked-mode -p:Platform=x64 -p:RuntimeIdentifier=win-x64
+          dotnet restore .\tests\magnetic-desk.Uninstaller.Tests\magnetic-desk.Uninstaller.Tests.csproj --locked-mode -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 
       - name: Build
-        run: dotnet build .\src\magnetic-desk\magnetic-desk.csproj --configuration Release --no-restore -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -v:minimal
+        run: dotnet build .\src\magnetic-desk\magnetic-desk.csproj --configuration Release --no-restore -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSDKSelfContained=true -v:minimal
 
       - name: Test
         timeout-minutes: 10
-        run: dotnet test .\tests\magnetic-desk.Tests\magnetic-desk.Tests.csproj --configuration Release --no-restore -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSdkBootstrapInitialize=false --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=test-results.trx" -v:minimal
+        run: dotnet test .\tests\magnetic-desk.Tests\magnetic-desk.Tests.csproj --configuration Release --no-restore -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSDKSelfContained=true -p:WindowsAppSdkBootstrapInitialize=false --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=test-results.trx" -v:minimal
+
+      - name: Test standalone uninstaller
+        run: dotnet test .\tests\magnetic-desk.Uninstaller.Tests\magnetic-desk.Uninstaller.Tests.csproj --configuration Release --no-restore -p:Platform=x64 -p:RuntimeIdentifier=win-x64 --logger "trx;LogFileName=uninstaller-results.trx" -v:minimal
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: tests/magnetic-desk.Tests/TestResults/**/*.trx
+          path: tests/**/TestResults/**/*.trx

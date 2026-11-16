@@ -1,9 +1,17 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace MagneticDesk.Tests;
 
 public sealed class AotStage7AContractTests
 {
+    [Fact]
+    public void ThumbnailProxySymbols_UseTheRenamedCargoBinary()
+    {
+        string build = Read("scripts/build-rust-thumbnail-proxy.ps1");
+        Assert.Contains("magnetic_desk_thumbnail_proxy.pdb", build, StringComparison.Ordinal);
+        Assert.DoesNotContain("deskbox_thumbnail_proxy.pdb", build, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void RustBuildScripts_MapBothWindowsMsvcTargetsAndUseStaticArm64PeContracts()
     {
@@ -118,7 +126,7 @@ public sealed class AotStage7AContractTests
         Assert.Contains("rust-arm64-msvc-environment.ps1", script, StringComparison.Ordinal);
         Assert.Contains("magnetic_desk_native.dll", script, StringComparison.Ordinal);
         Assert.DoesNotContain("deskbox_search_core.dll", script, StringComparison.Ordinal);
-        Assert.Contains("magnetic-desk.Updater.exe", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("magnetic-desk.Updater.exe", script, StringComparison.Ordinal);
     }
 
     [Fact]

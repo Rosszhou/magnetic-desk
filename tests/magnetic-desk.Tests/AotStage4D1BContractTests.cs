@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace MagneticDesk.Tests;
 
@@ -60,14 +60,14 @@ public sealed class AotStage4D1BContractTests
         // native notice Title/Message properties for the notice cards.
         IReadOnlyDictionary<string, int> usages = ReadLocalizedXamlUsages();
         Assert.Equal(7, usages.Count);
-        Assert.Equal(219, usages["toolkit:SettingsCard|HeaderKey"]);
-        Assert.Equal(187, usages["toolkit:SettingsCard|DescriptionKey"]);
-        Assert.Equal(36, usages["toolkit:SettingsExpander|HeaderKey"]);
-        Assert.Equal(22, usages["toolkit:SettingsExpander|DescriptionKey"]);
+        Assert.Equal(130, usages["toolkit:SettingsCard|HeaderKey"]);
+        Assert.Equal(116, usages["toolkit:SettingsCard|DescriptionKey"]);
+        Assert.Equal(25, usages["toolkit:SettingsExpander|HeaderKey"]);
+        Assert.Equal(13, usages["toolkit:SettingsExpander|DescriptionKey"]);
         Assert.Equal(2, usages["TextBox|HeaderKey"]);
-        Assert.Equal(6, usages["InfoBar|HeaderKey"]);
-        Assert.Equal(6, usages["InfoBar|DescriptionKey"]);
-        Assert.Equal(478, usages.Values.Sum());
+        Assert.Equal(3, usages["InfoBar|HeaderKey"]);
+        Assert.Equal(3, usages["InfoBar|DescriptionKey"]);
+        Assert.Equal(292, usages.Values.Sum());
     }
 
     [Fact]

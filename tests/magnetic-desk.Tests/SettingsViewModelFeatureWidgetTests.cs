@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Services;
 namespace MagneticDesk.Tests;
 
@@ -20,16 +20,14 @@ public sealed class FeatureWidgetEntryFactoryTests
         Assert.Equal(
         [
             WidgetKind.QuickCapture,
+            WidgetKind.Clipboard,
             WidgetKind.Todo,
-            WidgetKind.Music,
-            WidgetKind.Weather,
             WidgetKind.Search,
-            WidgetKind.Glance
         ], entries.Select(entry => entry.Kind));
         Assert.All(entries, entry =>
         {
-            Assert.True(entry.ShowToggle);
-            Assert.True(entry.CanToggle);
+            Assert.Equal(entry.Kind != WidgetKind.Clipboard, entry.ShowToggle);
+            Assert.Equal(entry.Kind != WidgetKind.Clipboard, entry.CanToggle);
             Assert.True(entry.IsAvailable);
         });
         Assert.DoesNotContain(entries, entry =>

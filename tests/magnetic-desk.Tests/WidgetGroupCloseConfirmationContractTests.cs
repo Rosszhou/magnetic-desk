@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class WidgetGroupCloseConfirmationContractTests
 {
@@ -9,7 +9,7 @@ public sealed class WidgetGroupCloseConfirmationContractTests
             "src/magnetic-desk/Views/ContentWidgetWindow.Commands.cs"));
 
         Assert.Equal(
-            6,
+            5,
             CountOccurrences(
                 source,
                 "AcquireCloseWidgetFlyoutHandoff();"));

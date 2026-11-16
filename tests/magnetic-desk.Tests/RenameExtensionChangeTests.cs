@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Services;
+using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
 
@@ -214,7 +214,7 @@ public sealed class RenameExtensionChangeTests
         string root = FindRepositoryRoot();
         string stringsDir = Path.Combine(root, "src/magnetic-desk/Strings");
         string[] languageFiles = Directory.GetFiles(stringsDir, "*.json");
-        Assert.True(languageFiles.Length >= 12);
+        Assert.True(languageFiles.Length == 2);
         foreach (string languageFile in languageFiles)
         {
             string content = File.ReadAllText(languageFile);

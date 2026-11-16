@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -8,7 +8,7 @@ namespace MagneticDesk.Tests;
 public sealed class AotPublishContractTests
 {
     [Fact]
-    public void AuditProfile_IsOptInAndPropagatesAotToUpdater()
+    public void AuditProfile_IsOptInAndOmitsRemovedUpdater()
     {
         XDocument project = XDocument.Load(TestPaths.FromRepository("src/magnetic-desk/magnetic-desk.csproj"));
 
@@ -33,16 +33,8 @@ public sealed class AotPublishContractTests
             nativeAotGroup.Element("DefineConstants")?.Value,
             StringComparison.Ordinal);
 
-        XElement publishUpdater = project
-            .Descendants("Target")
-            .Single(element => (string?)element.Attribute("Name") == "PublishMagneticDeskUpdater");
-        string properties = Assert.IsType<string>((string?)publishUpdater.Element("MSBuild")?.Attribute("Properties"));
-        Assert.Contains("MagneticDeskAotAudit=$(MagneticDeskAotAudit)", properties, StringComparison.Ordinal);
-        Assert.Contains("PublishAot=$(PublishAot)", properties, StringComparison.Ordinal);
-        Assert.Contains(
-            "IlcUseEnvironmentalTools=$(IlcUseEnvironmentalTools)",
-            properties,
-            StringComparison.Ordinal);
+        Assert.DoesNotContain(project.Descendants("Target"),
+            element => (string?)element.Attribute("Name") == "PublishMagneticDeskUpdater");
     }
 
     [Fact]
@@ -87,15 +79,9 @@ public sealed class AotPublishContractTests
     public void AuditProfile_DoesNotCopyManagedUpdaterBuildOutput()
     {
         XDocument project = XDocument.Load(TestPaths.FromRepository("src/magnetic-desk/magnetic-desk.csproj"));
-
-        foreach (string targetName in new[] { "BuildMagneticDeskUpdater", "CopyMagneticDeskUpdater" })
-        {
-            XElement target = project
-                .Descendants("Target")
-                .Single(element => (string?)element.Attribute("Name") == targetName);
-            string condition = Assert.IsType<string>((string?)target.Attribute("Condition"));
-            Assert.Contains("'$(PublishAot)' != 'true'", condition, StringComparison.Ordinal);
-        }
+        XElement copy = project.Descendants("Target").Single(element => (string?)element.Attribute("Name") == "CopyMagneticDeskUpdater");
+        Assert.Contains("'$(PublishAot)' != 'true'", (string?)copy.Attribute("Condition"));
+        Assert.DoesNotContain(project.Descendants("Target"), element => (string?)element.Attribute("Name") == "BuildMagneticDeskUpdater");
     }
 
     [Fact]
@@ -231,7 +217,7 @@ public sealed class AotPublishContractTests
         Assert.Contains("--artifacts-path", script, StringComparison.Ordinal);
         Assert.Contains("buildArtifactsDirectory", script, StringComparison.Ordinal);
         Assert.Contains("magnetic-desk.pdb", script, StringComparison.Ordinal);
-        Assert.Contains("magnetic-desk.Updater.pdb", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("magnetic-desk.Updater.pdb", script, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -589,17 +575,6 @@ public sealed class AotPublishContractTests
                 ["public sealed partial class MarkdownDocumentView"],
             ["src/magnetic-desk/Controls/WidgetItemTemplateSelector.cs"] =
                 ["public sealed partial class WidgetItemTemplateSelector"],
-            ["src/magnetic-desk/Controls/WidgetContents/GlanceWidgetContent.xaml.cs"] =
-            [
-                "public sealed partial class GlanceBoolToVisibilityConverter",
-                "public sealed partial class GlanceInverseBoolToVisibilityConverter",
-                "public sealed partial class GlanceBoolToFontWeightConverter"
-            ],
-            ["src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml.cs"] =
-            [
-                "internal sealed partial class TempBarMarginConverter",
-                "internal sealed partial class BoolToVisibilityConverter"
-            ]
         };
 
         foreach ((string relativePath, string[] declarations) in expectedDeclarations)

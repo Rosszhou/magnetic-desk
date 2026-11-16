@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
@@ -13,58 +13,44 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
         Guid.NewGuid().ToString("N"));
 
     [Fact]
-    public void ProductionInventory_IsFrozenAtFortyOneFilesAndNinetySixCalls()
+    public void ProductionInventory_MatchesCurrentSerializationBoundaries()
     {
         var expected = new Dictionary<string, int>(StringComparer.Ordinal)
         {
             ["src/magnetic-desk/App.AotHotkeySmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotShortcutSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotShellSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotQuickAccessMutationSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotMusicVolumeReadSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotMusicVolumeMutationSmoke.cs"] = 2,
-            ["src/magnetic-desk/App.AotMusicVolumeSessionMutationSmoke.cs"] = 2,
             ["src/magnetic-desk/App.AotManagedUiSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotTodoRecurrenceReminderSmoke.cs"] = 1,
-            ["src/magnetic-desk/App.AotTodoNotificationLifecycleSmoke.cs"] = 1,
+            ["src/magnetic-desk/App.AotQuickAccessMutationSmoke.cs"] = 1,
+            ["src/magnetic-desk/App.AotShellSmoke.cs"] = 1,
+            ["src/magnetic-desk/App.AotShortcutSmoke.cs"] = 1,
             ["src/magnetic-desk/App.AotTodoNotificationActivationSmoke.cs"] = 1,
             ["src/magnetic-desk/App.AotTodoNotificationForwardingSmoke.cs"] = 1,
-            // 3: update-check manifest, GitHub release fallback, and the
-            // display-only content-manifest fetch (release-notes window).
+            ["src/magnetic-desk/App.AotTodoNotificationLifecycleSmoke.cs"] = 1,
+            ["src/magnetic-desk/App.AotTodoRecurrenceReminderSmoke.cs"] = 1,
             ["src/magnetic-desk/Services/AppUpdateService.cs"] = 3,
-            ["src/magnetic-desk/Services/CitySearchService.cs"] = 1,
-            ["src/magnetic-desk/Services/MagneticDeskAttachmentHealthService.cs"] = 1,
-            ["src/magnetic-desk/Services/MagneticDeskDataBackupService.cs"] = 12,
-            ["src/magnetic-desk/Services/MagneticDeskDiagnosticsBundleService.cs"] = 1,
             ["src/magnetic-desk/Services/DesktopAutoOrganizationSuppressionRegistry.cs"] = 2,
             ["src/magnetic-desk/Services/DesktopOrganizationHistoryStore.cs"] = 2,
             ["src/magnetic-desk/Services/DesktopOrganizationRecoveryStore.cs"] = 2,
             ["src/magnetic-desk/Services/FeedbackService.cs"] = 4,
-            ["src/magnetic-desk/Services/GlanceImageService.cs"] = 2,
-            ["src/magnetic-desk/Services/GlanceWidgetStore.cs"] = 7,
             ["src/magnetic-desk/Services/LocalizationService.cs"] = 1,
+            ["src/magnetic-desk/Services/MagneticDeskAttachmentHealthService.cs"] = 1,
+            ["src/magnetic-desk/Services/MagneticDeskDataBackupService.cs"] = 12,
+            ["src/magnetic-desk/Services/MagneticDeskDiagnosticsBundleService.cs"] = 1,
             ["src/magnetic-desk/Services/ManagedStorageMigrationService.cs"] = 2,
             ["src/magnetic-desk/Services/NativeNotificationActivationEnvelopeStore.cs"] = 2,
             ["src/magnetic-desk/Services/QuickCaptureStore.cs"] = 2,
-            // 2: the wipe-recovery offer marker (read deserialize, atomic save serialize).
             ["src/magnetic-desk/Services/RecoveryOfferStore.cs"] = 2,
             ["src/magnetic-desk/Services/SearchHistoryService.cs"] = 2,
             ["src/magnetic-desk/Services/SettingsMigrationService.cs"] = 2,
             ["src/magnetic-desk/Services/SettingsService.cs"] = 3,
-            // Startup session ledger: read-previous + write-current breadcrumb.
             ["src/magnetic-desk/Services/StartupSessionLedger.cs"] = 2,
-            // Crash event report serialization for the support package.
-            ["src/magnetic-desk/Services/WindowsCrashEventCollector.cs"] = 1,
             ["src/magnetic-desk/Services/SyncOutboxStore.cs"] = 2,
             ["src/magnetic-desk/Services/SyncRevisionsStore.cs"] = 2,
             ["src/magnetic-desk/Services/SyncStateStore.cs"] = 2,
             ["src/magnetic-desk/Services/TodoWidgetStore.cs"] = 3,
-            ["src/magnetic-desk/Services/WeatherService.cs"] = 5,
             ["src/magnetic-desk/Services/WidgetFileStackSettings.cs"] = 7,
             ["src/magnetic-desk/Services/WidgetLayoutStore.cs"] = 2,
-            // 3: the title-icon asset store's recent-emoji state file
-            // (load deserialize, add deserialize, atomic save serialize).
-            ["src/magnetic-desk/Services/WidgetTitleIconAssetStore.cs"] = 3
+            ["src/magnetic-desk/Services/WidgetTitleIconAssetStore.cs"] = 3,
+            ["src/magnetic-desk/Services/WindowsCrashEventCollector.cs"] = 1
         };
 
         Dictionary<string, int> actual = ProductionSourceFiles()
@@ -84,16 +70,13 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             Assert.Equal(expectedCount, actual[path]);
         }
 
-        Assert.Equal(41, actual.Count);
-        Assert.Equal(96, actual.Values.Sum());
+        Assert.Equal(34, actual.Count);
+        Assert.Equal(76, actual.Values.Sum());
 
         string[] expectedContextOwners =
         [
             "src/magnetic-desk/App.AotHotkeySmoke.cs",
             "src/magnetic-desk/App.AotManagedUiSmoke.cs",
-            "src/magnetic-desk/App.AotMusicVolumeMutationSmoke.cs",
-            "src/magnetic-desk/App.AotMusicVolumeReadSmoke.cs",
-            "src/magnetic-desk/App.AotMusicVolumeSessionMutationSmoke.cs",
             "src/magnetic-desk/App.AotQuickAccessMutationSmoke.cs",
             "src/magnetic-desk/App.AotShellSmoke.cs",
             "src/magnetic-desk/App.AotShortcutSmoke.cs",
@@ -102,14 +85,12 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             "src/magnetic-desk/App.AotTodoNotificationLifecycleSmoke.cs",
             "src/magnetic-desk/App.AotTodoRecurrenceReminderSmoke.cs",
             "src/magnetic-desk/Services/AppUpdateService.cs",
-            "src/magnetic-desk/Services/MagneticDeskDataBackupService.cs",
-            "src/magnetic-desk/Services/MagneticDeskDiagnosticsBundleService.cs",
             "src/magnetic-desk/Services/DesktopOrganizationHistoryStore.cs",
             "src/magnetic-desk/Services/DesktopOrganizationRecoveryStore.cs",
             "src/magnetic-desk/Services/FeedbackService.cs",
-            "src/magnetic-desk/Services/GlanceImageService.cs",
-            "src/magnetic-desk/Services/GlanceWidgetStore.cs",
             "src/magnetic-desk/Services/LocalizationService.cs",
+            "src/magnetic-desk/Services/MagneticDeskDataBackupService.cs",
+            "src/magnetic-desk/Services/MagneticDeskDiagnosticsBundleService.cs",
             "src/magnetic-desk/Services/ManagedStorageMigrationModels.cs",
             "src/magnetic-desk/Services/NativeNotificationActivationEnvelopeStore.cs",
             "src/magnetic-desk/Services/QuickCaptureStore.cs",
@@ -120,7 +101,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             "src/magnetic-desk/Services/SyncRevisionsStore.cs",
             "src/magnetic-desk/Services/SyncStateStore.cs",
             "src/magnetic-desk/Services/TodoWidgetStore.cs",
-            "src/magnetic-desk/Services/WeatherService.cs",
             "src/magnetic-desk/Services/WidgetFileStackSettings.cs",
             "src/magnetic-desk/Services/WidgetLayoutStore.cs",
             "src/magnetic-desk/Services/WidgetTitleIconAssetStore.cs",
@@ -135,7 +115,7 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             .Order()
             .ToArray();
 
-        Assert.Equal(37, actualContextOwners.Length);
+        Assert.Equal(31, actualContextOwners.Length);
         Assert.Equal(expectedContextOwners, actualContextOwners);
     }
 
@@ -162,8 +142,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
     public void PhaseOneLeafCalls_UseSourceGeneratedTypeInfoAndPreserveOptionProfiles()
     {
         string appUpdate = ReadSource("src/magnetic-desk/Services/AppUpdateService.cs");
-        string citySearch = ReadSource("src/magnetic-desk/Services/CitySearchService.cs");
-        string weather = ReadSource("src/magnetic-desk/Services/WeatherService.cs");
         string localization = ReadSource("src/magnetic-desk/Services/LocalizationService.cs");
         string diagnostics = ReadSource(
             "src/magnetic-desk/Services/MagneticDeskDiagnosticsBundleService.cs");
@@ -171,18 +149,12 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
         string[] expectedTypeInfoReferences =
         [
             "AppUpdateJsonContext.Default.GitHubRelease",
-            "WeatherJsonContext.Default.PredefinedCityList",
-            "WeatherJsonContext.Default.GeocodingResult",
-            "WeatherJsonContext.Default.OpenMeteoWeather",
-            "WeatherJsonContext.Default.MsnWeather",
             "LocalizationJsonContext.Default.LocalizedStrings",
             "DiagnosticsJsonContext.Default.DiagnosticSnapshot"
         ];
         string allPhaseOneSources = string.Join(
             Environment.NewLine,
             appUpdate,
-            citySearch,
-            weather,
             localization,
             diagnostics);
 
@@ -206,7 +178,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
 
         Assert.Contains("JsonSerializerDefaults.Web", appUpdate, StringComparison.Ordinal);
         Assert.Contains("PropertyNameCaseInsensitive = true", appUpdate, StringComparison.Ordinal);
-        Assert.Contains("PropertyNameCaseInsensitive = true", weather, StringComparison.Ordinal);
         Assert.DoesNotContain("DictionaryKeyPolicy", localization, StringComparison.Ordinal);
         Assert.Contains(
             "PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase",
@@ -222,8 +193,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
         string settings = ReadSource("src/magnetic-desk/Services/SettingsService.cs");
         string quickCapture = ReadSource("src/magnetic-desk/Services/QuickCaptureStore.cs");
         string todo = ReadSource("src/magnetic-desk/Services/TodoWidgetStore.cs");
-        string glancePreferences = ReadSource("src/magnetic-desk/Services/GlanceWidgetStore.cs");
-        string glanceCatalog = ReadSource("src/magnetic-desk/Services/GlanceImageService.cs");
         string widgetMetadata = ReadSource(
             "src/magnetic-desk/Services/WidgetFileStackSettings.cs");
         string allPhaseTwoSources = string.Join(
@@ -231,8 +200,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             settings,
             quickCapture,
             todo,
-            glancePreferences,
-            glanceCatalog,
             widgetMetadata);
 
         var expectedTypeInfoReferences = new Dictionary<string, int>(StringComparer.Ordinal)
@@ -240,8 +207,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             ["SettingsJsonContext.Default.AppSettings"] = 3,
             ["QuickCaptureJsonContext.Default.StoreData"] = 2,
             ["TodoJsonContext.Default.StoreData"] = 3,
-            ["GlancePreferencesJsonContext.Default.Preferences"] = 7,
-            ["GlanceImageCatalogJsonContext.Default.ImageCatalog"] = 2,
             ["WidgetMetadataJsonContext.Default.StringMap"] = 2,
             ["WidgetMetadataJsonContext.Default.StringListMap"] = 2,
             ["WidgetMetadataJsonContext.Default.StringList"] = 3
@@ -255,7 +220,7 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
                     Regex.Escape(reference) + @"\b").Count);
         }
 
-        Assert.Equal(24, expectedTypeInfoReferences.Values.Sum());
+        Assert.Equal(15, expectedTypeInfoReferences.Values.Sum());
         Assert.DoesNotContain("JsonSerializerOptions", allPhaseTwoSources, StringComparison.Ordinal);
         Assert.DoesNotContain(
             "new JsonStringEnumConverter()",
@@ -263,7 +228,7 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             StringComparison.Ordinal);
 
         foreach (string stringEnumStore in
-                 new[] { settings, quickCapture, todo, glancePreferences })
+                 new[] { settings, quickCapture, todo })
         {
             Assert.Contains(
                 "PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase",
@@ -273,12 +238,6 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
             Assert.Contains("WriteIndented = true", stringEnumStore, StringComparison.Ordinal);
         }
 
-        Assert.Contains(
-            "PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase",
-            glanceCatalog,
-            StringComparison.Ordinal);
-        Assert.Contains("WriteIndented = true", glanceCatalog, StringComparison.Ordinal);
-        Assert.DoesNotContain("UseStringEnumConverter", glanceCatalog, StringComparison.Ordinal);
         Assert.DoesNotContain("PropertyNamingPolicy", widgetMetadata, StringComparison.Ordinal);
         Assert.DoesNotContain("DictionaryKeyPolicy", widgetMetadata, StringComparison.Ordinal);
         Assert.DoesNotContain("UseStringEnumConverter", widgetMetadata, StringComparison.Ordinal);
@@ -633,71 +592,7 @@ public sealed class JsonSerializationBaselineContractTests : IDisposable
         Assert.Empty(legacyQuick.Items);
         Assert.Empty(legacyQuick.RecentItems);
 
-        var glanceStore = new GlanceWidgetStore(Path.Combine(_tempRoot, "glance"));
-        await glanceStore.SaveAsync(new GlanceWidgetData
-        {
-            Layout = GlanceLayoutMode.Editorial,
-            Transition = GlanceTransitionMode.SlideFade
-        });
 
-        using (JsonDocument glanceJson = JsonDocument.Parse(
-                   await File.ReadAllTextAsync(glanceStore.StorePath)))
-        {
-            Assert.Equal("Editorial", glanceJson.RootElement.GetProperty("layout").GetString());
-            Assert.Equal("SlideFade", glanceJson.RootElement.GetProperty("transition").GetString());
-            Assert.Equal(JsonValueKind.String, glanceJson.RootElement.GetProperty("layout").ValueKind);
-        }
-
-        await File.WriteAllTextAsync(
-            glanceStore.StorePath,
-            """
-            {
-              "layout": 2,
-              "transition": 2,
-              "futurePreferenceField": true
-            }
-            """);
-        GlanceWidgetData legacyGlance = await new GlanceWidgetStore(
-            Path.Combine(_tempRoot, "glance")).LoadAsync();
-        Assert.Equal(GlanceLayoutMode.Editorial, legacyGlance.Layout);
-        Assert.Equal(GlanceTransitionMode.SlideFade, legacyGlance.Transition);
-        Assert.Equal(GlanceWidgetData.CurrentVersion, legacyGlance.Version);
-    }
-
-    [Fact]
-    public async Task GlanceImageCatalogGolden_ReadsNumericEnumsWithMissingAndUnknownFields()
-    {
-        string cacheDirectory = Path.Combine(_tempRoot, "glance-cache");
-        string imageDirectory = Directory.CreateDirectory(
-            Path.Combine(cacheDirectory, "images")).FullName;
-        string imagePath = Path.Combine(imageDirectory, "legacy.jpg");
-        await File.WriteAllBytesAsync(imagePath, [1, 2, 3]);
-        string escapedImagePath = JsonSerializer.Serialize(imagePath);
-        await File.WriteAllTextAsync(
-            Path.Combine(cacheDirectory, "catalog.json"),
-            $$"""
-            [
-              {
-                "id": "legacy-cities",
-                "localPath": {{escapedImagePath}},
-                "cachedAtUtc": "2026-08-20T00:00:00+00:00",
-                "onlineCategory": 2,
-                "onlineProvider": 0,
-                "futureCatalogField": { "ignored": true }
-              }
-            ]
-            """);
-
-        var service = new GlanceImageService(cacheDirectory);
-        IReadOnlyList<GlanceImageInfo> images = await service.LoadCachedOnlineImagesAsync(
-            GlanceOnlineImageProvider.Wikimedia,
-            GlanceOnlineImageCategory.Cities);
-
-        GlanceImageInfo image = Assert.Single(images);
-        Assert.Equal("legacy-cities", image.Id);
-        Assert.Equal(GlanceOnlineImageProvider.Wikimedia, image.OnlineProvider);
-        Assert.Equal(GlanceOnlineImageCategory.Cities, image.OnlineCategory);
-        Assert.Null(image.Title);
     }
 
     private static string[] GenericTypeArguments(string source, string methodName) =>

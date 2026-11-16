@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Services;
+using MagneticDesk.Services;
 using MagneticDesk.ViewModels;
 
 namespace MagneticDesk.Tests;
@@ -40,22 +40,4 @@ public sealed class WidgetVisibilityLifecyclePolicyTests
             hasDeferredChanges: false));
     }
 
-    [Fact]
-    public void MusicRevealRefreshPolicy_SkipsRapidCleanRevealButHonorsChanges()
-    {
-        DateTime now = new(2026, 8, 26, 12, 0, 0, DateTimeKind.Utc);
-
-        Assert.False(MusicWidgetViewModel.ShouldRefreshAfterReveal(
-            now,
-            now.AddSeconds(-29),
-            hasHiddenChanges: false));
-        Assert.True(MusicWidgetViewModel.ShouldRefreshAfterReveal(
-            now,
-            now.AddSeconds(-1),
-            hasHiddenChanges: true));
-        Assert.True(MusicWidgetViewModel.ShouldRefreshAfterReveal(
-            now,
-            now.AddSeconds(-30),
-            hasHiddenChanges: false));
-    }
 }

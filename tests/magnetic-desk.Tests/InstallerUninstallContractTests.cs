@@ -1,23 +1,8 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class InstallerUninstallContractTests
 {
-    private static readonly string[] InstallerLanguages =
-    [
-        "english",
-        "chinesesimplified",
-        "chinesetraditional",
-        "japanese",
-        "german",
-        "brazilianportuguese",
-        "hindi",
-        "spanish",
-        "french",
-        "arabic",
-        "bengali",
-        "russian",
-        "korean"
-    ];
+    private static readonly string[] InstallerLanguages = ["english", "chinesesimplified"];
 
     private static readonly string[] AppDataChoiceMessages =
     [
@@ -60,8 +45,8 @@ public sealed class InstallerUninstallContractTests
         Assert.Contains("SuppressibleTaskDialogMsgBox", code, StringComparison.Ordinal);
         Assert.Contains("IDYES", code, StringComparison.Ordinal);
         Assert.Contains("MagneticDeskPurgeUserDataParameter = '/PURGEUSERDATA'", code, StringComparison.Ordinal);
-        Assert.Contains("MagneticDeskAppDataRootPath = '{localappdata}\\MagneticDesk'", code, StringComparison.Ordinal);
-        Assert.Contains("MagneticDeskRecoveryRootPath = '{localappdata}\\MagneticDesk-Recovery'", code, StringComparison.Ordinal);
+        Assert.Contains("MagneticDeskAppDataRootPath = '{localappdata}\\magnetic-desk'", code, StringComparison.Ordinal);
+        Assert.Contains("MagneticDeskRecoveryRootPath = '{localappdata}\\magnetic-desk-Recovery'", code, StringComparison.Ordinal);
         Assert.Contains("MagneticDeskTemporaryRootPath = '{%TEMP}\\MagneticDesk'", code, StringComparison.Ordinal);
         Assert.Contains("MB_YESNO or MB_DEFBUTTON2", code, StringComparison.Ordinal);
         Assert.Contains("RemoveNotificationRegistration", code, StringComparison.Ordinal);
@@ -428,45 +413,8 @@ public sealed class InstallerUninstallContractTests
         }
     }
 
-    [Fact]
-    public void TraditionalChinese_IsImmediatelyAfterSimplifiedChinese()
-    {
-        string simplified =
-            "Name: \"chinesesimplified\"; MessagesFile: \"Languages\\ChineseSimplified.isl\"";
-        string traditional =
-            "Name: \"chinesetraditional\"; MessagesFile: \"Languages\\ChineseTraditional.isl\"";
-
-        foreach (string script in new[] { "installer/magnetic-desk.iss", "installer/magnetic-desk.arm64.iss" })
-        {
-            string content = ReadRepositoryFile(script);
-            int simplifiedIndex = content.IndexOf(simplified, StringComparison.Ordinal);
-            int traditionalIndex = content.IndexOf(traditional, StringComparison.Ordinal);
-
-            Assert.True(simplifiedIndex >= 0);
-            Assert.True(traditionalIndex > simplifiedIndex);
-            Assert.Contains(
-                "#include \"magnetic-desk.DependencyCustomMessages.iss\"",
-                content,
-                StringComparison.Ordinal);
-            Assert.Contains(
-                "AppComments={cm:RuntimeDependencyComment}",
-                content,
-                StringComparison.Ordinal);
-        }
-
-        string languageFile = ReadRepositoryFile("installer/Languages/ChineseTraditional.isl");
-        Assert.Contains("LanguageName=繁體中文", languageFile, StringComparison.Ordinal);
-    }
-
     [Theory]
-    [InlineData("hindi", "hi-IN")]
-    [InlineData("spanish", "es-ES")]
-    [InlineData("french", "fr-FR")]
-    [InlineData("arabic", "ar-SA")]
-    [InlineData("bengali", "bn-BD")]
-    [InlineData("russian", "ru-RU")]
-    [InlineData("korean", "ko-KR")]
-    [InlineData("chinesetraditional", "zh-TW")]
+    [InlineData("chinesesimplified", "zh-CN")]
     public void InstallerLanguage_IsPassedToFirstAppLaunch(
         string installerLanguage,
         string appLanguage)

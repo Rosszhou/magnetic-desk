@@ -150,7 +150,7 @@ if (-not $ValidateOnly.IsPresent) {
 
     $cargoOutput = Join-Path $cargoTargetRoot "$targetTriple\$cargoProfile"
     $builtExe = Join-Path $cargoOutput "magnetic-desk-thumbnail-proxy.exe"
-    $builtPdb = Join-Path $cargoOutput "deskbox_thumbnail_proxy.pdb"
+    $builtPdb = Join-Path $cargoOutput "magnetic_desk_thumbnail_proxy.pdb"
     if (-not (Test-Path -LiteralPath $builtExe -PathType Leaf)) {
         throw "Rust thumbnail proxy build did not produce '$builtExe'."
     }

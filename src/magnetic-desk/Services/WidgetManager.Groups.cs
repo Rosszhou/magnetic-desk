@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Controls;
+using MagneticDesk.Controls;
 using MagneticDesk.Controls.WidgetContents;
 using MagneticDesk.Contracts;
 using MagneticDesk.Helpers;
@@ -93,14 +93,14 @@ public sealed partial class WidgetManager
         }
 
         ClearGroupDragPreview();
-        while (_settingsService.Settings.WidgetGroups.Count > 0)
+        while (_settingsService.Settings.WidgetLayout.WidgetGroups.Count > 0)
         {
             WidgetGroupConfig group =
-                _settingsService.Settings.WidgetGroups[0];
+                _settingsService.Settings.WidgetLayout.WidgetGroups[0];
             string? memberId = group.MemberIds.FirstOrDefault();
             if (string.IsNullOrWhiteSpace(memberId))
             {
-                _settingsService.Settings.WidgetGroups.Remove(group);
+                _settingsService.Settings.WidgetLayout.WidgetGroups.Remove(group);
                 _widgetSurfaceSwitchGates.Remove(group.SurfaceId);
                 continue;
             }
@@ -133,30 +133,30 @@ public sealed partial class WidgetManager
     {
         _lastWidgetGroupDefaultNavigationStyle =
             WidgetGroupNavigationStyles.Normalize(
-                _settingsService.Settings.WidgetGroupDefaultNavigationStyle,
+                _settingsService.Settings.WidgetLayout.WidgetGroupDefaultNavigationStyle,
                 allowFollowDefault: false);
         _lastWidgetGroupDefaultTitleDisplayMode =
             WidgetGroupTitleDisplayModes.Normalize(
-                _settingsService.Settings.WidgetGroupDefaultTitleDisplayMode,
+                _settingsService.Settings.WidgetLayout.WidgetGroupDefaultTitleDisplayMode,
                 allowFollowDefault: false);
         _lastWidgetGroupWheelSwitchEnabled =
-            _settingsService.Settings.WidgetGroupWheelSwitchEnabled;
+            _settingsService.Settings.WidgetLayout.WidgetGroupWheelSwitchEnabled;
         _lastWidgetGroupHoverSwitchEnabled =
-            _settingsService.Settings.WidgetGroupHoverSwitchEnabled;
+            _settingsService.Settings.WidgetLayout.WidgetGroupHoverSwitchEnabled;
     }
 
     private void RefreshWidgetGroupPresentationDefaultsIfChanged()
     {
         string navigationStyle = WidgetGroupNavigationStyles.Normalize(
-            _settingsService.Settings.WidgetGroupDefaultNavigationStyle,
+            _settingsService.Settings.WidgetLayout.WidgetGroupDefaultNavigationStyle,
             allowFollowDefault: false);
         string titleMode = WidgetGroupTitleDisplayModes.Normalize(
-            _settingsService.Settings.WidgetGroupDefaultTitleDisplayMode,
+            _settingsService.Settings.WidgetLayout.WidgetGroupDefaultTitleDisplayMode,
             allowFollowDefault: false);
         bool wheelEnabled =
-            _settingsService.Settings.WidgetGroupWheelSwitchEnabled;
+            _settingsService.Settings.WidgetLayout.WidgetGroupWheelSwitchEnabled;
         bool hoverEnabled =
-            _settingsService.Settings.WidgetGroupHoverSwitchEnabled;
+            _settingsService.Settings.WidgetLayout.WidgetGroupHoverSwitchEnabled;
         if (string.Equals(
                 navigationStyle,
                 _lastWidgetGroupDefaultNavigationStyle,
@@ -239,14 +239,14 @@ public sealed partial class WidgetManager
                 group.ActiveMemberId,
                 WidgetGroupNavigationStyles.Resolve(
                     group.NavigationStyle,
-                    _settingsService.Settings.WidgetGroupDefaultNavigationStyle),
+                    _settingsService.Settings.WidgetLayout.WidgetGroupDefaultNavigationStyle),
                 WidgetGroupTitleDisplayModes.Resolve(
                     group.TitleDisplayMode,
-                    _settingsService.Settings.WidgetGroupDefaultTitleDisplayMode),
+                    _settingsService.Settings.WidgetLayout.WidgetGroupDefaultTitleDisplayMode),
                 group.WheelSwitchEnabled ??
-                    _settingsService.Settings.WidgetGroupWheelSwitchEnabled,
+                    _settingsService.Settings.WidgetLayout.WidgetGroupWheelSwitchEnabled,
                 group.HoverSwitchEnabled ??
-                    _settingsService.Settings.WidgetGroupHoverSwitchEnabled,
+                    _settingsService.Settings.WidgetLayout.WidgetGroupHoverSwitchEnabled,
                 members);
     }
 
@@ -308,7 +308,7 @@ public sealed partial class WidgetManager
 
     public string GetWidgetGroupDefaultNavigationStyle() =>
         WidgetGroupNavigationStyles.Normalize(
-            _settingsService.Settings.WidgetGroupDefaultNavigationStyle,
+            _settingsService.Settings.WidgetLayout.WidgetGroupDefaultNavigationStyle,
             allowFollowDefault: false);
 
     public async Task<bool> SetWidgetGroupTitleDisplayModeAsync(
@@ -356,7 +356,7 @@ public sealed partial class WidgetManager
 
     public string GetWidgetGroupDefaultTitleDisplayMode() =>
         WidgetGroupTitleDisplayModes.Normalize(
-            _settingsService.Settings.WidgetGroupDefaultTitleDisplayMode,
+            _settingsService.Settings.WidgetLayout.WidgetGroupDefaultTitleDisplayMode,
             allowFollowDefault: false);
 
     public async Task<bool> SetWidgetGroupWheelSwitchEnabledAsync(
@@ -397,7 +397,7 @@ public sealed partial class WidgetManager
     }
 
     public bool GetWidgetGroupDefaultWheelSwitchEnabled() =>
-        _settingsService.Settings.WidgetGroupWheelSwitchEnabled;
+        _settingsService.Settings.WidgetLayout.WidgetGroupWheelSwitchEnabled;
 
     public async Task<bool> SetWidgetGroupHoverSwitchEnabledAsync(
         string widgetId,
@@ -437,7 +437,7 @@ public sealed partial class WidgetManager
     }
 
     public bool GetWidgetGroupDefaultHoverSwitchEnabled() =>
-        _settingsService.Settings.WidgetGroupHoverSwitchEnabled;
+        _settingsService.Settings.WidgetLayout.WidgetGroupHoverSwitchEnabled;
 
     public WidgetChromeMode? GetWidgetGroupChromeMode(string widgetId)
     {
@@ -606,7 +606,7 @@ public sealed partial class WidgetManager
 
         var targets = new List<WidgetGroupJoinTarget>();
 
-        foreach (WidgetConfig config in _settingsService.Settings.Widgets)
+        foreach (WidgetConfig config in _settingsService.Settings.WidgetLayout.Widgets)
         {
             if (string.Equals(config.Id, sourceWidgetId, StringComparison.Ordinal) ||
                 IsDeleted(config.Id) ||
@@ -820,7 +820,7 @@ public sealed partial class WidgetManager
             string activeTargetId = targetGroup?.ActiveMemberId ?? targetWidgetId;
             WidgetConfig activeTargetConfig = FindConfig(activeTargetId) ?? targetConfig;
             List<WidgetGroupConfig> groupSnapshot =
-                _settingsService.Settings.WidgetGroups
+                _settingsService.Settings.WidgetLayout.WidgetGroups
                     .Select(CloneWidgetGroupConfig)
                     .ToList();
             WidgetGroupConfig mergedGroup = targetGroup ??
@@ -866,11 +866,11 @@ public sealed partial class WidgetManager
 
             if (sourceGroup is not null)
             {
-                _settingsService.Settings.WidgetGroups.Remove(sourceGroup);
+                _settingsService.Settings.WidgetLayout.WidgetGroups.Remove(sourceGroup);
             }
             if (targetGroup is null)
             {
-                _settingsService.Settings.WidgetGroups.Add(mergedGroup);
+                _settingsService.Settings.WidgetLayout.WidgetGroups.Add(mergedGroup);
             }
             List<WidgetGroupConfig> committedGroups =
                 settings.WidgetLayout.WidgetGroups.ToList();
@@ -1743,7 +1743,7 @@ public sealed partial class WidgetManager
             WidgetGroupConfig? survivingGroup = group.MemberIds.Count >= 2 ? group : null;
             if (survivingGroup is null)
             {
-                _settingsService.Settings.WidgetGroups.Remove(group);
+                _settingsService.Settings.WidgetLayout.WidgetGroups.Remove(group);
                 foreach (string exMemberId in group.MemberIds)
                 {
                     _widgetGroupMemberInactiveSince.Remove(exMemberId);
@@ -1980,7 +1980,7 @@ public sealed partial class WidgetManager
                 members[index].IsVisible = group.IsVisible;
             }
 
-            _settingsService.Settings.WidgetGroups.Remove(group);
+            _settingsService.Settings.WidgetLayout.WidgetGroups.Remove(group);
             bool persisted;
             try
             {
@@ -2231,7 +2231,7 @@ public sealed partial class WidgetManager
 
     public void UpdateWidgetGroupDragPreview(string sourceWidgetId)
     {
-        WidgetConfig? magneticSource = _settingsService.Settings.Widgets.FirstOrDefault(w => w.Id == sourceWidgetId);
+        WidgetConfig? magneticSource = _settingsService.Settings.WidgetLayout.Widgets.FirstOrDefault(w => w.Id == sourceWidgetId);
         if (magneticSource is not null && GetMagneticGroupId(magneticSource) is not null)
         {
             ClearGroupDragPreview();
@@ -3229,7 +3229,7 @@ public sealed partial class WidgetManager
     private void NormalizeWidgetGroupsForRuntime()
     {
         bool changed = WidgetGroupSettings.Normalize(_settingsService.Settings);
-        foreach (WidgetGroupConfig group in _settingsService.Settings.WidgetGroups.ToList())
+        foreach (WidgetGroupConfig group in _settingsService.Settings.WidgetLayout.WidgetGroups.ToList())
         {
             string previousActiveId = group.ActiveMemberId;
             List<string> unavailableMemberIds = group.MemberIds
@@ -3295,7 +3295,7 @@ public sealed partial class WidgetManager
             // a temporarily unavailable member must not reach this branch.
             if (group.MemberIds.Count < 2)
             {
-                _settingsService.Settings.WidgetGroups.Remove(group);
+                _settingsService.Settings.WidgetLayout.WidgetGroups.Remove(group);
                 _widgetSurfaceSwitchGates.Remove(group.SurfaceId);
                 if (group.MemberIds.FirstOrDefault() is { } remainingId &&
                     FindConfig(remainingId) is { } remainingConfig)
@@ -3459,24 +3459,24 @@ public sealed partial class WidgetManager
         AppSettings settings = _settingsService.Settings;
         var memberIds = group.MemberIds.ToHashSet(StringComparer.Ordinal);
 
-        int preferredIndex = settings.WidgetCapsuleBarOrder.FindIndex(id =>
+        int preferredIndex = settings.WidgetShell.WidgetCapsuleBarOrder.FindIndex(id =>
             string.Equals(id, group.ActiveMemberId, StringComparison.Ordinal));
-        int firstMemberIndex = settings.WidgetCapsuleBarOrder.FindIndex(memberIds.Contains);
+        int firstMemberIndex = settings.WidgetShell.WidgetCapsuleBarOrder.FindIndex(memberIds.Contains);
         int insertionIndex = preferredIndex >= 0
-            ? preferredIndex - settings.WidgetCapsuleBarOrder
+            ? preferredIndex - settings.WidgetShell.WidgetCapsuleBarOrder
                 .Take(preferredIndex)
                 .Count(memberIds.Contains)
             : firstMemberIndex;
-        int removedCount = settings.WidgetCapsuleBarOrder.RemoveAll(memberIds.Contains);
+        int removedCount = settings.WidgetShell.WidgetCapsuleBarOrder.RemoveAll(memberIds.Contains);
         if (removedCount > 0)
         {
-            insertionIndex = Math.Clamp(insertionIndex, 0, settings.WidgetCapsuleBarOrder.Count);
-            settings.WidgetCapsuleBarOrder.Insert(insertionIndex, group.ActiveMemberId);
+            insertionIndex = Math.Clamp(insertionIndex, 0, settings.WidgetShell.WidgetCapsuleBarOrder.Count);
+            settings.WidgetShell.WidgetCapsuleBarOrder.Insert(insertionIndex, group.ActiveMemberId);
             changed = removedCount != 1 || preferredIndex < 0;
         }
 
         WidgetCompactPlacement? freePlacement = null;
-        if (settings.WidgetCapsuleFreePlacements.TryGetValue(
+        if (settings.WidgetShell.WidgetCapsuleFreePlacements.TryGetValue(
                 group.ActiveMemberId,
                 out WidgetCompactPlacement? activePlacement))
         {
@@ -3486,7 +3486,7 @@ public sealed partial class WidgetManager
         {
             foreach (string memberId in group.MemberIds)
             {
-                if (settings.WidgetCapsuleFreePlacements.TryGetValue(
+                if (settings.WidgetShell.WidgetCapsuleFreePlacements.TryGetValue(
                         memberId,
                         out WidgetCompactPlacement? memberPlacement))
                 {
@@ -3497,16 +3497,16 @@ public sealed partial class WidgetManager
         }
 
         bool activeHadFreePlacement =
-            settings.WidgetCapsuleFreePlacements.ContainsKey(group.ActiveMemberId);
+            settings.WidgetShell.WidgetCapsuleFreePlacements.ContainsKey(group.ActiveMemberId);
         int existingPlacementCount = group.MemberIds.Count(
-            settings.WidgetCapsuleFreePlacements.ContainsKey);
+            settings.WidgetShell.WidgetCapsuleFreePlacements.ContainsKey);
         foreach (string memberId in group.MemberIds)
         {
-            settings.WidgetCapsuleFreePlacements.Remove(memberId);
+            settings.WidgetShell.WidgetCapsuleFreePlacements.Remove(memberId);
         }
         if (freePlacement is not null)
         {
-            settings.WidgetCapsuleFreePlacements[group.ActiveMemberId] = freePlacement;
+            settings.WidgetShell.WidgetCapsuleFreePlacements[group.ActiveMemberId] = freePlacement;
         }
         changed |= existingPlacementCount > 1 ||
                    (existingPlacementCount == 1 && !activeHadFreePlacement);
@@ -3522,21 +3522,21 @@ public sealed partial class WidgetManager
         }
 
         AppSettings settings = _settingsService.Settings;
-        int previousIndex = settings.WidgetCapsuleBarOrder.FindIndex(id =>
+        int previousIndex = settings.WidgetShell.WidgetCapsuleBarOrder.FindIndex(id =>
             string.Equals(id, previousWidgetId, StringComparison.Ordinal));
-        settings.WidgetCapsuleBarOrder.RemoveAll(id =>
+        settings.WidgetShell.WidgetCapsuleBarOrder.RemoveAll(id =>
             string.Equals(id, targetWidgetId, StringComparison.Ordinal));
         if (previousIndex >= 0)
         {
-            previousIndex = Math.Clamp(previousIndex, 0, settings.WidgetCapsuleBarOrder.Count - 1);
-            settings.WidgetCapsuleBarOrder[previousIndex] = targetWidgetId;
+            previousIndex = Math.Clamp(previousIndex, 0, settings.WidgetShell.WidgetCapsuleBarOrder.Count - 1);
+            settings.WidgetShell.WidgetCapsuleBarOrder[previousIndex] = targetWidgetId;
         }
 
-        if (settings.WidgetCapsuleFreePlacements.Remove(
+        if (settings.WidgetShell.WidgetCapsuleFreePlacements.Remove(
                 previousWidgetId,
                 out WidgetCompactPlacement? placement))
         {
-            settings.WidgetCapsuleFreePlacements[targetWidgetId] =
+            settings.WidgetShell.WidgetCapsuleFreePlacements[targetWidgetId] =
                 CloneCompactPlacement(placement)!;
         }
 
@@ -3600,10 +3600,10 @@ public sealed partial class WidgetManager
 
             return new WidgetGroupMutationSnapshot(
                 group,
-                settings.WidgetGroups.IndexOf(group),
+                settings.WidgetLayout.WidgetGroups.IndexOf(group),
                 members,
-                settings.WidgetCapsuleBarOrder.ToList(),
-                settings.WidgetCapsuleFreePlacements.ToDictionary(
+                settings.WidgetShell.WidgetCapsuleBarOrder.ToList(),
+                settings.WidgetShell.WidgetCapsuleFreePlacements.ToDictionary(
                     entry => entry.Key,
                     entry => CloneCompactPlacement(entry.Value)!,
                     StringComparer.Ordinal),
@@ -3620,14 +3620,14 @@ public sealed partial class WidgetManager
         public void Restore(WidgetManager manager)
         {
             AppSettings settings = manager._settingsService.Settings;
-            settings.WidgetGroups.RemoveAll(group => ReferenceEquals(group, _group));
+            settings.WidgetLayout.WidgetGroups.RemoveAll(group => ReferenceEquals(group, _group));
             if (_groupIndex >= 0)
             {
                 int insertIndex = Math.Clamp(
                     _groupIndex,
                     0,
-                    settings.WidgetGroups.Count);
-                settings.WidgetGroups.Insert(insertIndex, _group);
+                    settings.WidgetLayout.WidgetGroups.Count);
+                settings.WidgetLayout.WidgetGroups.Insert(insertIndex, _group);
             }
 
             _group.MemberIds.Clear();
@@ -3639,12 +3639,12 @@ public sealed partial class WidgetManager
                 member.Restore();
             }
 
-            settings.WidgetCapsuleBarOrder.Clear();
-            settings.WidgetCapsuleBarOrder.AddRange(_capsuleBarOrder);
-            settings.WidgetCapsuleFreePlacements.Clear();
+            settings.WidgetShell.WidgetCapsuleBarOrder.Clear();
+            settings.WidgetShell.WidgetCapsuleBarOrder.AddRange(_capsuleBarOrder);
+            settings.WidgetShell.WidgetCapsuleFreePlacements.Clear();
             foreach (var placement in _freePlacements)
             {
-                settings.WidgetCapsuleFreePlacements[placement.Key] =
+                settings.WidgetShell.WidgetCapsuleFreePlacements[placement.Key] =
                     CloneCompactPlacement(placement.Value)!;
             }
 

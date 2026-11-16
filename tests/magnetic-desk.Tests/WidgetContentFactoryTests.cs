@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Controls.WidgetContents;
+using MagneticDesk.Controls.WidgetContents;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
 namespace MagneticDesk.Tests;
@@ -6,15 +6,25 @@ namespace MagneticDesk.Tests;
 public sealed class WidgetContentFactoryTests
 {
     [Theory]
+    [InlineData(WidgetKind.Music)]
+    [InlineData(WidgetKind.Weather)]
+    [InlineData(WidgetKind.Glance)]
+    public void CreateDetachedContent_RejectsRemovedKinds(WidgetKind kind)
+    {
+        var factory = TestServices.CreateWidgetContentFactory();
+        Assert.False(factory.CanCreateDetachedContent(kind));
+        Assert.False(WidgetRegistry.Default.CanCreateWindow(kind));
+        Assert.Throws<NotSupportedException>(() => factory.CreateDetachedContent(new WidgetConfig { WidgetKind = kind }));
+    }
+
+    [Theory]
     [InlineData(WidgetKind.File, "magnetic-desk", WidgetContentStage.Implemented, true, WidgetContentAvailability.Available)]
-    [InlineData(WidgetKind.QuickCapture, "Quick Capture", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
-    [InlineData(WidgetKind.Weather, "Weather", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
+    [InlineData(WidgetKind.Clipboard, "Clipboard", WidgetContentStage.Implemented, true, WidgetContentAvailability.Available)]
+    [InlineData(WidgetKind.QuickCapture, "Notes", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
     [InlineData(WidgetKind.Todo, "Todo", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
     [InlineData(WidgetKind.Tags, "Tags", WidgetContentStage.Placeholder, false, WidgetContentAvailability.Planned)]
-    [InlineData(WidgetKind.Music, "Music", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
     [InlineData(WidgetKind.SystemMonitor, "System Monitor", WidgetContentStage.Placeholder, false, WidgetContentAvailability.Planned)]
     [InlineData(WidgetKind.Search, "Search", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
-    [InlineData(WidgetKind.Glance, "Glance", WidgetContentStage.Implemented, false, WidgetContentAvailability.Available)]
     public void GetDescriptor_ReturnsContentMetadata(
         WidgetKind widgetKind,
         string title,
@@ -47,13 +57,11 @@ public sealed class WidgetContentFactoryTests
         [
             WidgetKind.File,
             WidgetKind.QuickCapture,
+            WidgetKind.Clipboard,
             WidgetKind.Todo,
-            WidgetKind.Music,
-            WidgetKind.Weather,
             WidgetKind.Tags,
             WidgetKind.SystemMonitor,
             WidgetKind.Search,
-            WidgetKind.Glance
         ], descriptors.Select(descriptor => descriptor.WidgetKind));
     }
 
@@ -62,11 +70,8 @@ public sealed class WidgetContentFactoryTests
     [InlineData(WidgetKind.QuickCapture, WidgetChromeCategory.Interactive, WidgetChromeMode.Standard)]
     [InlineData(WidgetKind.Todo, WidgetChromeCategory.Interactive, WidgetChromeMode.Standard)]
     [InlineData(WidgetKind.Tags, WidgetChromeCategory.Interactive, WidgetChromeMode.Standard)]
-    [InlineData(WidgetKind.Music, WidgetChromeCategory.Display, WidgetChromeMode.Overlay)]
-    [InlineData(WidgetKind.Weather, WidgetChromeCategory.Display, WidgetChromeMode.Overlay)]
     [InlineData(WidgetKind.SystemMonitor, WidgetChromeCategory.Display, WidgetChromeMode.Overlay)]
     [InlineData(WidgetKind.Search, WidgetChromeCategory.Interactive, WidgetChromeMode.Standard)]
-    [InlineData(WidgetKind.Glance, WidgetChromeCategory.Display, WidgetChromeMode.Overlay)]
     public void GetDescriptor_ReturnsChromeDefaults(
         WidgetKind widgetKind,
         WidgetChromeCategory expectedCategory,
@@ -89,7 +94,7 @@ public sealed class WidgetContentFactoryTests
 
         var descriptors = factory.GetCreateEntryDescriptors();
 
-        Assert.Equal([WidgetKind.File], descriptors.Select(descriptor => descriptor.WidgetKind));
+        Assert.Equal([WidgetKind.File, WidgetKind.Clipboard], descriptors.Select(descriptor => descriptor.WidgetKind));
         Assert.All(descriptors, descriptor => Assert.True(WidgetRegistry.Default.CanCreateWindow(descriptor.WidgetKind)));
         Assert.All(descriptors, descriptor => Assert.False(string.IsNullOrWhiteSpace(descriptor.CreateEntryTextKey)));
         Assert.Equal("Common.NewWidget", descriptors.Single(descriptor => descriptor.WidgetKind == WidgetKind.File).CreateEntryTextKey);
@@ -118,29 +123,22 @@ public sealed class WidgetContentFactoryTests
         Assert.Equal(
         [
             WidgetKind.QuickCapture,
+            WidgetKind.Clipboard,
             WidgetKind.Todo,
-            WidgetKind.Music,
-            WidgetKind.Weather,
             WidgetKind.Search,
-            WidgetKind.Glance
         ], descriptors.Select(descriptor => descriptor.WidgetKind));
         Assert.DoesNotContain(descriptors, descriptor => descriptor.WidgetKind == WidgetKind.File);
         Assert.DoesNotContain(descriptors, descriptor => descriptor.IsPlanned);
         Assert.Contains(descriptors, descriptor => descriptor.WidgetKind == WidgetKind.Todo && descriptor.HasImplementedContent);
-        Assert.Contains(descriptors, descriptor => descriptor.WidgetKind == WidgetKind.Music && descriptor.HasImplementedContent);
-        Assert.Contains(descriptors, descriptor => descriptor.WidgetKind == WidgetKind.Weather && descriptor.HasImplementedContent);
     }
 
     [Theory]
     [InlineData(WidgetKind.File, true, false, true, true, false)]
     [InlineData(WidgetKind.QuickCapture, true, false, false, true, false)]
-    [InlineData(WidgetKind.Weather, true, false, false, true, false)]
     [InlineData(WidgetKind.Todo, true, false, false, true, false)]
     [InlineData(WidgetKind.Tags, false, true, false, false, true)]
-    [InlineData(WidgetKind.Music, true, false, false, true, false)]
     [InlineData(WidgetKind.SystemMonitor, false, true, false, false, true)]
     [InlineData(WidgetKind.Search, true, false, false, true, false)]
-    [InlineData(WidgetKind.Glance, true, false, false, true, false)]
     [InlineData(WidgetKind.Productivity, false, false, false, false, false)]
     public void ContentCapabilityQueries_ReturnExpectedReadOnlyState(
         WidgetKind widgetKind,
@@ -367,26 +365,6 @@ public sealed class WidgetContentFactoryTests
         Assert.True(factory.CanCreateDetachedContent(widgetKind));
         Assert.False(factory.CanShowInCreateEntry(widgetKind));
         Assert.False(WidgetRegistry.Default.CanCreateWindow(widgetKind));
-    }
-
-    [Fact]
-    public void CreateDetachedContent_ReturnsMusicAdapterForImplementedMusicKind()
-    {
-        var factory = TestServices.CreateWidgetContentFactory();
-        var config = new WidgetConfig
-        {
-            Id = "music-detached",
-            Name = "Music",
-            WidgetKind = WidgetKind.Music
-        };
-
-        var content = factory.CreateDetachedContent(config);
-
-        Assert.IsType<MusicWidgetContentAdapter>(content);
-        Assert.Equal(WidgetKind.Music, content.WidgetKind);
-        Assert.True(factory.CanCreateDetachedContent(WidgetKind.Music));
-        Assert.False(factory.CanShowInCreateEntry(WidgetKind.Music));
-        Assert.True(WidgetRegistry.Default.CanCreateWindow(WidgetKind.Music));
     }
 
     [Theory]

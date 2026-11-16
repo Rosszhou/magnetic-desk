@@ -10,7 +10,7 @@ public sealed partial class WidgetManager
 
     private void AppendCapsuleAppearanceMenu(MenuFlyout flyout, WidgetConfig config)
     {
-        var localization = App.Current.LocalizationService;
+        var localization = _localizationService;
         var menu = new MenuFlyoutSubItem { Text = localization.T(GetMagneticGroupId(config) is null ? "Capsule.Style.Menu" : "Capsule.Style.GroupMenu") };
         var preview = new MenuFlyoutItem { Text = localization.T("Capsule.Gallery.Open") };
         preview.Click += (_, _) => ShowCapsuleAppearance(config);
@@ -42,10 +42,10 @@ public sealed partial class WidgetManager
 
     internal void SetCapsuleAppearance(WidgetConfig config, WidgetCapsuleStyle style, bool wholeGroup = true)
     {
-        if (!_settingsService.Settings.Widgets.Any(w => w.Id == config.Id)) return;
+        if (!_settingsService.Settings.WidgetLayout.Widgets.Any(w => w.Id == config.Id)) return;
         string? group = wholeGroup ? GetMagneticGroupId(config) : null;
         var targets = group is null ? MagneticSurfaceConfigs(config).ToArray() :
-            _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == group).ToArray();
+            _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == group).ToArray();
         foreach (var target in targets) target.CapsuleStyle = style.ToString();
         foreach (var window in GetLoadedDesktopWindows().OfType<WidgetWindowBase>().Where(w => targets.Any(t => t.Id == w.Config.Id)))
             window.RefreshCapsuleAppearance();

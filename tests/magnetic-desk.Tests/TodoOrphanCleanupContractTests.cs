@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Source-scan contract for the todo orphan-data cleanup wiring. The deletion
@@ -16,7 +16,7 @@ public sealed class TodoOrphanCleanupContractTests
             "src/magnetic-desk/Services/WidgetManager.cs"));
 
         int todoBranch = manager.IndexOf(
-            "else if (config.WidgetKind == WidgetKind.Todo)",
+            "if (config.WidgetKind == WidgetKind.Todo)",
             StringComparison.Ordinal);
         Assert.True(todoBranch >= 0, "RemoveWidgetAsync must handle WidgetKind.Todo.");
 
@@ -26,17 +26,11 @@ public sealed class TodoOrphanCleanupContractTests
         int remainingCheck = manager.IndexOf(
             "hasRemainingTodoWidget",
             StringComparison.Ordinal);
-        int glanceBranch = manager.IndexOf(
-            "if (config.WidgetKind == WidgetKind.Glance)",
-            StringComparison.Ordinal);
 
         Assert.True(deleteCall > todoBranch, "The todo branch must delete the widget store.");
         Assert.True(
             remainingCheck > deleteCall,
             "The feature may only be disabled after checking for remaining todo widgets.");
-        Assert.True(
-            glanceBranch >= 0 && todoBranch > glanceBranch,
-            "The todo branch mirrors the glance branch structure.");
     }
 
     [Fact]

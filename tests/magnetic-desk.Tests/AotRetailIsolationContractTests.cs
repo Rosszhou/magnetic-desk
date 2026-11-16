@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace MagneticDesk.Tests;
@@ -46,7 +46,7 @@ public sealed class AotRetailIsolationContractTests
             .EnumerateFiles(sourceRoot, "*.cs", SearchOption.AllDirectories)
             .Where(IsSmokeHarnessSource)
             .ToArray();
-        Assert.Equal(61, harnessSources.Length);
+        Assert.Equal(48, harnessSources.Length);
         Assert.DoesNotContain(
             harnessSources,
             path => path.EndsWith(".AotBindableProperties.cs", StringComparison.Ordinal));
@@ -62,8 +62,7 @@ public sealed class AotRetailIsolationContractTests
                      "src/magnetic-desk/Helpers/ShellContextMenuHelper.cs",
                      "src/magnetic-desk/Services/FileService.ShellTransfer.cs",
                      "src/magnetic-desk/Services/LocalizationService.cs",
-                     "src/magnetic-desk/Services/OrganizerService.cs",
-                     "src/magnetic-desk/Services/WeatherWidgetContentProvider.cs"
+                     "src/magnetic-desk/Services/OrganizerService.cs"
                  })
         {
             string source = File.ReadAllText(TestPaths.FromRepository(relativePath));

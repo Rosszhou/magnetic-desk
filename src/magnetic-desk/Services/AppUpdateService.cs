@@ -12,9 +12,9 @@ namespace MagneticDesk.Services;
 
 public sealed partial class AppUpdateService : IAppUpdateService
 {
-    public const string DefaultManifestUrl = "https://deskbox.fun/update/stable.json";
-    public const string DefaultGitHubLatestReleaseApiUrl = "https://api.github.com/repos/Tianyu199509/DeskBox/releases/latest";
-    public const string DefaultManualDownloadUrl = "https://deskbox.fun/download";
+    public const string DefaultManifestUrl = "https://github.com/Rosszhou/magnetic-desk/releases/latest/download/update.json";
+    public const string DefaultGitHubLatestReleaseApiUrl = "https://api.github.com/repos/Rosszhou/magnetic-desk/releases/latest";
+    public const string DefaultManualDownloadUrl = "https://github.com/Rosszhou/magnetic-desk/releases/latest";
 
     private readonly HttpClient _httpClient;
     private readonly string _manifestUrl;
@@ -659,7 +659,7 @@ public sealed partial class AppUpdateService : IAppUpdateService
         {
             Channel = "direct",
             Version = version.Trim(),
-            ReleaseNotesUrl = $"https://github.com/Tianyu199509/DeskBox/releases/tag/v{version.Trim()}",
+            ReleaseNotesUrl = $"https://github.com/Rosszhou/magnetic-desk/releases/tag/v{version.Trim()}",
         };
     }
 
@@ -676,11 +676,6 @@ public sealed partial class AppUpdateService : IAppUpdateService
             return false;
         }
 
-        if (IsHostOrSubdomain(uri, "magnetic-desk.fun"))
-        {
-            return true;
-        }
-
         // GitHub hosts third-party repositories, so trusting the whole domain
         // would let a tampered manifest point at any attacker repository with
         // a matching hash. Only this project's own release downloads count;
@@ -689,14 +684,8 @@ public sealed partial class AppUpdateService : IAppUpdateService
         // which therefore must never be trusted as a manifest origin itself.
         return string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) &&
             uri.AbsolutePath.StartsWith(
-                "/Tianyu199509/magnetic-desk/releases/download/",
+                "/Rosszhou/magnetic-desk/releases/download/",
                 StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsHostOrSubdomain(Uri uri, string domain)
-    {
-        return uri.Host.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
-            uri.Host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
     }
 
     internal static bool TrySelectInstallerForArchitecture(

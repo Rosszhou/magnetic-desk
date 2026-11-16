@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace MagneticDesk.Tests;
@@ -1659,7 +1659,7 @@ public sealed class FileSurfaceParityContractTests
             "src/magnetic-desk/Views/ContentWidgetWindow.Commands.cs"));
 
         Assert.Contains("HostContextMenuOpening?.Invoke", surface, StringComparison.Ordinal);
-        Assert.Contains("WidgetChromeMenuBuilder.Create", host, StringComparison.Ordinal);
+        Assert.DoesNotContain("WidgetChromeMenuBuilder.Create", host, StringComparison.Ordinal);
         Assert.Contains(
             "WidgetDangerActionStyle.Apply(closeWidget)",
             host,

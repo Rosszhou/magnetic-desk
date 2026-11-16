@@ -1,108 +1,19 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace MagneticDesk.Tests;
 
 public sealed class SettingsCopyAndHierarchyTests
 {
     [Fact]
-    public void CapsuleModeIsTopLevelAndWidgetGroupsRemainUnderAppearance()
+    public void CapsuleModeIsTopLevelWithCollapseAndExpansionControls()
     {
-        string root = FindRepositoryRoot();
-        string windowXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsWindow.xaml"));
-        string appearanceXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsSections/AppearanceSettingsSection.xaml"));
-        string overviewResources = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Styles/SettingsOverviewResources.xaml"));
-        string capsuleXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml"));
-        System.Xml.Linq.XDocument capsuleIcon = System.Xml.Linq.XDocument.Load(
-            Path.Combine(
-                root,
-                "src/magnetic-desk/Assets/SettingsNavIcons/capsule-mode.svg"));
-        string routes = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsWindow.xaml.cs"));
-
-        int menuStart = windowXaml.IndexOf(
-            "<NavigationView.MenuItems>",
-            StringComparison.Ordinal);
-        int menuEnd = windowXaml.IndexOf(
-            "</NavigationView.MenuItems>",
-            menuStart,
-            StringComparison.Ordinal);
-        Assert.True(menuStart >= 0 && menuEnd > menuStart);
-        string primaryMenu = windowXaml[menuStart..menuEnd];
-
-        Assert.Contains("Tag=\"CapsuleMode\"", primaryMenu, StringComparison.Ordinal);
-        Assert.Contains("capsule-mode.svg", primaryMenu, StringComparison.Ordinal);
-        System.Xml.Linq.XNamespace svg = "http://www.w3.org/2000/svg";
-        Assert.Equal(5, capsuleIcon.Descendants(svg + "path").Count());
-        Assert.Equal(
-            5,
-            capsuleIcon.Descendants().Count(element =>
-                element.Name == svg + "linearGradient" ||
-                element.Name == svg + "radialGradient"));
-        // Capsule mode is now a top-level page: the Appearance section must
-        // not reference it at all anymore.
-        Assert.DoesNotContain("CapsuleMode", appearanceXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Tag=\"WidgetGroups\"", primaryMenu, StringComparison.Ordinal);
-        Assert.Contains("Tag=\"WidgetGroups\"", appearanceXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("WidgetCapsuleModeEnabled", appearanceXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "ItemsSource=\"{Binding AvailableWidgetCollapseBehaviorOptions}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain("Settings.Capsule.Enabled.Title", capsuleXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("WidgetCapsuleModeEnabled", capsuleXaml, StringComparison.Ordinal);
-        Assert.Contains(
-            "controls:SettingsComboBox.Value=\"{Binding CollapseBehavior, Mode=TwoWay}\"",
-            capsuleXaml,
-            StringComparison.Ordinal);
-        Assert.Contains("Tag=\"WidgetGroups\"", appearanceXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsWidgetGroupsEnabled", appearanceXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("IsWidgetGroupsEnabled", windowXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "ItemsSource=\"{Binding AvailableGroupNavigationStyleOptions}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "controls:SettingsComboBox.Value=\"{Binding GroupNavigationStyle, Mode=TwoWay}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
-        Assert.Contains("x:Key=\"SettingValueTextStyle\"", overviewResources, StringComparison.Ordinal);
-        Assert.Contains("ItemsSource=\"{Binding ExistingGroups}\"", windowXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Settings.WidgetGroups.Existing.Name.Title", windowXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("WidgetGroupNameTextBox_LostFocus", windowXaml, StringComparison.Ordinal);
-        Assert.Contains(
-            "Style=\"{StaticResource SectionTitleTextStyle}\"",
-            capsuleXaml,
-            StringComparison.Ordinal);
-        Assert.Contains("Settings.Section.CapsuleMode", capsuleXaml, StringComparison.Ordinal);
-        Assert.Contains("Margin=\"0,8,0,0\"", capsuleXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Settings.WidgetGroups.PageDescription", windowXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Settings.WidgetGroups.Default.Title", windowXaml, StringComparison.Ordinal);
-        Assert.DoesNotContain("Settings.WidgetGroups.Default.Description", windowXaml, StringComparison.Ordinal);
-        Assert.Contains("WidgetGroupNavigationComboBox_SelectionChanged", windowXaml, StringComparison.Ordinal);
-        Assert.Contains("DissolveWidgetGroupButton_Click", windowXaml, StringComparison.Ordinal);
-        int accentColor = appearanceXaml.IndexOf("Settings.Accent.Source.Title", StringComparison.Ordinal);
-        int material = appearanceXaml.IndexOf("Tag=\"AppearanceMaterialSettings\"", StringComparison.Ordinal);
-        int widgetGroups = appearanceXaml.IndexOf("Tag=\"WidgetGroups\"", StringComparison.Ordinal);
-        Assert.True(accentColor >= 0 && material > accentColor);
-        Assert.True(material < widgetGroups);
-        // Capsule mode is a top-level page now.
-        Assert.Contains(
-            "[\"CapsuleMode\"] = new(\"CapsuleMode\", \"Settings.Section.CapsuleMode\", null, \"CapsuleMode\")",
-            routes,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "[\"WidgetGroups\"] = new(\"WidgetGroups\", \"Settings.Section.WidgetGroups\", \"Appearance\", \"Appearance\")",
-            routes,
-            StringComparison.Ordinal);
+        string xaml = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Views/SettingsWindow.xaml"));
+        string capsule = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml"));
+        Assert.Contains("Tag=\"CapsuleMode\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Settings.Section.CapsuleMode", capsule, StringComparison.Ordinal);
+        Assert.Contains("{Binding CollapseBehavior, Mode=TwoWay}", capsule, StringComparison.Ordinal);
+        Assert.Contains("{Binding ExpansionDirection, Mode=TwoWay}", capsule, StringComparison.Ordinal);
+        Assert.DoesNotContain("WidgetCapsuleModeEnabled", capsule, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -128,12 +39,11 @@ public sealed class SettingsCopyAndHierarchyTests
             root,
             "src/magnetic-desk/Views/SettingsWindow.xaml.cs"));
 
-        Assert.Contains("AccentColorSource", appearanceXaml, StringComparison.Ordinal);
+        Assert.Contains("LayoutDensity", appearanceXaml, StringComparison.Ordinal);
         Assert.DoesNotContain("IsOn=\"{Binding UseSystemAccentColor", appearanceXaml, StringComparison.Ordinal);
 
         Assert.Contains("{Binding FileOpenMethod, Mode=TwoWay}", windowXaml, StringComparison.Ordinal);
         Assert.Contains("{Binding ShowDesktopBehavior, Mode=TwoWay}", windowXaml, StringComparison.Ordinal);
-        Assert.Contains("SelectedLocationMode", windowXaml, StringComparison.Ordinal);
         Assert.DoesNotContain("IsOn=\"{Binding DoubleClickToOpen", windowXaml, StringComparison.Ordinal);
         Assert.DoesNotContain("IsOn=\"{Binding KeepWidgetsVisibleOnShowDesktop", windowXaml, StringComparison.Ordinal);
         Assert.DoesNotContain("IsOn=\"{Binding WeatherAutoLocation", windowXaml, StringComparison.Ordinal);
@@ -207,8 +117,8 @@ public sealed class SettingsCopyAndHierarchyTests
             ["Widget.OpenStorageFolder"] = "打开格子文件夹",
             ["Widget.ShowInExplorer"] = "打开文件所在的位置",
             ["Search.Menu.AttachToTodo"] = "添加到待办",
-            ["QuickCapture.SaveToRecords"] = "保存为随记",
-            ["QuickCapture.PinToRecords"] = "固定这条随记",
+            ["QuickCapture.SaveToRecords"] = "保存为便签",
+            ["QuickCapture.PinToRecords"] = "固定这条便签",
             ["Widget.Stack.FollowDefaults"] = "跟随默认设置",
             ["Widget.Stack.DisableGroup"] = "不再自动叠放此类",
             ["Widget.Stack.Dissolve"] = "解散叠放",
@@ -248,7 +158,7 @@ public sealed class SettingsCopyAndHierarchyTests
             ["Settings.AttachmentHealth.Title"] = "检查附件",
             ["Settings.RuntimeHealth.Title"] = "后台服务状态",
             ["Settings.RuntimeHealth.Resync"] = "重新同步",
-            ["Settings.DataBackup.Description"] = "备份设置、格子、随记、待办和附件副本，不含文件格子中的文件",
+            ["Settings.DataBackup.Description"] = "备份设置、格子、便签、待办和附件副本，不含文件格子中的文件",
             ["Settings.Restore.Description"] = "恢复默认设置，保留语言、开机启动、格子开关和已有内容",
             ["Settings.Restore.Tooltip"] = "恢复默认设置，不会删除已有内容",
             ["Settings.Todo.Group.FooterActions.Description"] = "选择底部显示的剩余待办数量和清除已完成按钮",
@@ -271,28 +181,6 @@ public sealed class SettingsCopyAndHierarchyTests
         string json = strings.RootElement.GetRawText();
         Assert.DoesNotContain("...", json, StringComparison.Ordinal);
         Assert.DoesNotContain("Deskbox", json, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void AppearanceSummary_UsesTitleIconSelector()
-    {
-        string root = FindRepositoryRoot();
-        string appearanceXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsSections/AppearanceSettingsSection.xaml"));
-
-        Assert.Contains(
-            "Description=\"{Binding TitleIconModeText}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "ItemsSource=\"{Binding AvailableTitleIconModeOptions}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "controls:SettingsComboBox.Value=\"{Binding TitleIconMode, Mode=TwoWay}\"",
-            appearanceXaml,
-            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -502,27 +390,6 @@ public sealed class SettingsCopyAndHierarchyTests
     }
 
     [Fact]
-    public void WeatherDisplayOptions_UseSharedMultiSelectCard()
-    {
-        string root = FindRepositoryRoot();
-        string windowXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsWindow.xaml"));
-        string navigation = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsWindow.Navigation.cs"));
-
-        string weather = SliceSection(
-            windowXaml,
-            "x:Name=\"WeatherSettingsSection\"",
-            "x:Name=\"GeneralSection\"");
-
-        Assert.Contains("Settings.Weather.Group.Display.Title", weather, StringComparison.Ordinal);
-        Assert.Contains("IsOn=\"{Binding ShowForecast", weather, StringComparison.Ordinal);
-        Assert.Contains("IsOn=\"{Binding ShowPressure", weather, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void SearchHotkey_IsOwnedBySearchSettingsWithoutDuplicateTopHeading()
     {
         string root = FindRepositoryRoot();
@@ -577,7 +444,7 @@ public sealed class SettingsCopyAndHierarchyTests
         Assert.Contains("Common.NewFolderMapping", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("Common.AddFeatureWidget", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("CreateFolderWidgetFromPickerAsync", widgetCommands, StringComparison.Ordinal);
-        Assert.Contains("ShowSettings(\"FeatureWidgets\")", widgetCommands, StringComparison.Ordinal);
+        Assert.Contains("CreateWidgetOfKindAsync(entry.Kind)", widgetCommands, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -625,60 +492,6 @@ public sealed class SettingsCopyAndHierarchyTests
                 Assert.DoesNotContain('（', value);
             }
         }
-    }
-
-    [Fact]
-    public void QuickCaptureAndTodoSettings_UseTheSameCompactHierarchy()
-    {
-        string root = FindRepositoryRoot();
-        string windowXaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/SettingsWindow.xaml"));
-
-        string quickCapture = SliceSection(
-            windowXaml,
-            "x:Name=\"QuickCaptureSettingsSection\"",
-            "x:Name=\"TodoSettingsSection\"");
-        string todo = SliceSection(
-            windowXaml,
-            "x:Name=\"TodoSettingsSection\"",
-            "x:Name=\"MusicSettingsSection\"");
-
-        Assert.Contains("IsOn=\"{Binding Enabled, Mode=TwoWay}\"", quickCapture, StringComparison.Ordinal);
-        Assert.Contains("IsOn=\"{Binding Enabled, Mode=TwoWay}\"", todo, StringComparison.Ordinal);
-        Assert.Equal(5, CountOccurrences(quickCapture, "Loaded=\"FeatureSettingsExpander_Loaded\""));
-        Assert.Equal(4, CountOccurrences(todo, "Loaded=\"FeatureSettingsExpander_Loaded\""));
-
-        AssertInOrder(
-            quickCapture,
-            "Settings.QuickCapture.WideLayout.Title",
-            "Settings.QuickCapture.Tabs.Title",
-            "Settings.ContentEditor.Group.Title",
-            "Settings.QuickCapture.ClipboardTitle",
-            "Settings.QuickCapture.Group.Data.Title");
-        AssertInOrder(
-            todo,
-            "Settings.QuickCapture.WideLayout.Title",
-            "Settings.Todo.Tabs.Title",
-            "Settings.ContentEditor.Group.Title",
-            "Settings.Todo.FooterDisplay.Title",
-            "Settings.Todo.ReminderEnabled.Title");
-
-        Assert.Contains("Click=\"QuickCaptureTabsDropDown_Click\"", quickCapture, StringComparison.Ordinal);
-        Assert.Contains("Click=\"TodoTabsDropDown_Click\"", todo, StringComparison.Ordinal);
-        Assert.Contains("Click=\"TodoFooterDisplayDropDown_Click\"", todo, StringComparison.Ordinal);
-        Assert.Contains("ItemsSource=\"{Binding VisibleDefaultViewOptions}\"", quickCapture, StringComparison.Ordinal);
-        Assert.Contains("ItemsSource=\"{Binding VisibleDefaultFilterOptions}\"", todo, StringComparison.Ordinal);
-
-        Assert.DoesNotContain("IsOn=\"{Binding ShowRecordsTab", quickCapture, StringComparison.Ordinal);
-        Assert.DoesNotContain("{Binding TodoShowAllTab", todo, StringComparison.Ordinal);
-        Assert.DoesNotContain("{Binding TodoShowTabBar", todo, StringComparison.Ordinal);
-        Assert.DoesNotContain("{Binding SelectedTodo", todo, StringComparison.Ordinal);
-        Assert.Contains(
-            "controls:SettingsComboBox.Value=\"{Binding EditorFormat, Mode=TwoWay}\"",
-            quickCapture,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain("QuickCaptureDefaultFormat", quickCapture, StringComparison.Ordinal);
     }
 
     [Fact]

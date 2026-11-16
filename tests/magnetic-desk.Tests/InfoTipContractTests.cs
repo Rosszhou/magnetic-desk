@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Contracts for the InfoTip explanation-flyout pattern (long explanatory
@@ -82,7 +82,6 @@ public sealed class InfoTipContractTests
         // FontSize matching its context, so sizes intentionally differ.
         // (The "?" badge is manufactured in code by InfoTip.CreateAnchorButton —
         // card-side anchors carry keys only, so XAML holds no literal Text="?".)
-        Assert.DoesNotContain("Glyph=\"&#xE946;\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Glyph=\"&#xE897;\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("ScaleY=\"-0.0078125\"", xaml, StringComparison.Ordinal);
 

@@ -92,7 +92,10 @@ begin
 
   if RequireExecutable then
   begin
-    if not IsMagneticDeskInstallPath(NormalizedPath) then
+    // Paths discovered from shortcuts or default folders may belong to a
+    // portable copy. A direct-install upgrade also needs its Inno uninstaller.
+    if (not IsMagneticDeskInstallPath(NormalizedPath)) or
+       (not FileExists(AddBackslash(NormalizedPath) + 'unins000.exe')) then
       Exit;
   end
   else if not IsRegisteredMagneticDeskInstallPath(NormalizedPath) then

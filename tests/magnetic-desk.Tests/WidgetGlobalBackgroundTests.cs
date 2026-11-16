@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
 
@@ -226,59 +226,4 @@ public sealed class WidgetGlobalBackgroundTests
 
     // ── Wiring contracts ─────────────────────────────────────────
 
-    [Fact]
-    public void GlobalBackground_IsWiredAcrossSchemaSettingsAndShell()
-    {
-        Assert.Contains(
-            "CurrentSchemaVersion = 15",
-            File.ReadAllText(TestPaths.FromRepository(
-                "src/magnetic-desk/Services/SettingsMigrationService.cs")),
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "Migration_9_To_10",
-            File.ReadAllText(TestPaths.FromRepository(
-                "src/magnetic-desk/Services/SettingsMigrationService.cs")),
-            StringComparison.Ordinal);
-
-        string settingsXaml = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/SettingsWindow.xaml"));
-        Assert.Contains("{Binding WidgetBackgroundMode, Mode=TwoWay}", settingsXaml, StringComparison.Ordinal);
-        Assert.Contains("{Binding WidgetBackgroundDimPercent, Mode=TwoWay}", settingsXaml, StringComparison.Ordinal);
-        Assert.Contains("ChooseWidgetBackgroundImage_Click", settingsXaml, StringComparison.Ordinal);
-        Assert.Contains("ClearPerWidgetBackgroundsButton_Click", settingsXaml, StringComparison.Ordinal);
-
-        string bridge = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Features/Appearance/AppearanceSettingsViewModel.AotBindableProperties.cs"));
-        Assert.Contains("nameof(WidgetBackgroundMode)", bridge, StringComparison.Ordinal);
-        Assert.Contains("nameof(WidgetBackgroundDimPercent)", bridge, StringComparison.Ordinal);
-
-        string windowBase = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/WidgetWindowBase.TitleIconCustomization.cs"));
-        Assert.Contains("ResolveCustomPanoramaSource", windowBase, StringComparison.Ordinal);
-        Assert.Contains("UpdateCustomPanoramaViewport", windowBase, StringComparison.Ordinal);
-
-        string bounds = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/WidgetWindowBase.Bounds.cs"));
-        Assert.Contains("UpdateCustomPanoramaViewport", bounds, StringComparison.Ordinal);
-
-        // The panorama clip must track the host element, not the shell: the
-        // host flips Collapsed→Visible without a shell resize, and a zero
-        // RenderSize at that moment clips the image away forever.
-        string shellCode = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Controls/WidgetShell.xaml.cs"));
-        Assert.Contains(
-            "CustomBackgroundPanoramaHost.SizeChanged",
-            shellCode,
-            StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void SettingsSearchCatalog_CoversTheWidgetBackgroundCard()
-    {
-        string catalog = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Services/SettingsSearchCatalog.cs"));
-        Assert.Contains("Settings.WidgetBackground.Title", catalog, StringComparison.Ordinal);
-        Assert.Contains("Settings.WidgetBackground.Image.Title", catalog, StringComparison.Ordinal);
-        Assert.Contains("Settings.WidgetBackground.PerWidget.Title", catalog, StringComparison.Ordinal);
-    }
 }

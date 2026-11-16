@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Services;
 using Windows.UI;
 
@@ -240,9 +240,9 @@ public sealed class WidgetBackgroundCustomizationTests : IDisposable
     // ── Wiring contracts ────────────────────────────────────────
 
     [Fact]
-    public void TheWidgetMenu_ExposesTheBackgroundCustomizer()
+    public void TheWidgetMenu_OmitsTheRemovedBackgroundCustomizer()
     {
-        Assert.Contains(
+        Assert.DoesNotContain(
             "Widget.CustomBackground.MenuLabel",
             File.ReadAllText(TestPaths.FromRepository(
                 "src/magnetic-desk/Views/ContentWidgetWindow.Commands.cs")),
@@ -295,23 +295,4 @@ public sealed class WidgetBackgroundCustomizationTests : IDisposable
             StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void GlanceYieldsToShellBackground_AndSettingsNormalizeCoversBackground()
-    {
-        string glance = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Controls/WidgetContents/GlanceWidgetContent.xaml.cs"));
-        Assert.Contains("SetShellCustomBackgroundActive", glance, StringComparison.Ordinal);
-        Assert.Contains("_shellCustomBackgroundActive", glance, StringComparison.Ordinal);
-
-        string window = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Views/ContentWidgetWindow.xaml.cs"));
-        Assert.Contains("SetShellCustomBackgroundActive", window, StringComparison.Ordinal);
-
-        string settings = File.ReadAllText(TestPaths.FromRepository(
-            "src/magnetic-desk/Services/SettingsService.cs"));
-        Assert.Contains(
-            "WidgetBackgroundCustomization.NormalizeOverrides",
-            settings,
-            StringComparison.Ordinal);
-    }
 }

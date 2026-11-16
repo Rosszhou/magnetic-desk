@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Mirror guard for the 2026-10-20 retail incident (1.5.9 acceptance): the

@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Views;
 using Windows.Graphics;
 
@@ -59,14 +59,14 @@ public sealed partial class WidgetManager
     {
         var surface = WidgetGroupSettings.FindByMember(_settingsService.Settings, config.Id);
         return surface is null ? new[] { config } :
-            _settingsService.Settings.Widgets.Where(w => surface.MemberIds.Contains(w.Id));
+            _settingsService.Settings.WidgetLayout.Widgets.Where(w => surface.MemberIds.Contains(w.Id));
     }
 
     internal void SetMagneticGroupCollapseBehavior(WidgetConfig config, WidgetCollapseBehavior behavior)
     {
         string? id = GetMagneticGroupId(config);
         if (id is null) return;
-        foreach (var member in _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == id))
+        foreach (var member in _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == id))
         {
             member.MagneticCollapseLinked = true;
             WidgetCollapseBehaviorNames.SetOverride(member, behavior);
@@ -81,10 +81,10 @@ public sealed partial class WidgetManager
             window.RefreshMagneticCollapseBehavior();
         }
         bool collapsed = WidgetCollapseBehaviorNames.Resolve(config,
-            _settingsService.Settings.WidgetCollapseBehavior) != WidgetCollapseBehavior.Expanded;
-        foreach (var member in _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == id))
+            _settingsService.Settings.WidgetShell.WidgetCollapseBehavior) != WidgetCollapseBehavior.Expanded;
+        foreach (var member in _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == id))
             member.IsCollapsed = collapsed;
-        foreach (var surface in _settingsService.Settings.WidgetGroups.Where(g => g.MagneticGroupId == id))
+        foreach (var surface in _settingsService.Settings.WidgetLayout.WidgetGroups.Where(g => g.MagneticGroupId == id))
             surface.IsCollapsed = collapsed;
         ApplyMagneticCollapse(windows, collapsed, persist: true, animate: true);
         _settingsService.SaveDebounced(notifySubscribers: false);
@@ -141,7 +141,7 @@ public sealed partial class WidgetManager
         await Task.Delay(150);
         if (!_pendingMagneticCollapse.Remove(id) || !source.MagneticCollapseInitialized) return;
         if (WidgetCollapseBehaviorNames.Resolve(source.Config,
-            _settingsService.Settings.WidgetCollapseBehavior) != WidgetCollapseBehavior.Smart) return;
+            _settingsService.Settings.WidgetShell.WidgetCollapseBehavior) != WidgetCollapseBehavior.Smart) return;
         TrySetMagneticGroupCollapsed(source, true, false, true, false);
     }
 
@@ -173,7 +173,7 @@ public sealed partial class WidgetManager
             var homeBounds = WidgetCoordinatedMoveCalculator.GetUnion(compactHomes.Values);
             var origin = new PointInt32(homeBounds.X, homeBounds.Y);
             double scale = Platform.Win32Helper.GetDpiScaleForWindow(WinRT.Interop.WindowNative.GetWindowHandle(members[0]), members[0].WindowContentRoot?.XamlRoot);
-            int expandedGap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetSnapSpacing * scale));
+            int expandedGap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * scale));
             var expandedSizes = expanded.ToDictionary(p => p.Key, p => new SizeInt32(p.Value.Width, p.Value.Height));
             expanded = WidgetMagneticCollapseLayout.KeepVisible(
                 WidgetMagneticCollapseLayout.ArrangeVisible(attachment, expandedSizes, false,

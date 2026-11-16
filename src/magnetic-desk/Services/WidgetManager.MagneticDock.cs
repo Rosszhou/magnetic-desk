@@ -93,7 +93,7 @@ public sealed partial class WidgetManager
 
         RectInt32 sourceBounds = source.CoordinatedMoveBounds;
         double scale = Win32Helper.GetDpiScaleForWindow(source.WindowHandle, source.WindowContentRoot?.XamlRoot);
-        int spacing = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetSnapSpacing * scale));
+        int spacing = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * scale));
         int threshold = Math.Max(1, (int)Math.Round(20 * scale));
         int minimumOverlap = Math.Max(1, (int)Math.Round(28 * scale));
         IDesktopWidgetWindow? target = null;

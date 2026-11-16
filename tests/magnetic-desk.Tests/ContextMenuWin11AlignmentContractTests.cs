@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Pins the Windows 11-aligned context menu shape: naming keys, item
@@ -369,7 +369,7 @@ public sealed class ContextMenuWin11AlignmentContractTests
     {
         string stringsDir = TestPaths.FromRepository("src/magnetic-desk/Strings");
         string[] files = Directory.GetFiles(stringsDir, "*.json");
-        Assert.True(files.Length >= 12, "expected the full language set");
+        Assert.True(files.Length == 2, "expected the full language set");
 
         string[] newKeys =
         [

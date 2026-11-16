@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Features.Interaction;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
@@ -47,12 +47,12 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         Assert.False(settings.Settings.ShowHoverButtons);
         Assert.False(settings.Settings.IdleWorkingSetTrimEnabled);
         Assert.False(settings.Settings.ImmediateHiddenWorkingSetTrimEnabled);
-        Assert.Equal(9, notified);
+        Assert.Equal(7, notified);
 
         // Unchanged writes must not notify or save again.
         coordinator.SetDoubleClickToOpen(false);
         editor.SetIdleWorkingSetTrimEnabled(false);
-        Assert.Equal(9, notified);
+        Assert.Equal(7, notified);
     }
 
     [Fact]
@@ -66,11 +66,11 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         // The in-memory default mirrors an enabled registration; reflecting
         // the same state must not save (the page's old read-before-write
         // guard now lives in the coordinator).
-        coordinator.SetAutoStart(true);
+        coordinator.SetAutoStart(false);
         Assert.Equal(0, notified);
 
-        coordinator.SetAutoStart(false);
-        Assert.False(settings.Settings.AutoStart);
+        coordinator.SetAutoStart(true);
+        Assert.True(settings.Settings.AutoStart);
         Assert.Equal(1, notified);
     }
 
@@ -196,7 +196,7 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         Assert.True(coordinator.IsStopped);
 
         await settings.SaveAsync();
-        Assert.True(settings.Settings.AutoCheckForUpdates);
+        Assert.False(settings.Settings.AutoCheckForUpdates);
         Assert.Equal(
             SettingsService.WidgetLayerModeDynamic,
             settings.Settings.WidgetLayerMode);

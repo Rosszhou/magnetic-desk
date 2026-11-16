@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage5B4C3B2B1ContractTests
 {
@@ -162,10 +162,10 @@ public sealed class AotStage5B4C3B2B1ContractTests
             "tests/magnetic-desk.Tests/JsonSerializationBaselineContractTests.cs");
         string rust = Read("native/magnetic-desk-native/src/lib.rs");
 
-        Assert.Contains("FortyOneFilesAndNinetySixCalls", baseline, StringComparison.Ordinal);
-        Assert.Contains("Assert.Equal(41, actual.Count)", baseline, StringComparison.Ordinal);
-        Assert.Contains("Assert.Equal(96, actual.Values.Sum())", baseline, StringComparison.Ordinal);
-        Assert.Contains("Assert.Equal(37, actualContextOwners.Length)", baseline, StringComparison.Ordinal);
+        Assert.Contains("MatchesCurrentSerializationBoundaries", baseline, StringComparison.Ordinal);
+        Assert.Contains("Assert.Equal(34, actual.Count)", baseline, StringComparison.Ordinal);
+        Assert.Contains("Assert.Equal(76, actual.Values.Sum())", baseline, StringComparison.Ordinal);
+        Assert.Contains("Assert.Equal(31, actualContextOwners.Length)", baseline, StringComparison.Ordinal);
         Assert.Contains(
             "App.AotTodoNotificationForwardingSmoke.cs\"] = 1",
             baseline,

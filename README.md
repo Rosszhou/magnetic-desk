@@ -4,6 +4,15 @@ Windows desktop organizer with file widgets, persistent magnetic groups, compact
 
 English | [简体中文](README.zh-CN.md)
 
+## Download and install
+
+Download `magnetic-desk_Setup_1.0.0_x64.exe` from [GitHub Releases](https://github.com/Rosszhou/magnetic-desk/releases/latest) and run the installer.
+
+- Supports x64 Windows 10 version 2004 (build 19041) or later and Windows 11.
+- Includes its runtime components for offline installation.
+- Supports English and Simplified Chinese. Uninstall through Settings → About or Windows Installed apps.
+- The installer is currently unsigned, so Windows may show an unknown publisher. A matching `.sha256` checksum file is available with the download.
+
 ## Features
 
 - Map existing folders or create file widgets backed by ordinary folders.
@@ -34,13 +43,14 @@ Run the managed regression subset covering magnetic layout, movement, localizati
 dotnet test tests/magnetic-desk.ManagedRegression/magnetic-desk.ManagedRegression.csproj -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 ```
 
-The inherited full suite still contains tests for removed Weather, Music, and Glance types. Those tests need migration before the full suite and its existing CI job can pass. Its native test stage also requires the Rust toolchain. The full-suite command is:
+Historical tests have been migrated to the current feature set. The full Release suite passes 5,261 tests, and the standalone uninstaller passes 9 tests, with no skipped tests. The native test stage requires the Rust toolchain.
 
 ```powershell
-dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -p:Platform=x64 -p:RuntimeIdentifier=win-x64
+dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSDKSelfContained=true -p:WindowsAppSdkBootstrapInitialize=false
+dotnet test tests/magnetic-desk.Uninstaller.Tests/magnetic-desk.Uninstaller.Tests.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 ```
 
-Current local verification and limitations are recorded in the upload review delivered with this source snapshot. ARM64 and Native AOT release builds need their own validation.
+The x64 Native AOT offline package has been verified on Windows 11 for installation, first launch, and uninstallation, including preservation of extra files and configuration. ARM64 releases require separate validation.
 
 ## Repository contents
 
@@ -49,5 +59,3 @@ Current local verification and limitations are recorded in the upload review del
 ## Origin and license
 
 This project is derived from [Tianyu199509/DeskBox v1.5.9](https://github.com/Tianyu199509/DeskBox/tree/v1.5.9). The original copyright and third-party notices are retained. Licensed under GPL-3.0-only, see [LICENSE](LICENSE). Earlier entries in [CHANGELOG.md](CHANGELOG.md) document the upstream history.
-
-This source snapshot is prepared for a new repository. Download links for magnetic-desk will be added after its first release is published.

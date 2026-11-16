@@ -1,11 +1,11 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
 
 public sealed class WidgetKindCoverageTests
 {
-    private static readonly WidgetKind[] LegacyWidgetKinds = [WidgetKind.Productivity];
+    private static readonly WidgetKind[] LegacyWidgetKinds = [WidgetKind.Productivity, WidgetKind.Music, WidgetKind.Weather, WidgetKind.Glance];
 
     private static readonly WidgetKind[] ActiveWidgetKinds = Enum
         .GetValues<WidgetKind>()

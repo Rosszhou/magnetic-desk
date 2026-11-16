@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Controls;
+using MagneticDesk.Controls;
 
 namespace MagneticDesk.Tests;
 
@@ -15,20 +15,6 @@ public sealed class WidgetVisualActivityContractTests
             Math.PI * 2 / 0.8,
             WidgetShell.EdgeGlowPulseDurationSeconds,
             precision: 8);
-    }
-
-    [Fact]
-    public void MusicTitleMarquee_UsesCompositionWithOriginalDelaySpeedAndGap()
-    {
-        string source = Read("src/magnetic-desk/Controls/WidgetContents/MusicWidgetContent.xaml.cs");
-
-        Assert.Contains("TitleMarqueeGap = 32.0", source, StringComparison.Ordinal);
-        Assert.Contains("TitleMarqueeStartDelayMs = 900.0", source, StringComparison.Ordinal);
-        Assert.Contains("TitleMarqueeSpeedPixelsPerSecond = 50.0", source, StringComparison.Ordinal);
-        Assert.Contains("CreateScalarKeyFrameAnimation()", source, StringComparison.Ordinal);
-        Assert.Contains("visual.StartAnimation(\"Translation.X\", animation);", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("_titleMarqueeTimer", source, StringComparison.Ordinal);
-        Assert.DoesNotContain("TimeSpan.FromMilliseconds(33)", source, StringComparison.Ordinal);
     }
 
     [Fact]

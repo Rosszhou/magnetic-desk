@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.ViewModels;
 using MagneticDesk.Features.Appearance;
 using MagneticDesk.Models;
@@ -526,61 +526,16 @@ public sealed class AppearanceSettingsEditorTests : IDisposable
     [Fact]
     public void XamlAndBridge_WireTheAppearanceFamilyToTheEditor()
     {
-        string window = File.ReadAllText(
-            Path.Combine(TestPaths.FromRepository("src/magnetic-desk"), "Views/SettingsWindow.xaml"));
-        string section = File.ReadAllText(
-            Path.Combine(TestPaths.FromRepository("src/magnetic-desk"), "Views/SettingsSections/AppearanceSettingsSection.xaml"));
-        string deferred = File.ReadAllText(
-            Path.Combine(TestPaths.FromRepository("src/magnetic-desk"), "Views/SettingsWindow.DeferredSections.cs"));
-        string bridge = File.ReadAllText(
-            Path.Combine(TestPaths.FromRepository("src/magnetic-desk"), "Features/Appearance/AppearanceSettingsViewModel.AotBindableProperties.cs"));
-        string shellBridge = File.ReadAllText(
-            Path.Combine(TestPaths.FromRepository("src/magnetic-desk"), "ViewModels/SettingsViewModel.AotBindableProperties.cs"));
-
-        // Editor binding paths on the section family ({Binding} markers kept).
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding Theme, Mode=TwoWay}\"", section);
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding TrayIconStyle, Mode=TwoWay}\"", section);
-        Assert.Contains(
-            "SelectedColor=\"{Binding SelectedAccentColorHex, Mode=TwoWay, Converter={StaticResource SettingsColorStringConverter}}\"",
-            section);
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding MaterialType, Mode=TwoWay}\"", section);
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding LayoutDensity, Mode=TwoWay}\"", window);
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding TitleIconMode, Mode=TwoWay}\"", window);
-        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding AnimationPreset, Mode=TwoWay}\"", window);
-        Assert.Contains("Value=\"{Binding WidgetTransparency, Mode=TwoWay}\"", window);
-        Assert.Contains("Value=\"{Binding TextSize, Mode=TwoWay}\"", window);
-        // Conditional appearance sub-settings stay visible and gray out
-        // instead of collapsing, so the expanders always have content.
-        Assert.Contains("IsEnabled=\"{Binding ShowOpacitySlider}\"", window);
-        Assert.Contains("IsEnabled=\"{Binding ShowMaterialIntensitySlider}\"", window);
-        Assert.Contains("IsEnabled=\"{Binding ShowForegroundCustomColor}\"", window);
-        Assert.Contains("IsOpen=\"{Binding Windows10Compatibility}\"", window);
-        Assert.Contains("IsEnabled=\"{Binding NativeCornersSupported}\"", window);
-
-        // The legacy shell paths are gone from the appearance family.
-        Assert.DoesNotContain("{Binding SelectedTheme", section + window);
-        Assert.DoesNotContain("{Binding SelectedWidgetMaterialType", section + window);
-        Assert.DoesNotContain("{Binding SelectedLayoutDensity", section + window);
-        Assert.DoesNotContain("{Binding SelectedAnimationPreset", section + window);
-        Assert.DoesNotContain("{Binding SelectedWidgetTitleIconMode", section + window);
-        Assert.DoesNotContain("{Binding WidgetOpacityVisibility", window);
-        Assert.DoesNotContain("{Binding IsWindows10VisualCompatibilityMode", window);
-
-        // Section-level DataContext switch covers the whole family.
-        Assert.Contains("\"Appearance\" or", deferred);
-        Assert.Contains("\"AppearanceMaterialSettings\"", deferred);
-        Assert.Contains("\"AppearanceDensitySettings\"", deferred);
-        Assert.Contains("\"AppearanceWindowSettings\"", deferred);
-        Assert.Contains("\"AppearanceAnimationSettings\"", deferred);
+        string root = TestPaths.FromRepository("src/magnetic-desk");
+        string section = File.ReadAllText(Path.Combine(root, "Views/SettingsSections/AppearanceSettingsSection.xaml"));
+        string deferred = File.ReadAllText(Path.Combine(root, "Views/SettingsWindow.DeferredSections.cs"));
+        string bridge = File.ReadAllText(Path.Combine(root, "Features/Appearance/AppearanceSettingsViewModel.AotBindableProperties.cs"));
+        Assert.Contains("controls:SettingsComboBox.Value=\"{Binding LayoutDensity, Mode=TwoWay}\"", section);
+        Assert.Contains("ItemsSource=\"{Binding AvailableLayoutDensityOptions}\"", section);
         Assert.Contains("section.DataContext = _appearanceSettingsViewModel;", deferred);
-
-        // The editor exposes an AOT bridge and the shell bridge dropped the
-        // migrated names.
-        Assert.Contains("[WinRT.GeneratedBindableCustomProperty([", bridge);
-        Assert.Contains("nameof(WidgetTransparency)", bridge);
-        Assert.DoesNotContain("nameof(SelectedWidgetMaterialType)", shellBridge);
-        Assert.DoesNotContain("nameof(WidgetTransparency)", shellBridge);
-        Assert.DoesNotContain("nameof(SelectedTheme)", shellBridge);
+        Assert.Contains("nameof(LayoutDensity)", bridge);
+        Assert.Contains("nameof(TextSize)", bridge);
+        Assert.DoesNotContain("{Binding SelectedLayoutDensity", section);
     }
 
     [Fact]

@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
 
@@ -106,8 +106,7 @@ public sealed class WidgetBorderCustomizationTests
         string source = File.ReadAllText(TestPaths.FromRepository(path));
 
         Assert.Contains("Widget.StyleMenu.Label", source, StringComparison.Ordinal);
-        Assert.Contains("WidgetBorderMenuBuilder.Create", source, StringComparison.Ordinal);
-        Assert.Contains("WidgetCustomIconAndBackgroundLiveUnderStyleMenu", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("WidgetBorderMenuBuilder.Create", source, StringComparison.Ordinal);
     }
 
     [Fact]

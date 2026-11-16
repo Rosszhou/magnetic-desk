@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace MagneticDesk.Tests;
 
@@ -33,21 +33,9 @@ public sealed class SettingsSectionElementAotContractTests
         Assert.DoesNotMatch(RawCastAccessor, source);
         Assert.Contains("MarshalInspectable<T>.FromAbi", source, StringComparison.Ordinal);
         Assert.Contains(
-            "FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.PasswordBox>(\"CloudBackupSettings\", \"CloudBackupPasswordBox\")",
+            "FindCreatedSectionElement<global::MagneticDesk.Views.SettingsSections.AppearanceSettingsSection>(\"Appearance\", \"AppearanceSection\")",
             source,
             StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void SectionElementAccessors_CoverEveryNamedElementUsedByCloudBackupCodeBehind()
-    {
-        string accessors = ReadRepositoryFile("src/magnetic-desk/Views/SettingsWindow.SectionElements.cs");
-        string codeBehind = ReadRepositoryFile("src/magnetic-desk/Views/SettingsWindow.CloudBackup.cs");
-
-        foreach (Match match in Regex.Matches(codeBehind, @"\bCloudBackup[A-Za-z]+Box\b"))
-        {
-            Assert.Contains($" {match.Value} =>", accessors, StringComparison.Ordinal);
-        }
     }
 
     [Fact]
@@ -70,7 +58,6 @@ public sealed class SettingsSectionElementAotContractTests
 
         string[] lookupSources =
         [
-            "src/magnetic-desk/Views/SettingsWindow.CloudBackup.cs",
             "src/magnetic-desk/Views/SettingsWindow.SectionElements.cs",
             "src/magnetic-desk/Views/SettingsWindow.Maintenance.cs",
         ];
@@ -92,35 +79,6 @@ public sealed class SettingsSectionElementAotContractTests
         // The scan must stay wired to real call sites; an empty or broken
         // regex would otherwise pass vacuously.
         Assert.True(checkedLiterals > 0);
-    }
-
-    [Fact]
-    public void CloudBackupCodeBehind_NeverUsesUntypedSectionElementLookup()
-    {
-        // The untyped overload returns whatever RCW CsWinRT resolved — a
-        // base-class wrapper under AOT makes `is T` fail silently (blank
-        // snapshot list) instead of throwing like a direct cast did.
-        string codeBehind = ReadRepositoryFile("src/magnetic-desk/Views/SettingsWindow.CloudBackup.cs");
-
-        Assert.DoesNotMatch(
-            new Regex(@"FindCreatedSectionElement\s*\(\s*""", RegexOptions.CultureInvariant),
-            codeBehind);
-    }
-
-    [Fact]
-    public void CloudBackupSnapshotItem_HasGeneratedBindableMetadata()
-    {
-        // Batch 49 moved the item type to the backup editor family.
-        string source = ReadRepositoryFile(
-            "src/magnetic-desk/Features/Backup/CloudBackupRemoteSnapshotItem.cs");
-
-        // Title/Details bind through compiled x:Bind now; the generated
-        // metadata is retained as a fallback contract for the item type.
-        Assert.Contains("[WinRT.GeneratedBindableCustomProperty]", source, StringComparison.Ordinal);
-        Assert.Contains(
-            "public sealed partial class CloudBackupRemoteSnapshotItem",
-            source,
-            StringComparison.Ordinal);
     }
 
     private static string ReadRepositoryFile(string relativePath)

@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Contracts;
+using MagneticDesk.Contracts;
 using MagneticDesk.Features.Performance;
 using MagneticDesk.Models;
 using MagneticDesk.Services;
@@ -175,42 +175,16 @@ public sealed class PerformanceSettingsEditorTests : IDisposable
     public void DecorativeToggle_WritesTheDerivedFlagAndSwitchesToCustom()
     {
         (SettingsService settings, _, _, PerformanceSettingsViewModel editor) = CreateEditor(
-            _root,
-            settings => settings.Settings.Performance.PerformanceMode =
-                PerformanceOptionKinds.ModeBalanced);
-
-        // Default projection: all four switches on (legacy flags default).
-        Assert.Equal(
-            PassthroughLocalize("Settings.Performance.DecorativeAnimations.All"),
-            editor.ContinuousDecorativeAnimationsSummaryText);
-
-        editor.ToggleContinuousDecorativeAnimation(
-            PerformanceOptionKinds.DecorativeAnimationVinylRotation);
-
-        PerformanceSettingsSlice performance = settings.Settings.Performance;
-        Assert.False(performance.EnableVinylRotationAnimations);
-        Assert.False(performance.EnableContinuousDecorativeAnimations);
-        Assert.Equal(PerformanceOptionKinds.ModeCustom, performance.PerformanceMode);
+            _root, settings => settings.Settings.Performance.PerformanceMode = PerformanceOptionKinds.ModeBalanced);
+        Assert.Equal(PassthroughLocalize("Settings.Performance.DecorativeAnimations.All"), editor.ContinuousDecorativeAnimationsSummaryText);
+        editor.ToggleContinuousDecorativeAnimation(PerformanceOptionKinds.DecorativeAnimationTextMarquee);
+        Assert.False(settings.Settings.Performance.EnableTextMarqueeAnimations);
+        Assert.False(settings.Settings.Performance.EnableContinuousDecorativeAnimations);
         Assert.Equal(PerformanceOptionKinds.ModeCustom, editor.SelectedPerformanceMode);
-        Assert.True(editor.IsContinuousDecorativeAnimationSelected(
-            PerformanceOptionKinds.DecorativeAnimationTextMarquee));
-
-        // All four off renders the localized "off" summary.
-        editor.ToggleContinuousDecorativeAnimation(
-            PerformanceOptionKinds.DecorativeAnimationTextMarquee);
-        editor.ToggleContinuousDecorativeAnimation(
-            PerformanceOptionKinds.DecorativeAnimationGlanceRotation);
-        editor.ToggleContinuousDecorativeAnimation(
-            PerformanceOptionKinds.DecorativeAnimationCompactAmbient);
-        Assert.Equal(
-            PassthroughLocalize("Common.Off"),
-            editor.ContinuousDecorativeAnimationsSummaryText);
-        // A partial selection joins the localized display names.
-        editor.ToggleContinuousDecorativeAnimation(
-            PerformanceOptionKinds.DecorativeAnimationGlanceRotation);
-        Assert.Contains(
-            PassthroughLocalize("Settings.Performance.DecorativeAnimations.GlanceRotation"),
-            editor.ContinuousDecorativeAnimationsSummaryText);
+        editor.ToggleContinuousDecorativeAnimation(PerformanceOptionKinds.DecorativeAnimationCompactAmbient);
+        Assert.Equal(PassthroughLocalize("Common.Off"), editor.ContinuousDecorativeAnimationsSummaryText);
+        editor.ToggleContinuousDecorativeAnimation(PerformanceOptionKinds.DecorativeAnimationTextMarquee);
+        Assert.Contains(PassthroughLocalize("Settings.Performance.DecorativeAnimations.Marquee"), editor.ContinuousDecorativeAnimationsSummaryText);
     }
 
     [Fact]

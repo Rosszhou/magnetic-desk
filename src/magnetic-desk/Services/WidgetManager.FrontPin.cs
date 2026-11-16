@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Views;
 using Microsoft.UI.Xaml.Controls;
 
@@ -15,7 +15,7 @@ public sealed partial class WidgetManager
         if (GetMagneticGroupId(config) is { } group)
         {
             var whole = new ToggleMenuFlyoutItem { Text = _localizationService.T("FrontPin.Group"),
-                IsChecked = _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == group).All(w => w.IsAlwaysOnTop) };
+                IsChecked = _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == group).All(w => w.IsAlwaysOnTop) };
             whole.Click += (_, _) => SetPinnedToFront(config, whole.IsChecked, true);
             menu.Items.Add(whole);
         }
@@ -26,7 +26,7 @@ public sealed partial class WidgetManager
     {
         string? group = wholeGroup ? GetMagneticGroupId(config) : null;
         var targets = group is null ? MagneticSurfaceConfigs(config).ToArray() :
-            _settingsService.Settings.Widgets.Where(w => GetMagneticGroupId(w) == group).ToArray();
+            _settingsService.Settings.WidgetLayout.Widgets.Where(w => GetMagneticGroupId(w) == group).ToArray();
         foreach (var member in targets) member.IsAlwaysOnTop = pinned;
         foreach (var window in GetLoadedDesktopWindows().OfType<WidgetWindowBase>().Where(w => targets.Any(t => t.Id == w.Config.Id)))
             window.RefreshFrontPinState();

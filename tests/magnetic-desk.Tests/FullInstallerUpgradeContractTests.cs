@@ -4,6 +4,17 @@ namespace MagneticDesk.Tests;
 
 public sealed class FullInstallerUpgradeContractTests : IDisposable
 {
+    [Fact]
+    public void DiscoveredPortableCopies_DoNotForceAnInstallerUpgrade()
+    {
+        string source = File.ReadAllText(TestPaths.FromRepository("installer/magnetic-desk.Installation.iss"));
+        int discovered = source.IndexOf("if RequireExecutable then", StringComparison.Ordinal);
+        int registered = source.IndexOf("else if not IsRegisteredMagneticDeskInstallPath", discovered, StringComparison.Ordinal);
+        Assert.True(discovered >= 0 && registered > discovered);
+        Assert.Contains("FileExists(AddBackslash(NormalizedPath) + 'unins000.exe')", source[discovered..registered], StringComparison.Ordinal);
+        Assert.Contains("AddInstallCandidate(InstallPath, Source, False)", source, StringComparison.Ordinal);
+    }
+
     private readonly string _tempRoot = Path.Combine(
         Path.GetTempPath(),
         "MagneticDesk.FullInstallerUpgrade.Tests",

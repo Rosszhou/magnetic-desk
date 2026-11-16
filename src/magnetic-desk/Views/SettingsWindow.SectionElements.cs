@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 using WinRT;
 
@@ -42,14 +42,8 @@ public sealed partial class SettingsWindow
 
     private global::MagneticDesk.Views.SettingsSections.AppearanceSettingsSection AppearanceSection =>
         FindCreatedSectionElement<global::MagneticDesk.Views.SettingsSections.AppearanceSettingsSection>("Appearance", "AppearanceSection")!;
-    private global::Microsoft.UI.Xaml.Controls.StackPanel AppearanceMaterialSettingsSection =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("AppearanceMaterialSettings", "AppearanceMaterialSettingsSection")!;
     private global::Microsoft.UI.Xaml.Controls.StackPanel AppearanceDensitySettingsSection =>
         FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("AppearanceDensitySettings", "AppearanceDensitySettingsSection")!;
-    private global::Microsoft.UI.Xaml.Controls.StackPanel AppearanceWindowSettingsSection =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("AppearanceWindowSettings", "AppearanceWindowSettingsSection")!;
-    private global::Microsoft.UI.Xaml.Controls.StackPanel AppearanceAnimationSettingsSection =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("AppearanceAnimationSettings", "AppearanceAnimationSettingsSection")!;
     private global::Microsoft.UI.Xaml.Controls.StackPanel WidgetGroupsSection =>
         FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("WidgetGroups", "WidgetGroupsSection")!;
     private global::MagneticDesk.Views.SettingsSections.CapsuleModeSettingsSection CapsuleModeSection =>
@@ -168,18 +162,4 @@ public sealed partial class SettingsWindow
         FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("About", "AboutRightPanel")!;
     private global::Microsoft.UI.Xaml.Controls.StackPanel AboutInfoActionsPanel =>
         FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("About", "AboutInfoActionsPanel")!;
-    private global::Microsoft.UI.Xaml.Controls.Button AboutMeButton =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.Button>("About", "AboutMeButton")!;
-    private global::Microsoft.UI.Xaml.Controls.Button AboutWebsiteButton =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.Button>("About", "AboutWebsiteButton")!;
-    private global::Microsoft.UI.Xaml.Controls.Button OneClickUpdateButton =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.Button>("About", "OneClickUpdateButton")!;
-    private global::Microsoft.UI.Xaml.Controls.StackPanel UpdateCheckActionsPanel =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("About", "UpdateCheckActionsPanel")!;
-    private global::Microsoft.UI.Xaml.Controls.Button ViewReleaseNotesButton =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.Button>("About", "ViewReleaseNotesButton")!;
-    private global::Microsoft.UI.Xaml.Controls.StackPanel UpdateActionsPanel =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.StackPanel>("About", "UpdateActionsPanel")!;
-    private global::Microsoft.UI.Xaml.Controls.Button OpenManualUpdateDownloadButton =>
-        FindCreatedSectionElement<global::Microsoft.UI.Xaml.Controls.Button>("About", "OpenManualUpdateDownloadButton")!;
 }

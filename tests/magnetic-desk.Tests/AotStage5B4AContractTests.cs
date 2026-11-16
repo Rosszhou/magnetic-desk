@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage5B4AContractTests
 {
@@ -131,12 +131,7 @@ public sealed class AotStage5B4AContractTests
         string source = ReadRepositoryFile("src/magnetic-desk/Services/LocalizationService.cs");
 
         Assert.Contains("CaptureAotSmokeResourceDiagnostics", source, StringComparison.Ordinal);
-        foreach (string locale in new[]
-                 {
-                     "zh-CN", "zh-TW", "en-US", "ja-JP", "de-DE", "pt-BR",
-                     "hi-IN", "es-ES", "fr-FR", "ar-SA", "bn-BD", "ru-RU",
-                     "ko-KR"
-                 })
+        foreach (string locale in new[] { "zh-CN", "en-US" })
         {
             Assert.Contains($"\"{locale}\"", source, StringComparison.Ordinal);
         }
@@ -168,7 +163,7 @@ public sealed class AotStage5B4AContractTests
     {
         string app = ReadRepositoryFile("src/magnetic-desk/App.xaml.cs");
         int sessionMutation = app.IndexOf(
-            "StartAotMusicVolumeSessionMutationSmokeIfRequested();",
+            "StartAotQuickAccessMutationSmokeIfRequested();",
             StringComparison.Ordinal);
         int managedUi = app.IndexOf(
             "StartAotManagedUiSmokeIfRequested();",
@@ -206,9 +201,6 @@ public sealed class AotStage5B4AContractTests
             "scripts/run-aot-shortcut-smoke.ps1",
             "scripts/run-aot-shell-smoke.ps1",
             "scripts/run-aot-quick-access-mutation-smoke.ps1",
-            "scripts/run-aot-music-volume-read-smoke.ps1",
-            "scripts/run-aot-music-volume-mutation-smoke.ps1",
-            "scripts/run-aot-music-volume-session-mutation-smoke.ps1",
             "scripts/run-aot-managed-ui-smoke.ps1"
         ];
 

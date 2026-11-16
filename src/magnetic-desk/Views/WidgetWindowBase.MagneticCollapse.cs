@@ -1,4 +1,4 @@
-﻿using MagneticDesk.Models;
+using MagneticDesk.Models;
 using MagneticDesk.Services;
 using Windows.Graphics;
 
@@ -31,7 +31,7 @@ public abstract partial class WidgetWindowBase
             var bounds = WidgetCompactBoundsCalculator.Resolve(Config, expanded,
                 WidgetPositioningService.GetDpiScale(ResolveCompactWorkArea(expanded)),
                 ResolveEffectiveCompactContentMode(), alignToExpandedWidth: UsesAlignedCompactWidth(),
-                heightContentMode: SettingsService.Settings.WidgetCompactContentMode);
+                heightContentMode: SettingsService.Settings.WidgetShell.WidgetCompactContentMode);
             return new SizeInt32(bounds.Width, bounds.Height);
         }
     }

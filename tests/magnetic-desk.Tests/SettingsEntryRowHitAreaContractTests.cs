@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Entry rows are native toolkit SettingsCards with IsClickEnabled: the
@@ -13,8 +13,8 @@
 public sealed class SettingsEntryRowHitAreaContractTests
 {
     [Theory]
-    [InlineData("src/magnetic-desk/Views/SettingsWindow.xaml", 6)]
-    [InlineData("src/magnetic-desk/Views/SettingsSections/AppearanceSettingsSection.xaml", 5)]
+    [InlineData("src/magnetic-desk/Views/SettingsWindow.xaml", 5)]
+    [InlineData("src/magnetic-desk/Views/SettingsSections/AppearanceSettingsSection.xaml", 1)]
     [InlineData("src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml", 1)]
     [InlineData("src/magnetic-desk/Views/SettingsSections/FileWidgetSettingsSection.xaml", 3)]
     public void EntryRows_AreClickableNativeSettingsCards(string path, int expectedCount)
@@ -42,10 +42,7 @@ public sealed class SettingsEntryRowHitAreaContractTests
         // inline controls stay operable, and the "custom only" child rows
         // stay visible but disabled outside custom presets — hiding them
         // left the expanders promising content they never showed.
-        Assert.Contains("IsEnabled=\"{Binding IsBarSpacingEnabled}\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("IsEnabled=\"{Binding IsBarEnabled}\"", xaml, StringComparison.Ordinal);
         Assert.Contains("IsEnabled=\"{Binding ShowHoverResponseCustom}\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("IsEnabled=\"{Binding ShowAnimationCustom}\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Visibility=\"{Binding ShowHoverResponseCustom", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Visibility=\"{Binding ShowAnimationCustom", xaml, StringComparison.Ordinal);
     }

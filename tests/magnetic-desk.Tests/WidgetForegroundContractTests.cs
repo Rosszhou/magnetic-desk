@@ -1,16 +1,16 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class WidgetForegroundContractTests
 {
     [Fact]
-    public void SettingsSurface_ExposesPaletteAndColorControlsWithoutTextEdge()
+    public void SettingsSurface_OmitsRetiredGlobalForegroundControls()
     {
         string xaml = Read("src/magnetic-desk/Views/SettingsWindow.xaml");
         string bridge = Read(
             "src/magnetic-desk/Features/Appearance/AppearanceSettingsViewModel.AotBindableProperties.cs");
 
-        Assert.Contains("AvailableForegroundModeOptions", xaml, StringComparison.Ordinal);
-        Assert.Contains("ForegroundColorHex", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("AvailableForegroundModeOptions", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("ForegroundColorHex", xaml, StringComparison.Ordinal);
         Assert.Contains("nameof(ForegroundColorHex)", bridge, StringComparison.Ordinal);
         // The text edge experiment was removed in 1.5.1 (too many platform
         // traps for the value it added); nothing may quietly reintroduce a
@@ -69,46 +69,13 @@ public sealed class WidgetForegroundContractTests
             StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void WeatherContent_UsesWidgetPaletteWithoutDetachedThemeOverrides()
-    {
-        string weatherCode = Read(
-            "src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml.cs");
-        string windowCode = Read("src/magnetic-desk/Views/ContentWidgetWindow.xaml.cs");
-
-        // A weather-local RequestedTheme makes ThemeResource labels resolve
-        // against framework brushes instead of the widget's mutable palette.
-        Assert.Contains(
-            "RequestedTheme = ElementTheme.Default;",
-            weatherCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "RootGrid.RequestedTheme = ElementTheme.Default;",
-            weatherCode,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "RootGrid.RequestedTheme = !_viewModel.UsesRichSkin",
-            weatherCode,
-            StringComparison.Ordinal);
-
-        // The collapsed weather capsule must inherit the same palette as the
-        // expanded content instead of forcing a second light/dark theme.
-        Assert.DoesNotContain(
-            "UseLightForeground: usesRichSkin",
-            windowCode,
-            StringComparison.Ordinal);
-    }
-
     [Theory]
     [InlineData("src/magnetic-desk/Controls/WidgetShell.xaml")]
     [InlineData("src/magnetic-desk/Controls/FileItemSurface.xaml")]
     [InlineData("src/magnetic-desk/Controls/WidgetContents/FileSurfaceContent.xaml")]
-    [InlineData("src/magnetic-desk/Controls/WidgetContents/GlanceWidgetContent.xaml")]
-    [InlineData("src/magnetic-desk/Controls/WidgetContents/MusicWidgetContent.xaml")]
     [InlineData("src/magnetic-desk/Controls/WidgetContents/QuickCaptureSurfaceContent.xaml")]
     [InlineData("src/magnetic-desk/Controls/WidgetContents/SearchWidgetContent.xaml")]
     [InlineData("src/magnetic-desk/Controls/WidgetContents/TodoWidgetContent.xaml")]
-    [InlineData("src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml")]
     public void WidgetContentRoots_InheritTheWidgetPrimaryForeground(string path)
     {
         Assert.Contains(

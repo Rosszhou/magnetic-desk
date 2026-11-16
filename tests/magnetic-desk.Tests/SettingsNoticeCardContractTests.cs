@@ -1,4 +1,4 @@
-﻿using System.Xml.Linq;
+using System.Xml.Linq;
 
 namespace MagneticDesk.Tests;
 
@@ -34,7 +34,7 @@ public sealed class SettingsNoticeCardContractTests
     }
 
     [Theory]
-    [InlineData("src/magnetic-desk/Views/SettingsWindow.xaml", 3)]
+    [InlineData("src/magnetic-desk/Views/SettingsWindow.xaml", 1)]
     [InlineData("src/magnetic-desk/Views/SettingsSections/SearchSettingsSection.xaml", 1)]
     public void Notices_AreNativeInfoBarsWithTitleAndMessageProperties(string path, int expectedCount)
     {

@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Pins the palette rule the interaction states were rebuilt around: hover,
@@ -103,7 +103,6 @@ public sealed class NeutralInteractionPaletteContractTests
     public void SegmentationPointerStates_AreNeutralWhileSelectionKeepsTheAccent()
     {
         string helper = Read("src/magnetic-desk/Services/WidgetSegmentedStyleHelper.cs");
-        string weather = Read("src/magnetic-desk/Controls/WidgetContents/WeatherWidgetContent.xaml.cs");
 
         Assert.Contains(
             "ApplyNeutralPointerStates",
@@ -123,8 +122,6 @@ public sealed class NeutralInteractionPaletteContractTests
             helper,
             StringComparison.Ordinal);
         // Weather reuses the shared entry point instead of its own copy.
-        Assert.Contains("ApplyNeutralPointerStates", weather, StringComparison.Ordinal);
-        Assert.DoesNotContain("AccentResourceScope.Apply", weather, StringComparison.Ordinal);
     }
 
     [Fact]

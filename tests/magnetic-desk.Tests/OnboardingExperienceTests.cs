@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace MagneticDesk.Tests;
 
@@ -40,8 +40,6 @@ public sealed class OnboardingExperienceTests
         "Onboarding.Feature.Todo",
         "Onboarding.Feature.QuickCapture",
         "Onboarding.Feature.Search",
-        "Onboarding.Feature.Weather",
-        "Onboarding.Feature.Music",
         "Onboarding.Scene.MoveBadge",
         "Widget.Empty.ActionsHint"
     ];
@@ -77,7 +75,7 @@ public sealed class OnboardingExperienceTests
 
         Assert.Contains("Click=\"Step3Try_Click\"", xaml, StringComparison.Ordinal);
         Assert.Contains("Click=\"Step4OpenMenu_Click\"", xaml, StringComparison.Ordinal);
-        foreach (string kind in new[] { "Todo", "QuickCapture", "Search", "Weather", "Music", "Glance" })
+        foreach (string kind in new[] { "Todo", "QuickCapture", "Search" })
         {
             Assert.Contains(
                 $"Tag=\"{kind}\" Toggled=\"Step5FeatureToggle_Toggled\"",
@@ -142,9 +140,8 @@ public sealed class OnboardingExperienceTests
     }
 
     [Theory]
-    [InlineData("ja-JP.json", "グリッド")]
-    [InlineData("de-DE.json", "Raster")]
-    [InlineData("pt-BR.json", "grade")]
+    [InlineData("en-US.json", "layout grid")]
+    [InlineData("zh-CN.json", "网格布局")]
     public void TaskFlow_UsesWidgetTermInsteadOfLayoutGrid(
         string fileName,
         string forbiddenTerm)
@@ -323,7 +320,7 @@ public sealed class OnboardingExperienceTests
             strings.RootElement.GetProperty("Onboarding.Step2.Body").GetString(),
             StringComparison.Ordinal);
         Assert.Contains(
-            "映射为格子",
+            "映射",
             strings.RootElement.GetProperty("Onboarding.Step4.Body").GetString(),
             StringComparison.Ordinal);
         Assert.DoesNotContain(

@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Every ToggleSwitch in the settings domain and onboarding must carry an
@@ -14,13 +14,13 @@ public sealed class ToggleSwitchAccessibleNameContractTests
 {
     public static TheoryData<string, int> ToggleSwitchHostFiles => new()
     {
-        { "src/magnetic-desk/Views/SettingsWindow.xaml", 51 },
+        { "src/magnetic-desk/Views/SettingsWindow.xaml", 32 },
         { "src/magnetic-desk/Views/SettingsSections/SearchSettingsSection.xaml", 4 },
-        { "src/magnetic-desk/Views/SettingsSections/GlanceWidgetSettingsSection.xaml", 4 },
+
         { "src/magnetic-desk/Views/SettingsSections/FileWidgetSettingsSection.xaml", 1 },
         { "src/magnetic-desk/Views/SettingsSections/DesktopOrganizationSettingsSection.xaml", 2 },
         { "src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml", 1 },
-        { "src/magnetic-desk/Views/OnboardingWindow.xaml", 6 },
+        { "src/magnetic-desk/Views/OnboardingWindow.xaml", 3 },
     };
 
     [Theory]

@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 /// <summary>
 /// Pins the material section's system visual-effect cards: they are read-only
@@ -9,28 +9,6 @@
 /// </summary>
 public sealed class WindowShadowSettingsContractTests
 {
-    [Fact]
-    public void MaterialSection_HostsBothSystemEffectCardsWithStatusAndDeepLinks()
-    {
-        string slice = Read(
-            "src/magnetic-desk/Views/SettingsWindow.xaml");
-        string material = Slice(
-            slice,
-            "x:Key=\"AppearanceMaterialSettingsSectionTemplate\"",
-            "x:Key=\"AppearanceDensitySettingsSectionTemplate\"");
-
-        // Transparency card: status projection + ms-settings deep link.
-        Assert.Contains("HeaderKey=\"Settings.SystemTransparency.Title\"", material, StringComparison.Ordinal);
-        Assert.Contains("Text=\"{Binding SystemTransparencyStatusText}\"", material, StringComparison.Ordinal);
-        Assert.Contains("Click=\"OpenSystemTransparencySettingsButton_Click\"", material, StringComparison.Ordinal);
-        Assert.Contains("svc:Localized.Key=\"Settings.SystemEffect.OpenSystemSettings\"", material, StringComparison.Ordinal);
-
-        // Shadow card: same shape, mirroring SPI_GETDROPSHADOW.
-        Assert.Contains("HeaderKey=\"Settings.WindowShadow.Title\"", material, StringComparison.Ordinal);
-        Assert.Contains("Text=\"{Binding SystemShadowStatusText}\"", material, StringComparison.Ordinal);
-        Assert.Contains("Click=\"OpenWindowShadowSettingsButton_Click\"", material, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void AppearanceSection_NoLongerExposesTheShadowToggle()
     {

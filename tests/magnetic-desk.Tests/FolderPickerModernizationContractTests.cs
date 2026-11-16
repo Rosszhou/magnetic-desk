@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
@@ -98,13 +98,12 @@ public sealed class FolderPickerModernizationContractTests
     }
 
     [Fact]
-    public void AllSevenProductEntrances_AwaitTheOwnerAwarePicker()
+    public void CurrentProductEntrances_AwaitTheOwnerAwarePicker()
     {
         var expectedCalls = new Dictionary<string, int>
         {
             ["src/magnetic-desk/App.Tray.cs"] = 1,
             ["src/magnetic-desk/Services/JumpListService.cs"] = 1,
-            ["src/magnetic-desk/Views/SettingsSections/GlanceWidgetSettingsSection.xaml.cs"] = 1,
             ["src/magnetic-desk/Views/SettingsWindow.Maintenance.cs"] = 3,
             ["src/magnetic-desk/Views/SettingsWindow.StorageAndUpdates.cs"] = 1
         };
@@ -127,7 +126,7 @@ public sealed class FolderPickerModernizationContractTests
             totalCalls += callCount;
         }
 
-        Assert.Equal(7, totalCalls);
+        Assert.Equal(6, totalCalls);
     }
 
     [Fact]

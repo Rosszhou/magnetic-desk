@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text.RegularExpressions;
 using MagneticDesk.Models;
@@ -157,10 +157,8 @@ public sealed class FeatureSettingsBoundaryContractTests
         [
             // Batch 49 deleted the shell backup option partials (the
             // binding surface lives on the backup editor now).
-            "src/magnetic-desk/Views/SettingsWindow.CloudBackup.cs",
             "src/magnetic-desk/Features/Backup/BackupSettingsViewModel.cs",
             "src/magnetic-desk/Features/Backup/BackupSettingsViewModel.SettingsSurface.cs",
-            "src/magnetic-desk/Features/Backup/CloudBackupRemoteSnapshotItem.cs",
             "src/magnetic-desk/Services/BackupSettingsCoordinator.cs",
             "src/magnetic-desk/Services/BackupRestoreActions.cs"
         ];

@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage5B4C1C2AContractTests
 {
@@ -16,13 +16,13 @@ public sealed class AotStage5B4C1C2AContractTests
         Assert.Contains("? AotManagedUiNativeDropWidgetId", shared, StringComparison.Ordinal);
         Assert.Contains("CaptureAotManagedUiNativeDropAsync", shared, StringComparison.Ordinal);
         Assert.Contains("public AotManagedUiNativeDropEvidence? NativeDrop", shared, StringComparison.Ordinal);
-        Assert.Contains("NormalShutdownRequested = true", shared, StringComparison.Ordinal);
+        Assert.Contains("result.NormalShutdownRequested =", shared, StringComparison.Ordinal);
         Assert.Contains("ShutdownApplicationAsync()", shared, StringComparison.Ordinal);
         string finalization = SliceBetween(
             shared,
             "        finally",
             "private async Task CaptureAotManagedUiTrayAndWidgetsAsync(");
-        Assert.Contains("AotManagedUiNativeDropScenario)", finalization, StringComparison.Ordinal);
+        Assert.Contains("AotManagedUiNativeDropScenario;", finalization, StringComparison.Ordinal);
         Assert.Equal(1, CountOccurrences(shared, "JsonSerializer.Serialize("));
     }
 

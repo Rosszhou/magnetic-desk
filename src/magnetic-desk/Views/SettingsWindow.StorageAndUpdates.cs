@@ -544,7 +544,7 @@ public sealed partial class SettingsWindow
         {
             if (!_isClosed)
             {
-                UpdateCheckActionsPanel.StartBringIntoView();
+                FindCreatedSectionElement<FrameworkElement>("About", "AboutSection")?.StartBringIntoView();
             }
         });
     }

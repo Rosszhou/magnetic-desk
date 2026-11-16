@@ -1,4 +1,4 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class AotStage5B4C1C1ContractTests
 {
@@ -14,7 +14,7 @@ public sealed class AotStage5B4C1C1ContractTests
         Assert.Contains("aot-5b4c1c1-file", shared, StringComparison.Ordinal);
         Assert.Contains("CaptureAotManagedUiPickerClipboardAsync", shared, StringComparison.Ordinal);
         Assert.Contains("public AotManagedUiPickerClipboardEvidence? PickerClipboard", shared, StringComparison.Ordinal);
-        Assert.Contains("NormalShutdownRequested = true", shared, StringComparison.Ordinal);
+        Assert.Contains("result.NormalShutdownRequested =", shared, StringComparison.Ordinal);
         Assert.Contains("ShutdownApplicationAsync()", shared, StringComparison.Ordinal);
         Assert.Equal(1, CountOccurrences(shared, "JsonSerializer.Serialize("));
     }

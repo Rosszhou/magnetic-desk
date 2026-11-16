@@ -659,8 +659,8 @@ public partial class App
         }
         finally
         {
-            WriteAotManagedUiResult(resultPath, result);
-            if (scenario is AotManagedUiSettingsWidgetPersistenceScenario or
+            result.NormalShutdownRequested =
+                scenario is AotManagedUiSettingsWidgetPersistenceScenario or
                 AotManagedUiQuickCapturePersistenceScenario or
                 AotManagedUiTodoPersistenceScenario or
                 AotManagedUiTodoStepsPersistenceScenario or
@@ -670,7 +670,9 @@ public partial class App
                 AotManagedUiShellMoveScenario or
                 AotManagedUiFilePropertiesScenario or
                 AotManagedUiPickerClipboardScenario or
-                AotManagedUiNativeDropScenario)
+                AotManagedUiNativeDropScenario;
+            WriteAotManagedUiResult(resultPath, result);
+            if (result.NormalShutdownRequested)
             {
                 await Task.Delay(100);
                 await ShutdownApplicationAsync();

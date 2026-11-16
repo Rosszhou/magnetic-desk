@@ -257,10 +257,8 @@ public sealed class ModuleBoundaryContractTests
         [
             // Batch 49 deleted the shell backup option partials (the
             // binding surface lives on the backup editor now).
-            "src/magnetic-desk/Views/SettingsWindow.CloudBackup.cs",
             "src/magnetic-desk/Features/Backup/BackupSettingsViewModel.cs",
             "src/magnetic-desk/Features/Backup/BackupSettingsViewModel.SettingsSurface.cs",
-            "src/magnetic-desk/Features/Backup/CloudBackupRemoteSnapshotItem.cs",
             "src/magnetic-desk/Services/BackupSettingsCoordinator.cs",
             "src/magnetic-desk/Services/BackupRestoreActions.cs"
         ];
@@ -289,7 +287,6 @@ public sealed class ModuleBoundaryContractTests
             "src/magnetic-desk/Features/Todo/TodoSettingsViewModel.cs",
             // Batch 48: the Weather section's binding surface (incl. the
             // pushed city-search projection) lives on the section editor.
-            "src/magnetic-desk/Features/Weather/WeatherSettingsViewModel.cs",
             // Batch 50: the performance section's binding surface (incl. the
             // three working-set trim switches whose change handlers replaced
             // the old On*Changed partials) lives on the section editor.

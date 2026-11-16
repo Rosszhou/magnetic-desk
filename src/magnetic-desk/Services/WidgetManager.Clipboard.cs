@@ -12,7 +12,7 @@ public sealed partial class WidgetManager
         await _clipboardWidgetGate.WaitAsync();
         try
         {
-            var config = _settingsService.Settings.Widgets.FirstOrDefault(w =>
+            var config = _settingsService.Settings.WidgetLayout.Widgets.FirstOrDefault(w =>
                 w.WidgetKind == WidgetKind.Clipboard && !IsDeleted(w.Id));
             if (config is null)
             {
@@ -21,11 +21,11 @@ public sealed partial class WidgetManager
                     Name = _localizationService.T("Clipboard.Title"),
                     WidgetKind = WidgetKind.Clipboard,
                     BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
-                    Width = _settingsService.Settings.DefaultWidgetWidth,
-                    Height = _settingsService.Settings.DefaultWidgetHeight
+                    Width = _settingsService.Settings.WidgetShell.DefaultWidgetWidth,
+                    Height = _settingsService.Settings.WidgetShell.DefaultWidgetHeight
                 };
                 ApplyNewWidgetPlacement(config);
-                _settingsService.Settings.Widgets.Add(config);
+                _settingsService.Settings.WidgetLayout.Widgets.Add(config);
             }
             config.IsDisabled = false;
             config.IsVisible = true;
@@ -45,7 +45,7 @@ public sealed partial class WidgetManager
         await _clipboardWidgetGate.WaitAsync();
         try
         {
-            var config = _settingsService.Settings.Widgets.FirstOrDefault(w =>
+            var config = _settingsService.Settings.WidgetLayout.Widgets.FirstOrDefault(w =>
                 w.Id == id && w.WidgetKind == WidgetKind.Clipboard);
             if (config is null) return;
             config.IsDisabled = !enabled;

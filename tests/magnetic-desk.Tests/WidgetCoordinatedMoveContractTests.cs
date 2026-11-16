@@ -1,9 +1,9 @@
-﻿namespace MagneticDesk.Tests;
+namespace MagneticDesk.Tests;
 
 public sealed class WidgetCoordinatedMoveContractTests
 {
     [Fact]
-    public void CtrlTitleDrag_UsesAtomicSameMonitorBatchWithoutZOrderMutation()
+    public void TitleDrag_PassesDetachModifierAndUsesAtomicMoveWithoutZOrderMutation()
     {
         string interaction = Read("src/magnetic-desk/Views/WidgetWindowBase.Interaction.cs");
         string manager = Read("src/magnetic-desk/Services/WidgetManager.CoordinatedMove.cs");
@@ -11,7 +11,7 @@ public sealed class WidgetCoordinatedMoveContractTests
             "src/magnetic-desk/Views/ContentWidgetWindow.WindowInteraction.cs");
 
         Assert.Contains("VirtualKey.Control", interaction, StringComparison.Ordinal);
-        Assert.Contains("TryBeginCoordinatedMove(HWnd)", interaction, StringComparison.Ordinal);
+        Assert.Contains("TryBeginCoordinatedMove(HWnd, controlPressed)", interaction, StringComparison.Ordinal);
         Assert.Contains("UpdateCoordinatedMove(", interaction, StringComparison.Ordinal);
         Assert.Contains("frame.DeltaX", interaction, StringComparison.Ordinal);
         Assert.Contains("frame.DeltaY", interaction, StringComparison.Ordinal);

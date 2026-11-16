@@ -157,6 +157,7 @@ internal static class SettingsSearchCatalog
         new("ResetSettings", "Settings.Restore.Title", "Settings.Restore.Description"),
         new("CompatibilityDiagnosticsSettings", "Settings.DragDropPermission.Title", "Settings.DragDropPermission.Description"),
         new("CompatibilityDiagnosticsSettings", "Settings.RuntimeHealth.Title", "Settings.RuntimeHealth.Description"),
+        new("About", "Settings.Uninstall.Title", "Settings.Uninstall.Description"),
         new("About", "Settings.About.FeedbackTitle", "Settings.About.FeedbackDescription"),
     ];
 }
