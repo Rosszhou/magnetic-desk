@@ -1,0 +1,24 @@
+magnetic-desk
+
+License identifier
+GPL-3.0-only
+
+Upstream work
+Tianyu199509/DeskBox v1.5.9
+https://github.com/Tianyu199509/DeskBox/tree/v1.5.9
+
+Upstream copyright notice reproduced from the source
+Copyright (c) DeskBox. All rights reserved.
+
+Modification notice
+Rosszhou modified this work between 2026-11-12 and 2026-11-17 for
+magnetic-desk. Changes include magnetic widget groups, coordinated resize
+and collapse behavior, capsule appearance, clipboard widgets, branding,
+onboarding, English and Simplified Chinese interfaces, feedback contact,
+local uninstallation, offline distribution, and regression-test migration.
+
+The modified work is distributed under GPL-3.0-only. The full license and
+its warranty disclaimer are provided in LICENSE. Copyright and license
+notices embedded in the source and third-party components apply to their
+respective portions. The Everything SDK license is provided separately in
+src/magnetic-desk/ThirdParty/Everything/LICENSE.txt.

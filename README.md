@@ -56,6 +56,6 @@ The x64 Native AOT offline package has been verified on Windows 11 for installat
 
 `src` contains the application and updater sources, `native` contains native helper sources, `tests` contains tests and opt-in integration fixtures, and `scripts` contains build and validation tooling. Generated executables, build directories, logs, and local configuration are excluded through `.gitignore`.
 
-## Origin and license
+## License
 
-This project is derived from [Tianyu199509/DeskBox v1.5.9](https://github.com/Tianyu199509/DeskBox/tree/v1.5.9). The original copyright and third-party notices are retained. Licensed under GPL-3.0-only, see [LICENSE](LICENSE). Earlier entries in [CHANGELOG.md](CHANGELOG.md) document the upstream history.
+Licensed under GPL-3.0-only. Copyright and modification notices are provided in [NOTICE](NOTICE), with the full license in [LICENSE](LICENSE).

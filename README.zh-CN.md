@@ -56,6 +56,6 @@ x64 Native AOT 离线安装包已在 Windows 11 上验证安装、首次启动�
 
 `src` 为应用和更新辅助程序源码，`native` 为原生组件源码，`tests` 为测试和按需启用的窗口集成验证，`scripts` 为构建和检查脚本。`.gitignore` 排除编译输出、运行日志与本机配置。
 
-## 来源与协议
+## 许可协议
 
-本项目基于 [Tianyu199509/DeskBox v1.5.9](https://github.com/Tianyu199509/DeskBox/tree/v1.5.9) 修改，保留上游版权和第三方声明，采用 GPL-3.0-only 协议，详见 [LICENSE](LICENSE)。[CHANGELOG.md](CHANGELOG.md) 中较早的条目记录上游历史。
+本项目采用 GPL-3.0-only 协议。版权与修改声明见 [NOTICE](NOTICE)，完整许可条款见 [LICENSE](LICENSE)。
