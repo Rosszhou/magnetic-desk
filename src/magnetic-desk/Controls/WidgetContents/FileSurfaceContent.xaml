@@ -828,90 +828,102 @@
                 KeyDown="ItemRenameTextBox_KeyDown"
                 LostFocus="ItemRenameTextBox_LostFocus" />
 
-            <StackPanel
-                Margin="16"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Spacing="8"
-                Visibility="Collapsed"
-                x:Name="EmptyState">
-                <FontIcon
+            <ScrollViewer
+                Visibility="{Binding ElementName=EmptyState, Path=Visibility}"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalContentAlignment="Stretch"
+                VerticalContentAlignment="Center"
+                IsTabStop="False">
+                <StackPanel
+                    Margin="16"
                     HorizontalAlignment="Center"
-                    FontSize="24"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Glyph="{Binding EmptyStateGlyph}" />
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    FontSize="14"
-                    Text="{Binding EmptyStateTitle}" />
-                <TextBlock
-                    MaxWidth="240"
-                    HorizontalAlignment="Center"
-                    FontSize="11.5"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    TextAlignment="Center"
-                    TextWrapping="Wrap"
-                    svc:Localized.Key="Widget.Empty.ActionsHint" />
-                <Button svc:Localized.AutomationNameKey="Widget.AddFile"
-                    x:Name="EmptyAddButton"
-                    HorizontalAlignment="Center"
-                    Click="AddButton_Click">
-                    <StackPanel Orientation="Horizontal" Spacing="7">
-                        <FontIcon FontSize="12" Glyph="&#xE710;" />
-                        <TextBlock x:Name="EmptyAddButtonText" />
-                    </StackPanel>
-                </Button>
-                <Button
-                    x:Name="EmptyStateHelpButton"
-                    Width="24"
-                    Height="24"
-                    Padding="0"
-                    HorizontalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Click="EmptyStateHelpButton_Click"
-                    CornerRadius="12">
-                    <FlyoutBase.AttachedFlyout>
-                        <Flyout x:Name="EmptyStateHelpFlyout" Placement="Bottom">
-                            <StackPanel Width="232" Spacing="6">
-                                <TextBlock
-                                    FontSize="13"
-                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                    TextWrapping="Wrap"
-                                    svc:Localized.Key="Widget.Empty.HelpTipTitle" />
-                                <TextBlock
-                                    FontSize="11.5"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    TextWrapping="Wrap"
-                                    svc:Localized.Key="Widget.Empty.HelpTipCause" />
-                                <TextBlock
-                                    FontSize="11.5"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    TextWrapping="Wrap"
-                                    svc:Localized.Key="Widget.Empty.HelpTipCheck" />
-                                <TextBlock
-                                    FontSize="11.5"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    TextWrapping="Wrap"
-                                    svc:Localized.Key="Widget.Empty.HelpTipSolution" />
-                            </StackPanel>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
+                    VerticalAlignment="Center"
+                    Spacing="8"
+                    Visibility="Collapsed"
+                    x:Name="EmptyState">
                     <FontIcon
-                        FontSize="11"
+                        HorizontalAlignment="Center"
+                        FontSize="28"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Glyph="&#xE897;" />
-                </Button>
-                <InfoBar
-                    x:Name="EmptyStateElevatedBar"
-                    Margin="0,2,0,0"
-                    HorizontalAlignment="Center"
-                    FontSize="12"
-                    IsClosable="True"
-                    IsOpen="False"
-                    Padding="12,4"
-                    Severity="Warning" />
-            </StackPanel>
+                        Glyph="{Binding EmptyStateGlyph}" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        Text="{Binding EmptyStateTitle}" />
+                    <TextBlock
+                        MaxWidth="240"
+                        HorizontalAlignment="Center"
+                        FontSize="11.5"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        svc:Localized.Key="Widget.Empty.ActionsHint" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                        <Button svc:Localized.AutomationNameKey="Widget.AddFile"
+                            x:Name="EmptyAddButton"
+                            CornerRadius="8" Padding="14,8"
+                            HorizontalAlignment="Center"
+                            Click="AddButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                <TextBlock x:Name="EmptyAddButtonText" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            x:Name="EmptyStateHelpButton"
+                            Width="24"
+                            Height="24"
+                            Padding="0"
+                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="EmptyStateHelpButton_Click"
+                            CornerRadius="12">
+                            <FlyoutBase.AttachedFlyout>
+                                <Flyout x:Name="EmptyStateHelpFlyout" Placement="Bottom">
+                                    <StackPanel Width="232" Spacing="6">
+                                        <TextBlock
+                                            FontSize="13"
+                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                            TextWrapping="Wrap"
+                                            svc:Localized.Key="Widget.Empty.HelpTipTitle" />
+                                        <TextBlock
+                                            FontSize="11.5"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="Wrap"
+                                            svc:Localized.Key="Widget.Empty.HelpTipCause" />
+                                        <TextBlock
+                                            FontSize="11.5"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="Wrap"
+                                            svc:Localized.Key="Widget.Empty.HelpTipCheck" />
+                                        <TextBlock
+                                            FontSize="11.5"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            TextWrapping="Wrap"
+                                            svc:Localized.Key="Widget.Empty.HelpTipSolution" />
+                                    </StackPanel>
+                                </Flyout>
+                            </FlyoutBase.AttachedFlyout>
+                            <FontIcon
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="&#xE897;" />
+                        </Button>
+                    </StackPanel>
+                    <InfoBar
+                        x:Name="EmptyStateElevatedBar"
+                        Margin="0,2,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="12"
+                        IsClosable="True"
+                        IsOpen="False"
+                        Padding="12,4"
+                        Severity="Warning" />
+                </StackPanel>
+            </ScrollViewer>
 
             <Border
                 x:Name="DropOverlay"

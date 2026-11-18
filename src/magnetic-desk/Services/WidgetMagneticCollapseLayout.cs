@@ -6,6 +6,47 @@ internal sealed record MagneticCompactMember(string Id, RectInt32 Expanded, Size
 
 internal static class WidgetMagneticCollapseLayout
 {
+    internal static IReadOnlyDictionary<string, RectInt32> ArrangeTransition(
+        IReadOnlyDictionary<string, RectInt32> expanded, IReadOnlyDictionary<string, SizeInt32> sizes,
+        string? anchor, int spacing, int tolerance)
+    {
+        IReadOnlyDictionary<string, RectInt32> targets = expanded.ToDictionary();
+        foreach (var pair in expanded.OrderBy(pair => pair.Value.Y).ThenBy(pair => pair.Value.X))
+        {
+            SizeInt32 size = sizes[pair.Key];
+            if (size.Width == pair.Value.Width && size.Height == pair.Value.Height) continue;
+            RectInt32 current = targets[pair.Key];
+            int x = anchor?.Contains("Right", StringComparison.Ordinal) == true ? current.X + current.Width - size.Width : current.X;
+            int y = anchor?.Contains("Bottom", StringComparison.Ordinal) == true ? current.Y + current.Height - size.Height : current.Y;
+            targets = WidgetMagneticResizeLayout.Arrange(targets, pair.Key, new(x, y, size.Width, size.Height), expanded, anchor, spacing, tolerance);
+        }
+        return targets;
+    }
+
+    internal static IReadOnlyDictionary<string, RectInt32> RestoreExpanded(
+        IReadOnlyDictionary<string, RectInt32> expanded, PointInt32 origin,
+        IReadOnlyDictionary<string, RectInt32>? attachment = null, string? anchor = null,
+        int spacing = 8, int tolerance = 12)
+    {
+        if (expanded.Count == 0) return new Dictionary<string, RectInt32>();
+        IReadOnlyDictionary<string, RectInt32> restored = expanded;
+        if (attachment is not null)
+        {
+            restored = attachment.ToDictionary();
+            foreach (var pair in expanded.OrderBy(p => attachment[p.Key].Y)
+                .ThenBy(p => attachment[p.Key].X).ThenBy(p => p.Key, StringComparer.Ordinal))
+            {
+                if (pair.Value.Equals(attachment[pair.Key]) || pair.Value.Equals(restored[pair.Key])) continue;
+                restored = WidgetMagneticResizeLayout.Arrange(restored, pair.Key, pair.Value,
+                    attachment, anchor, spacing, tolerance);
+            }
+        }
+        RectInt32 savedOrigin = WidgetCoordinatedMoveCalculator.GetUnion(restored.Values);
+        return restored.ToDictionary(p => p.Key, p => new RectInt32(
+            p.Value.X + origin.X - savedOrigin.X, p.Value.Y + origin.Y - savedOrigin.Y,
+            p.Value.Width, p.Value.Height));
+    }
+
     internal static IReadOnlyDictionary<string, RectInt32> KeepVisible(
         IReadOnlyDictionary<string, RectInt32> targets, RectInt32 workArea)
     {

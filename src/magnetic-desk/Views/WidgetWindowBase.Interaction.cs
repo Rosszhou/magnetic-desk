@@ -33,7 +33,7 @@ public abstract partial class WidgetWindowBase
     {
         if (!controlPressed || !IsDragging || !HasMovedTitleBarDrag) return false;
         _controlDragPreviousCompanions = App.Current?.WidgetManager?.GetMagneticCompanionIds(Config) ?? [];
-        _detachedMagneticGroupThisDrag = App.Current?.WidgetManager?.LeaveMagneticGroup(Config) == true;
+        _detachedMagneticGroupThisDrag = App.Current?.WidgetManager?.LeaveMagneticGroup(Config, continueDrag: true) == true;
         if (_detachedMagneticGroupThisDrag) App.Current?.WidgetManager?.CancelWidgetGroupDrag(Config.Id);
         return _detachedMagneticGroupThisDrag;
     }
@@ -307,6 +307,8 @@ public abstract partial class WidgetWindowBase
 
     protected void BeginWindowDragCore(PointerRoutedEventArgs e, FrameworkElement captureElement)
     {
+        if (IsPositionLocked || App.Current?.WidgetManager?.IsMagneticLayoutLocked(Config) == true) return;
+        App.Current?.WidgetManager?.BeginLayoutOperation(Config.Id, "Magnetic.Undo.Move");
         _magneticDockCompleted = false;
         App.Current?.WidgetManager?.CancelMagneticDockDrag(Config.Id);
         CancelPendingTitleBarDragFrame();
@@ -437,6 +439,7 @@ public abstract partial class WidgetWindowBase
 
         if (TryMoveCompactArrangement(frame.ProposedBounds, out _))
         {
+            App.Current?.WidgetManager?.UpdateMagneticDockDrag(Config.Id);
             return;
         }
 
@@ -451,16 +454,13 @@ public abstract partial class WidgetWindowBase
             snappedBounds.Height,
             persist: false,
             updateConfig: false);
-        if (!IsCompactBoundsStateActive)
+        if (App.Current?.WidgetManager?.UpdateMagneticDockDrag(Config.Id) == true)
         {
-            if (App.Current?.WidgetManager?.UpdateMagneticDockDrag(Config.Id) == true)
-            {
-                App.Current.WidgetManager.CancelWidgetGroupDrag(Config.Id);
-            }
-            else if (!_detachedMagneticGroupThisDrag)
-            {
-                App.Current?.WidgetManager?.UpdateWidgetGroupDragPreview(Config.Id);
-            }
+            App.Current.WidgetManager.CancelWidgetGroupDrag(Config.Id);
+        }
+        else if (!IsCompactBoundsStateActive && !_detachedMagneticGroupThisDrag)
+        {
+            App.Current?.WidgetManager?.UpdateWidgetGroupDragPreview(Config.Id);
         }
     }
 
@@ -503,6 +503,7 @@ public abstract partial class WidgetWindowBase
             HasMovedTitleBarDrag = false;
             App.Current.WidgetManager.RestoreTemporarilyRaisedWidgetsToDesktopLayer(
                 "coordinated-drag-ended");
+            App.Current?.WidgetManager?.CompleteLayoutOperation(Config.Id);
             e.Handled = true;
             return;
         }
@@ -540,6 +541,7 @@ public abstract partial class WidgetWindowBase
         QueueBackdropRefresh();
         App.Current?.WidgetManager?.RestoreTemporarilyRaisedWidgetsToDesktopLayer(
             "drag-ended");
+        App.Current?.WidgetManager?.CompleteLayoutOperation(Config.Id);
         e.Handled = true;
     }
 
@@ -547,6 +549,7 @@ public abstract partial class WidgetWindowBase
 
     protected void ResizeBorder_PointerPressedCore(object sender, PointerRoutedEventArgs e)
     {
+        if (App.Current?.WidgetManager?.IsMagneticLayoutLocked(Config) == true) return;
         if (IsSizeLocked || IsResizing || sender is not FrameworkElement element)
         {
             return;
@@ -566,6 +569,7 @@ public abstract partial class WidgetWindowBase
             return;
         }
 
+        App.Current?.WidgetManager?.BeginLayoutOperation(Config.Id, "Magnetic.Undo.Resize");
         BeginWidgetBoundsInteraction();
         IsResizing = true;
         // Per-commit config sync from AppWindow.Changed would fight the
@@ -693,7 +697,11 @@ public abstract partial class WidgetWindowBase
         finally
         {
             try { App.Current?.WidgetManager?.CompleteMagneticResize(this); }
-            finally { _deferInteractiveResizeConfigUpdates = false; }
+            finally
+            {
+                _deferInteractiveResizeConfigUpdates = false;
+                App.Current?.WidgetManager?.CompleteLayoutOperation(Config.Id);
+            }
         }
     }
 
@@ -791,6 +799,7 @@ public abstract partial class WidgetWindowBase
             HasMovedTitleBarDrag = false;
             App.Current.WidgetManager.RestoreTemporarilyRaisedWidgetsToDesktopLayer(
                 "coordinated-drag-capture-lost");
+            App.Current?.WidgetManager?.CompleteLayoutOperation(Config.Id);
             e.Handled = true;
             return;
         }
@@ -823,6 +832,7 @@ public abstract partial class WidgetWindowBase
         QueueBackdropRefresh();
         App.Current?.WidgetManager?.RestoreTemporarilyRaisedWidgetsToDesktopLayer(
             "drag-capture-lost");
+        App.Current?.WidgetManager?.CompleteLayoutOperation(Config.Id);
         e.Handled = true;
     }
 

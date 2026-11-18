@@ -65,7 +65,7 @@ public sealed class WidgetMagneticMouseLeaveTests
         int detach = source.IndexOf("DetachMagneticMemberForControlDrag(_titleBarDragControlPressed)", moved, StringComparison.Ordinal);
         Assert.True(distanceCheck < moved && moved < detach);
         Assert.Contains("!controlPressed || !IsDragging || !HasMovedTitleBarDrag", source);
-        Assert.Contains("else if (!_detachedMagneticGroupThisDrag)", source);
+        Assert.Contains("else if (!IsCompactBoundsStateActive && !_detachedMagneticGroupThisDrag)", source);
     }
 
     [Fact]

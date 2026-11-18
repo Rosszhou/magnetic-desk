@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="MagneticDesk.Views.SettingsSections.MagneticLayoutSettingsSection"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:MagneticDesk.Controls"
+    xmlns:svc="using:MagneticDesk.Services"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls">
+    <StackPanel Spacing="20">
+        <TextBlock FontSize="28" FontWeight="SemiBold" AutomationProperties.HeadingLevel="Level1" svc:Localized.Key="Design.Settings.Layout" />
+        <Grid x:Name="LayoutGrid" ColumnSpacing="20" RowSpacing="20" SizeChanged="LayoutGrid_SizeChanged">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="1.2*" /></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <StackPanel x:Name="SettingsColumn" Spacing="16">
+                <Border Style="{StaticResource MagneticSurfaceStyle}" Padding="20">
+                    <StackPanel x:Name="SettingsControlsPanel" Spacing="20">
+                        <toolkit:SettingsCard BorderThickness="0" Background="Transparent" Padding="0" CornerRadius="0"
+                            svc:Localized.HeaderKey="Design.Settings.AlignTitle" svc:Localized.DescriptionKey="Design.Settings.AlignDescription">
+                            <ToggleSwitch svc:Localized.AutomationNameKey="Design.Settings.AlignTitle" IsOn="{Binding SnapEnabled, Mode=TwoWay}" OnContent="" OffContent="" MinWidth="0" />
+                        </toolkit:SettingsCard>
+                        <Border Height="1" Background="{ThemeResource MagneticStrokeBrush}" />
+                        <toolkit:SettingsCard BorderThickness="0" Background="Transparent" Padding="0" CornerRadius="0" ContentAlignment="Vertical" HorizontalContentAlignment="Stretch"
+                            svc:Localized.HeaderKey="Settings.WidgetSnap.Spacing.Title">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding SnapSpacingText}" HorizontalAlignment="Right" FontSize="12" />
+                                <Slider Width="{Binding ElementName=SettingsControlsPanel, Path=ActualWidth}" MinWidth="0" HorizontalAlignment="Stretch" Minimum="0" Maximum="40" StepFrequency="1" IsEnabled="{Binding SnapEnabled}" IsThumbToolTipEnabled="False" Value="{Binding SnapSpacing, Mode=TwoWay}" svc:Localized.AutomationNameKey="Settings.WidgetSnap.Spacing.Title" />
+                            </StackPanel>
+                        </toolkit:SettingsCard>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource MagneticSurfaceStyle}" Padding="20">
+                    <StackPanel Spacing="16">
+                        <TextBlock FontWeight="SemiBold" svc:Localized.Key="Design.Settings.GroupActions" />
+                        <Grid ColumnSpacing="12">
+                            <TextBlock VerticalAlignment="Center" svc:Localized.Key="Magnetic.Undo" />
+                            <Border HorizontalAlignment="Right" Padding="8,4" Background="{ThemeResource MagneticPaneBrush}" CornerRadius="6"><TextBlock Text="Ctrl + Z" FontSize="12" /></Border>
+                        </Grid>
+                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" svc:Localized.Key="Design.Settings.UndoHint" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            <Border x:Name="PreviewColumn" Grid.Column="1" Style="{StaticResource MagneticSurfaceStyle}" Padding="20">
+                <StackPanel Spacing="16">
+                    <TextBlock FontWeight="SemiBold" svc:Localized.Key="Design.Settings.Preview" />
+                    <controls:MagneticLayoutPreview x:Name="LayoutPreview" SnapSpacing="{Binding SnapSpacing}" SnapEnabled="{Binding SnapEnabled}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Border Style="{StaticResource MagneticSurfaceStyle}" Padding="20">
+            <Grid ColumnSpacing="18">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                <Border Width="44" Height="44" CornerRadius="10" Background="{ThemeResource MagneticSelectionBrush}"><FontIcon Glyph="&#xE72E;" Foreground="{ThemeResource MagneticAccentBrush}" FontSize="19" /></Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                    <TextBlock FontWeight="SemiBold" svc:Localized.Key="Magnetic.LockLayout" />
+                    <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" svc:Localized.Key="Design.Settings.LockHint" />
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Button HorizontalAlignment="Left" Click="Appearance_Click" Style="{StaticResource MagneticActionStyle}" svc:Localized.Key="Design.Settings.Appearance" />
+    </StackPanel>
+</UserControl>

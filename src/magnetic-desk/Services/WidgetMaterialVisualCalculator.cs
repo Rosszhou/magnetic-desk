@@ -92,16 +92,7 @@ internal static class WidgetMaterialVisualCalculator
         bool isDark,
         Windows.UI.Color accentColor)
     {
-        var baseColor = isDark
-            ? Windows.UI.Color.FromArgb(0xFF, 0x20, 0x22, 0x26)
-            : Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
-
-        return BuildAccentSurfaceColor(
-            isDark,
-            accentColor,
-            baseColor,
-            accentMix: isDark ? 0.08 : 0.16,
-            overlayMix: isDark ? 0.04 : 0.08);
+        return BuildContentSolidSurfaceColor(isDark, accentColor, surfaceOpacity: 1.0);
     }
 
     public static Windows.UI.Color BuildMicaFallbackColor(bool isDark, bool useAlt)
@@ -139,10 +130,10 @@ internal static class WidgetMaterialVisualCalculator
                 isDark,
                 accentColor,
                 isDark
-                    ? Windows.UI.Color.FromArgb(0xFF, 0x21, 0x24, 0x2A)
-                    : Windows.UI.Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF),
-                accentMix: 0.18,
-                overlayMix: isDark ? 0.15 : 0.04),
+                    ? Windows.UI.Color.FromArgb(0xFF, 0x26, 0x2B, 0x33)
+                    : Windows.UI.Color.FromArgb(0xFF, 0xFA, 0xFA, 0xF8),
+                accentMix: 0.02,
+                overlayMix: 0.01),
             Math.Clamp(surfaceOpacity, 0.0, 1.0));
     }
 

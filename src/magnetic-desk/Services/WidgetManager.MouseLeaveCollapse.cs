@@ -13,7 +13,7 @@ public sealed partial class WidgetManager
 
     internal bool HasMouseLeaveAutoCollapse(WidgetWindowBase window) => _mouseLeaveExpandedWindows.Contains(window);
 
-    private string MouseLeaveScopeId(Models.WidgetConfig config) => GetMagneticGroupId(config) is { } id
+    private string MouseLeaveScopeId(Models.WidgetConfig config) => config.MagneticCollapseLinked && GetMagneticGroupId(config) is { } id
         ? $"magnetic:{id}" : $"surface:{config.Id}";
 
     private WidgetWindowBase[] GetMouseLeaveScope(WidgetWindowBase window) =>
@@ -34,6 +34,7 @@ public sealed partial class WidgetManager
 
     internal void ArmMouseLeaveAutoCollapse(WidgetWindowBase window)
     {
+        NormalizeMagneticCollapseMembership(window.Config);
         if (!window.CanCollapseAfterMouseLeave) return;
         foreach (var member in GetMouseLeaveScope(window).Where(w => w.CanCollapseAfterMouseLeave && !w.IsCompactArrangementActive))
             _mouseLeaveExpandedWindows.Add(member);
@@ -49,6 +50,7 @@ public sealed partial class WidgetManager
 
     internal void CancelMouseLeaveAutoCollapse(WidgetWindowBase window, bool wholeScope = true)
     {
+        if (wholeScope) NormalizeMagneticCollapseMembership(window.Config);
         var members = wholeScope ? GetMouseLeaveScope(window) : [window];
         foreach (var member in members)
         {

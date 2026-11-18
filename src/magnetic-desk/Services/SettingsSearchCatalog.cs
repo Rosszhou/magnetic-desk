@@ -9,6 +9,7 @@ internal static class SettingsSearchCatalog
 {
     internal static IReadOnlyList<SettingsSearchCatalogEntry> Entries { get; } =
     [
+        new("General", "Settings.Section.Maintenance", "Design.Settings.DataHint"),
         new("General", "Settings.Language.Title", "Settings.Language.Description"),
         new("General", "Settings.AutoStart.Title", "Settings.AutoStart.Description"),
         new("General", "Settings.AutoStart.Mode.Title", "Settings.AutoStart.Mode.Description"),
@@ -17,6 +18,8 @@ internal static class SettingsSearchCatalog
         new("General", "Settings.Displays.Title", "Settings.Displays.Description"),
         new("General", "Settings.AttachmentStorageMode.Title", "Settings.AttachmentStorageMode.Description"),
         new("General", "Settings.Onboarding.Title", "Settings.Onboarding.Description"),
+        new("MagneticLayout", "Design.Settings.AlignTitle", "Design.Settings.AlignDescription"),
+        new("MagneticLayout", "Settings.WidgetSnap.Spacing.Title", null),
         new("Appearance", "Settings.Density.Title", null),
         new("AppearanceDensitySettings", "Settings.Density.Title", "Settings.Density.Description"),
         new("AppearanceDensitySettings", "Settings.Density.Scale.Title", "Settings.Density.Scale.Description"),
@@ -85,8 +88,6 @@ internal static class SettingsSearchCatalog
         new("InteractionWindowSettings", "Settings.ShowDesktopBehavior.Title", "Settings.ShowDesktopBehavior.Description"),
         new("InteractionWindowSettings", "Settings.OpenMethod.Title", "Settings.OpenMethod.Description"),
         new("InteractionWindowSettings", "Settings.Interaction.Hover.Title", "Settings.Interaction.Hover.Description"),
-        new("InteractionWindowSettings", "Settings.ResizeSnap.Title", "Settings.ResizeSnap.Description"),
-        new("InteractionWindowSettings", "Settings.WidgetSnap.Spacing.Title", "Settings.WidgetSnap.Spacing.Description"),
         new("InteractionWindowSettings", "Settings.DesktopDoubleClick.Title", "Settings.DesktopDoubleClick.Description"),
         new("ManagedStorage", "Settings.ManagedStorage.ListTitle", null),
         new("QuickCaptureSettings", "Settings.QuickCapture.Title", null),

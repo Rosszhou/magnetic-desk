@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MagneticDesk.Services;
 
 namespace MagneticDesk.Tests;
 
@@ -307,6 +308,9 @@ public sealed class SettingsCopyAndHierarchyTests
             fileWidgetXaml.IndexOf("Tag=\"FileDisplaySettings\"", StringComparison.Ordinal));
         Assert.Contains("Click=\"OrganizeDesktopButton_Click\"", fileWidgetXaml, StringComparison.Ordinal);
         Assert.Contains("DesktopOrganization.Settings.StartAction", fileWidgetXaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tag=\"FeatureWidgets\"", fileWidgetXaml, StringComparison.Ordinal);
+        Assert.DoesNotContain(SettingsSearchCatalog.Entries, entry =>
+            entry.SectionTag == "AppearanceDetail" && entry.HeaderKey == "Settings.Section.FeatureWidgets");
         Assert.True(
             fileWidgetXaml.IndexOf("Tag=\"FileStackSettings\"", StringComparison.Ordinal) <
             fileWidgetXaml.IndexOf("FeatureWidgets.FolderOpenBehavior", StringComparison.Ordinal));
@@ -336,10 +340,6 @@ public sealed class SettingsCopyAndHierarchyTests
             StringComparison.Ordinal);
         int globalHotkey = windowXaml.IndexOf(
             "svc:Localized.HeaderKey=\"Settings.GlobalHotkey.Title\"",
-            interactionDetail,
-            StringComparison.Ordinal);
-        int resizeSnap = windowXaml.IndexOf(
-            "svc:Localized.HeaderKey=\"Settings.ResizeSnap.Title\"",
             interactionDetail,
             StringComparison.Ordinal);
         int desktopDoubleClick = windowXaml.IndexOf(
@@ -373,8 +373,9 @@ public sealed class SettingsCopyAndHierarchyTests
         Assert.True(showDesktopBehavior > globalHotkey);
         Assert.True(openMethod > showDesktopBehavior);
         Assert.True(hoverActions > openMethod);
-        Assert.True(resizeSnap > hoverActions);
-        Assert.True(desktopDoubleClick > resizeSnap);
+        Assert.True(desktopDoubleClick > hoverActions);
+        string layoutXaml = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml"));
+        Assert.Contains("HeaderKey=\"Design.Settings.AlignTitle\"", layoutXaml, StringComparison.Ordinal);
         Assert.True(generalSection >= 0);
         Assert.True(generalSection < language);
         Assert.True(language < autoStart);

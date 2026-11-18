@@ -6,7 +6,7 @@ English | [简体中文](README.zh-CN.md)
 
 ## Download and install
 
-Download `magnetic-desk_Setup_1.0.0_x64.exe` from [GitHub Releases](https://github.com/Rosszhou/magnetic-desk/releases/latest) and run the installer.
+Download `magnetic-desk_Setup_1.1.0_x64.exe` from [GitHub Releases](https://github.com/Rosszhou/magnetic-desk/releases/latest) and run the installer.
 
 - Supports x64 Windows 10 version 2004 (build 19041) or later and Windows 11.
 - Includes its runtime components for offline installation.
@@ -19,10 +19,12 @@ Download `magnetic-desk_Setup_1.0.0_x64.exe` from [GitHub Releases](https://gith
 - Drag a widget near another edge and hold for three seconds to form a magnetic group. Drag a title to move the group. Hold Ctrl to detach and move one member.
 - Expand and collapse a magnetic group together. Temporary expansion collapses after the pointer stays outside for five seconds. An arriving widget inherits an existing group's shared collapse mode.
 - Choose capsule styles and magnetic animations, with layouts saved across restarts.
+- Preview the docking outline and alignment guides. Nearby compact targets open while awaiting attachment, with collision checks across the entire group.
+- Undo grouping, splitting, movement, and resizing. Lock a group's layout to prevent accidental movement.
 - Add notes, clipboard, todo, and search widgets through the title-bar plus menu.
 - Use local backup and recovery. The interface supports English and Simplified Chinese. System language selects Chinese for Chinese systems and English otherwise.
 
-This edition is version 1.0.0. Weather, music, Glance, WebDAV backup, and application update entry points have been removed from this edition. Legacy configuration models remain for compatibility.
+This edition is version 1.1.0. Weather, music, Glance, WebDAV backup, and application update entry points have been removed from this edition. Legacy configuration models remain for compatibility.
 
 ## Build and verification
 
@@ -43,7 +45,7 @@ Run the managed regression subset covering magnetic layout, movement, localizati
 dotnet test tests/magnetic-desk.ManagedRegression/magnetic-desk.ManagedRegression.csproj -p:Platform=x64 -p:RuntimeIdentifier=win-x64
 ```
 
-Historical tests have been migrated to the current feature set. The full Release suite passes 5,261 tests, and the standalone uninstaller passes 9 tests, with no skipped tests. The native test stage requires the Rust toolchain.
+Historical tests have been migrated to the current feature set. The full Release suite passes 5,323 tests, and the standalone uninstaller passes 9 tests, with no skipped tests. The native test stage requires the Rust toolchain.
 
 ```powershell
 dotnet test tests/magnetic-desk.Tests/magnetic-desk.Tests.csproj -c Release -p:Platform=x64 -p:RuntimeIdentifier=win-x64 -p:WindowsAppSDKSelfContained=true -p:WindowsAppSdkBootstrapInitialize=false

@@ -40,12 +40,12 @@ public sealed partial class SettingsWindow : Window
         bool HasReset,
         bool HasToggle);
 
-    private const int DefaultWindowWidth = 1040;
+    private const int DefaultWindowWidth = 1180;
     private const int DefaultWindowHeight = 760;
     private const int MinWindowWidth = 800;
     private const int MinWindowHeight = 560;
     private const int WindowWorkAreaMargin = 48;
-    private const double ContentMaxWidth = 820;
+    private const double ContentMaxWidth = 980;
     private const double PageSidePadding = 24;
     private const double RowStackContentThreshold = 620;
     private const double NarrowTitleThreshold = 560;
@@ -88,30 +88,31 @@ public sealed partial class SettingsWindow : Window
     private static readonly IReadOnlyDictionary<string, SettingsSectionRoute> SectionRoutes =
         new Dictionary<string, SettingsSectionRoute>(StringComparer.Ordinal)
         {
+            ["MagneticLayout"] = new("MagneticLayout", "Design.Settings.Layout", null, "MagneticLayout"),
             ["General"] = new("General", "Settings.Section.General", null, "General"),
             ["PerformanceSettings"] = new("PerformanceSettings", "Settings.Performance.Title", "General", "General"),
-            ["Appearance"] = new("Appearance", "Settings.Section.Appearance", null, "Appearance"),
+            ["Appearance"] = new("Appearance", "Settings.Section.Appearance", "MagneticLayout", "MagneticLayout"),
             ["CapsuleMode"] = new("CapsuleMode", "Settings.Section.CapsuleMode", null, "CapsuleMode"),
-            ["WidgetGroups"] = new("WidgetGroups", "Settings.Section.WidgetGroups", "Appearance", "Appearance"),
+            ["WidgetGroups"] = new("WidgetGroups", "Settings.Section.WidgetGroups", "Appearance", "MagneticLayout"),
             ["AppearanceDetail"] = new("AppearanceDetail", "Settings.Appearance.DetailTitle", null, "AppearanceDetail"),
-            ["FeatureWidgets"] = new("FeatureWidgets", "Settings.Section.FeatureWidgets", null, "FeatureWidgets"),
+            ["FeatureWidgets"] = new("FeatureWidgets", "Settings.Section.FeatureWidgets", "AppearanceDetail", "AppearanceDetail"),
             ["Interaction"] = new("Interaction", "Settings.Section.Interaction", null, "Interaction"),
             ["Displays"] = new("Displays", "Settings.Displays.Title", "General", "General"),
             ["Advanced"] = new("Advanced", "Settings.Section.Advanced", null, "Interaction"),
-            ["Maintenance"] = new("Maintenance", "Settings.Section.Maintenance", null, "Maintenance"),
+            ["Maintenance"] = new("Maintenance", "Settings.Section.Maintenance", "General", "General"),
             ["About"] = new("About", "Settings.Nav.About", null, "About"),
             ["FileDisplaySettings"] = new("FileDisplaySettings", "Settings.Group.FileLayout.Title", "AppearanceDetail", "AppearanceDetail"),
             ["ManagedStorage"] = new("ManagedStorage", "Settings.ManagedStorage.PageTitle", "AppearanceDetail", "AppearanceDetail"),
             ["FileStackSettings"] = new("FileStackSettings", "Settings.FileStacks.PageTitle", "AppearanceDetail", "AppearanceDetail"),
             ["DesktopOrganizationSettings"] = new("DesktopOrganizationSettings", "DesktopOrganization.Settings.Title", "AppearanceDetail", "AppearanceDetail"),
-            ["QuickCaptureSettings"] = new("QuickCaptureSettings", "Settings.QuickCapture.Title", "FeatureWidgets", "FeatureWidgets"),
-            ["TodoSettings"] = new("TodoSettings", "Settings.Todo.Title", "FeatureWidgets", "FeatureWidgets"),
-            ["SearchSettings"] = new("SearchSettings", "Settings.Search.Title", "FeatureWidgets", "FeatureWidgets"),
-            ["AppearanceDensitySettings"] = new("AppearanceDensitySettings", "Settings.Density.Title", "Appearance", "Appearance"),
+            ["QuickCaptureSettings"] = new("QuickCaptureSettings", "Settings.QuickCapture.Title", "FeatureWidgets", "AppearanceDetail"),
+            ["TodoSettings"] = new("TodoSettings", "Settings.Todo.Title", "FeatureWidgets", "AppearanceDetail"),
+            ["SearchSettings"] = new("SearchSettings", "Settings.Search.Title", "FeatureWidgets", "AppearanceDetail"),
+            ["AppearanceDensitySettings"] = new("AppearanceDensitySettings", "Settings.Density.Title", "Appearance", "MagneticLayout"),
             ["CapsuleOverridesSettings"] = new("CapsuleOverridesSettings", "Settings.Capsule.Overrides.Title", "CapsuleMode", "CapsuleMode"),
-            ["BackupRestoreSettings"] = new("BackupRestoreSettings", "Settings.DataBackup.Title", "Maintenance", "Maintenance"),
-            ["DataHealthSettings"] = new("DataHealthSettings", "Settings.AttachmentHealth.Title", "Maintenance", "Maintenance"),
-            ["CompatibilityDiagnosticsSettings"] = new("CompatibilityDiagnosticsSettings", "Settings.DragDropPermission.Title", "Maintenance", "Maintenance")
+            ["BackupRestoreSettings"] = new("BackupRestoreSettings", "Settings.DataBackup.Title", "Maintenance", "General"),
+            ["DataHealthSettings"] = new("DataHealthSettings", "Settings.AttachmentHealth.Title", "Maintenance", "General"),
+            ["CompatibilityDiagnosticsSettings"] = new("CompatibilityDiagnosticsSettings", "Settings.DragDropPermission.Title", "Maintenance", "General")
         };
 
     public SettingsViewModel ViewModel { get; }
@@ -280,8 +281,8 @@ public sealed partial class SettingsWindow : Window
         ApplyLocalizedText();
         RefreshManagedStoragePathWarning();
         LogConstructionCheckpoint("localized-content");
-        SettingsNavigationView.SelectedItem = GeneralNavItem;
-        ShowSettingsSection("General");
+        SettingsNavigationView.SelectedItem = MagneticLayoutNavItem;
+        ShowSettingsSection("MagneticLayout");
         UpdateResponsiveLayout(GetWindowWidth());
         LogConstructionCheckpoint("initial-section");
 

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="MagneticControlAccentBrush" Color="#2563EB" />
+            <SolidColorBrush x:Key="MagneticControlAccentHoverBrush" Color="#1D55D5" />
+            <SolidColorBrush x:Key="MagneticControlAccentPressedBrush" Color="#194ABB" />
+            <StaticResource x:Key="AccentButtonBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderTrackValueFill" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderThumbBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="NavigationViewSelectionIndicatorForeground" ResourceKey="MagneticControlAccentBrush" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="MagneticControlAccentBrush" Color="#79ADFF" />
+            <SolidColorBrush x:Key="MagneticControlAccentHoverBrush" Color="#95BEFF" />
+            <SolidColorBrush x:Key="MagneticControlAccentPressedBrush" Color="#AECFFF" />
+            <StaticResource x:Key="AccentButtonBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderTrackValueFill" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderThumbBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="NavigationViewSelectionIndicatorForeground" ResourceKey="MagneticControlAccentBrush" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="MagneticControlAccentBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="MagneticControlAccentHoverBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="MagneticControlAccentPressedBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <StaticResource x:Key="AccentButtonBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="AccentButtonBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderTrackValueFill" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderTrackValueFillPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="SliderThumbBackground" ResourceKey="MagneticControlAccentBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPointerOver" ResourceKey="MagneticControlAccentHoverBrush" />
+            <StaticResource x:Key="SliderThumbBackgroundPressed" ResourceKey="MagneticControlAccentPressedBrush" />
+            <StaticResource x:Key="NavigationViewSelectionIndicatorForeground" ResourceKey="MagneticControlAccentBrush" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

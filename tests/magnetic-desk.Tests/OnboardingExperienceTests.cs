@@ -45,98 +45,45 @@ public sealed class OnboardingExperienceTests
     ];
 
     [Fact]
-    public void TaskFlow_PresentsAFiveStepJourneyWithOnePersistentScene()
+    public void TaskFlow_PresentsThreeStepsWithOneInteractivePreview()
     {
         string root = FindRepositoryRoot();
-        string xaml = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.xaml"));
-        string codeBehind = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
-
-        Assert.Contains("StepCount = 5", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("0 => Step1Panel", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("1 => Step2Panel", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("2 => Step3Panel", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("3 => Step4Panel", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("4 => Step5Panel", codeBehind, StringComparison.Ordinal);
-
-        // The scene stage is mounted once; each step owns one hero illustration.
-        Assert.Contains("x:Name=\"ScenePanel\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneStage\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneHalo\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneMark\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneDropBox\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneFileToken\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneKeycapHost\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneTrayMenu\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"SceneFeatureTiles\"", xaml, StringComparison.Ordinal);
-
-        Assert.Contains("Click=\"Step3Try_Click\"", xaml, StringComparison.Ordinal);
-        Assert.Contains("Click=\"Step4OpenMenu_Click\"", xaml, StringComparison.Ordinal);
-        foreach (string kind in new[] { "Todo", "QuickCapture", "Search" })
-        {
-            Assert.Contains(
-                $"Tag=\"{kind}\" Toggled=\"Step5FeatureToggle_Toggled\"",
-                xaml,
-                StringComparison.Ordinal);
-        }
+        string xaml = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/OnboardingWindow.xaml"));
+        string window = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
+        Assert.Contains("StepCount = 3", window, StringComparison.Ordinal);
+        Assert.Contains("CurrentOnboardingVersion = 4", window, StringComparison.Ordinal);
+        foreach (string panel in new[] { "Step1Panel", "Step2Panel", "Step3Panel" })
+            Assert.Contains("x:Name=\"" + panel + "\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("<controls:MagneticLayoutPreview", xaml, StringComparison.Ordinal);
+        Assert.Contains("Click=\"CreateWidget_Click\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Click=\"Settings_Click\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("WelcomeBrandArt", xaml, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void Scene_MorphsBetweenStepsWithCompositorMotionAndHonorsReducedMotion()
+    public void MagneticPractice_UsesDockingPolicyAndCleansUpInterruptedInput()
     {
         string root = FindRepositoryRoot();
-        string scene = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.Scene.cs"));
-        string codeBehind = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
-
-        Assert.Contains("ApplySceneState(int step, bool animate)", scene, StringComparison.Ordinal);
-        Assert.Contains("StartSceneLoops(int step)", scene, StringComparison.Ordinal);
-        Assert.Contains("StartFileFlightLoop", scene, StringComparison.Ordinal);
-        Assert.Contains("StartKeycapPressLoop", scene, StringComparison.Ordinal);
-        Assert.Contains("StartTrayHaloLoop", scene, StringComparison.Ordinal);
-        Assert.Contains("StartFeatureFloatLoop", scene, StringComparison.Ordinal);
-        Assert.Contains("AnimationIterationBehavior.Forever", scene, StringComparison.Ordinal);
-        Assert.Contains(
-            "WindowsCompatibilityService.AreAnimationsEnabled",
-            scene,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "WindowsCompatibilityService.AreAnimationsEnabled",
-            codeBehind,
-            StringComparison.Ordinal);
-        Assert.Contains("PlayTextColumnSwap", codeBehind, StringComparison.Ordinal);
-        Assert.Contains("ElementCompositionPreview", codeBehind, StringComparison.Ordinal);
+        string preview = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Controls/MagneticLayoutPreview.xaml.cs"));
+        string scene = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/OnboardingWindow.Scene.cs"));
+        Assert.Contains("WidgetMagneticDockPolicy.FindContact", preview, StringComparison.Ordinal);
+        Assert.Contains("DragHandle_PointerCaptureLost", preview, StringComparison.Ordinal);
+        Assert.Contains("_timer.Stop()", preview, StringComparison.Ordinal);
+        Assert.Contains("UndoDemo()", preview, StringComparison.Ordinal);
+        Assert.Contains("Unloaded +=", preview, StringComparison.Ordinal);
+        Assert.Contains("Grid.SetRow(PreviewHost, stacked ? 1 : 0)", scene, StringComparison.Ordinal);
+        Assert.DoesNotContain("AnimationIterationBehavior.Forever", preview, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void SummonAndTraySteps_DriveTheRealEntryPoints()
+    public void CreateAndSettingsActions_DriveTheRealEntryPoints()
     {
         string root = FindRepositoryRoot();
-        string steps = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.Steps.cs"));
-        string windowCode = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
-
-        Assert.Contains("ToggleWidgetsForOnboardingAsync", steps, StringComparison.Ordinal);
-        Assert.Contains("ShowTrayContextMenuForOnboarding", steps, StringComparison.Ordinal);
-        Assert.Contains("OnOnboardingWidgetsVisibilityChanged", steps, StringComparison.Ordinal);
-        Assert.Contains(
-            "OnboardingWidgetsVisibilityChanged += OnOnboardingWidgetsVisibilityChanged",
-            windowCode,
-            StringComparison.Ordinal);
-        Assert.Contains(
-            "OnboardingWidgetsVisibilityChanged -= OnOnboardingWidgetsVisibilityChanged",
-            windowCode,
-            StringComparison.Ordinal);
-        Assert.Contains("FormatActivation", steps, StringComparison.Ordinal);
+        string steps = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/OnboardingWindow.Steps.cs"));
+        Assert.Contains("CreateManagedWidgetAsync()", steps, StringComparison.Ordinal);
+        Assert.Contains("ShowSettings(\"MagneticLayout\")", steps, StringComparison.Ordinal);
+        Assert.Contains("GlobalHotkeyService.FormatActivation", steps, StringComparison.Ordinal);
+        Assert.Contains("_createWidgetTask.IsCompleted", steps, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -186,30 +133,15 @@ public sealed class OnboardingExperienceTests
     }
 
     [Fact]
-    public void FinalFeatureSwitches_PersistImmediatelyAndFinishWaitsForSynchronization()
+    public void CompletionWaitsForWidgetCreationAndPersistsProgress()
     {
         string root = FindRepositoryRoot();
-        string steps = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.Steps.cs"));
-        string windowCode = File.ReadAllText(Path.Combine(
-            root,
-            "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
-
-        Assert.Contains("PersistFeatureWidgetSelectionAfterAsync", steps, StringComparison.Ordinal);
-        Assert.Contains("reveal: enabled", steps, StringComparison.Ordinal);
-        Assert.Contains("SynchronizeFeatureTogglesFromSettings", steps, StringComparison.Ordinal);
-        Assert.Contains("_settingsService.SettingsChanged += OnFeatureWidgetSettingsChanged", windowCode, StringComparison.Ordinal);
-        Assert.Contains("_settingsService.SettingsChanged -= OnFeatureWidgetSettingsChanged", windowCode, StringComparison.Ordinal);
-
-        string completionMethod = windowCode[windowCode.IndexOf(
-            "private async Task CompleteOnboardingAsync",
-            StringComparison.Ordinal)..windowCode.IndexOf(
-            "private void NavigateToStep",
-            StringComparison.Ordinal)];
-        Assert.True(
-            completionMethod.IndexOf("await _featureWidgetSelectionUpdateTask", StringComparison.Ordinal) <
-            completionMethod.IndexOf("Close();", StringComparison.Ordinal));
+        string code = File.ReadAllText(Path.Combine(root, "src/magnetic-desk/Views/OnboardingWindow.xaml.cs"));
+        string completion = code[code.IndexOf("private async Task CompleteOnboardingAsync", StringComparison.Ordinal)..code.IndexOf("private void OnLanguageChanged", StringComparison.Ordinal)];
+        Assert.True(completion.IndexOf("await _createWidgetTask", StringComparison.Ordinal) < completion.IndexOf("Close();", StringComparison.Ordinal));
+        Assert.Contains("HasCompletedOnboarding = true", completion, StringComparison.Ordinal);
+        Assert.Contains("await _settingsService.SaveAsync()", completion, StringComparison.Ordinal);
+        Assert.Contains("if (_completing) return", completion, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -365,7 +297,8 @@ public sealed class OnboardingExperienceTests
         Assert.DoesNotContain("IntroOverlay", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("IntroMarkHost", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("PlayIntroSequence", code, StringComparison.Ordinal);
-        Assert.Contains("PlaySceneEntrance", code, StringComparison.Ordinal);
+        Assert.Contains("RootGrid.Loaded +=", code, StringComparison.Ordinal);
+        Assert.Contains("SetupStep();", code, StringComparison.Ordinal);
     }
 
     private static string FindRepositoryRoot()

@@ -1618,8 +1618,8 @@ public sealed partial class WidgetShell : UserControl
     {
         bool narrow = TitleBarGrid.ActualWidth > 0 && TitleBarGrid.ActualWidth < 260;
         Grid.SetRow(RightActionButtonsHost, narrow ? 1 : 0);
-        Grid.SetColumn(RightActionButtonsHost, narrow ? 0 : 1);
-        Grid.SetColumnSpan(RightActionButtonsHost, narrow ? 2 : 1);
+        Grid.SetColumn(RightActionButtonsHost, narrow ? 0 : 2);
+        Grid.SetColumnSpan(RightActionButtonsHost, narrow ? 3 : 1);
         RightActionButtonsHost.HorizontalAlignment = HorizontalAlignment.Right;
     }
 
@@ -4588,7 +4588,7 @@ public sealed partial class WidgetShell : UserControl
         RightActionButtons.VerticalAlignment = usesOverlay ? VerticalAlignment.Top : VerticalAlignment.Center;
         TitleBarGrid.Visibility = usesOverlay && !isEditingTitle ? Visibility.Collapsed : Visibility.Visible;
 
-        HeaderDivider.Margin = new Thickness(12, 0, 12, _titleBarPadding.Bottom);
+        HeaderDivider.Margin = new Thickness(1, 0, 1, 0);
         HeaderDivider.Visibility = usesOverlay || usesGroupTabs ? Visibility.Collapsed : Visibility.Visible;
         TabActionsDivider.Visibility = usesGroupTabs ? Visibility.Visible : Visibility.Collapsed;
         Grid.SetRow(ShellContentPresenter, usesOverlay ? 0 : 1);

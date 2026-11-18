@@ -8,9 +8,9 @@ namespace MagneticDesk.Tests;
 public sealed class WidgetMagneticCapsuleStyleTests
 {
     [Fact]
-    public void ProductVersion_IsOneZeroZero()
+    public void ProductVersion_IsOneOneZero()
     {
-        Assert.Equal(new Version(1, 0, 0, 0), typeof(WidgetConfig).Assembly.GetName().Version);
+        Assert.Equal(new Version(1, 1, 0, 0), typeof(WidgetConfig).Assembly.GetName().Version);
     }
 
     [Fact]

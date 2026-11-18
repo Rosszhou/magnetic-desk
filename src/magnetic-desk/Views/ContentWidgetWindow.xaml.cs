@@ -90,6 +90,13 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
         ContentWidgetShell.ShowHoverButtons = settingsService.Settings.ShowHoverButtons;
         ContentWidgetShell.IsTitleEditable = true;
         ApplyLocalizedTitleActionTooltips();
+        ContentWidgetShell.MagneticGroupRequested += (_, _) =>
+        {
+            if (App.Current.WidgetManager is not { } manager) return;
+            var menu = manager.CreateMagneticGroupActions(_config);
+            TrackWidgetFlyout(menu);
+            menu.ShowAt(ContentWidgetShell.MagneticGroupAnchor);
+        };
 
         ConfigureWindowCore();
         ApplyTitleBarLayout();
@@ -110,8 +117,8 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
     protected override FrameworkElement RootElement => RootGrid;
     protected override WidgetShell WidgetShellControl => ContentWidgetShell;
     protected override string LogPrefix => "Content";
-    protected override bool IsSizeLocked => _config.IsSizeLocked;
-    protected override bool IsPositionLocked => _config.IsPositionLocked;
+    protected override bool IsSizeLocked => _config.IsSizeLocked || App.Current?.WidgetManager?.IsMagneticLayoutLocked(_config) == true;
+    protected override bool IsPositionLocked => _config.IsPositionLocked || App.Current?.WidgetManager?.IsMagneticLayoutLocked(_config) == true;
     protected override bool IsCompactExpansionWarmupContentReady =>
         _contentHost.CurrentContent is not null;
 
@@ -985,6 +992,7 @@ IsHideAnimationRunning = true;
 
     private void ApplyLocalizedTitleActionTooltips()
     {
+        RefreshMagneticGroupChrome();
         var localization = App.Current.LocalizationService;
         ToolTipService.SetToolTip(ContentWidgetShell.PositionLockActionButton, localization.T("Widget.LockPosition"));
         ToolTipService.SetToolTip(ContentWidgetShell.SizeLockActionButton, localization.T("Widget.LockSize"));

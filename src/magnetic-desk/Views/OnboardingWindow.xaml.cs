@@ -1,421 +1,127 @@
-﻿using System.Numerics;
 using MagneticDesk.Helpers;
-using MagneticDesk.Models;
 using MagneticDesk.Platform;
 using MagneticDesk.Services;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Hosting;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Shapes;
 using WinRT.Interop;
 
 namespace MagneticDesk.Views;
 
 public sealed partial class OnboardingWindow : Window
 {
-    internal const int CurrentOnboardingVersion = 3;
-    private const int DesiredWindowWidth = 1040;
-    private const int DesiredWindowHeight = 680;
-    private const int MinWindowWidth = 700;
+    internal const int CurrentOnboardingVersion = 4;
+    private const int DesiredWindowWidth = 1120;
+    private const int DesiredWindowHeight = 720;
+    private const int MinWindowWidth = 740;
     private const int MinWindowHeight = 560;
-    private const int WindowWorkAreaMargin = 80;
-    private const int CompactLayoutThreshold = 860;
-    private const int StepCount = 5;
+    private const int StepCount = 3;
     private static readonly UIntPtr OnboardingWindowSubclassId = new(0xD05C0B01);
-
     private readonly SettingsService _settingsService;
     private readonly LocalizationService _localizationService;
     private readonly AppWindow _appWindow;
     private readonly IntPtr _hWnd;
-
-    private int _stepIndex;
-    private bool _hasLoaded;
-    private bool _isClosed;
-    private bool _isAnimating;
-    private bool _hasInitializedFeatureToggles;
-    private bool _isSynchronizingFeatureToggles;
-    private bool _hasToggledDuringSummonStep;
-    private bool _hasCompletedSummonPractice;
-    private bool _isCompactLayout;
-    private Task _featureWidgetSelectionUpdateTask = Task.CompletedTask;
     private readonly Win32Helper.SubclassProc _windowSubclassProc;
+    private int _stepIndex;
+    private bool _isClosed;
+    private bool _completing;
+    private Task _createWidgetTask = Task.CompletedTask;
 
-    public OnboardingWindow(
-        SettingsService settingsService,
-        LocalizationService localizationService,
-        int initialStep = 0)
+    public OnboardingWindow(SettingsService settingsService, LocalizationService localizationService, int initialStep = 0)
     {
         _settingsService = settingsService;
         _localizationService = localizationService;
         _stepIndex = Math.Clamp(initialStep, 0, StepCount - 1);
         _windowSubclassProc = CallbackDepth.WrapSubclassProc(WindowSubclassProc);
         InitializeComponent();
-        _localizationService.LanguageChanged += OnLanguageChanged;
-        _settingsService.SettingsChanged += OnFeatureWidgetSettingsChanged;
-        App.Current.OnboardingWidgetsVisibilityChanged += OnOnboardingWidgetsVisibilityChanged;
-
+        _hWnd = WindowNative.GetWindowHandle(this);
+        _appWindow = AppWindow.GetFromWindowId(Win32Interop.GetWindowIdFromWindow(_hWnd));
+        AppBranding.ApplyWindowIcon(_appWindow);
         WindowsCompatibilityService.ApplySafeBackdrop(this);
-
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(TitleBarHost);
-
-        Title = localizationService.T("Onboarding.WindowTitle");
-        _hWnd = WindowNative.GetWindowHandle(this);
-        var windowId = Win32Interop.GetWindowIdFromWindow(_hWnd);
-        _appWindow = AppWindow.GetFromWindowId(windowId);
-        AppBranding.ApplyWindowIcon(_appWindow);
-        ResizeAndCenterForDisplay(windowId);
+        ResizeAndCenterForDisplay();
         InstallMinimumSizeHook();
-
-        if (_appWindow.Presenter is OverlappedPresenter presenter)
-        {
-            presenter.IsResizable = true;
-            presenter.IsMaximizable = true;
-            presenter.IsMinimizable = false;
-        }
-
-        SizeChanged += (_, _) => ApplyResponsiveLayout();
-        RootGrid.Loaded += (_, _) =>
-        {
-            _hasLoaded = true;
-            ApplyResponsiveLayout();
-            StepPips.SelectedPageIndex = _stepIndex;
-            SetupStep(animate: false);
-            ApplySceneState(_stepIndex, animate: false);
-            StartSceneLoops(_stepIndex);
-            PlaySceneEntrance();
-        };
-
-        RootGrid.ActualThemeChanged += (_, _) =>
-        {
-            SetupStep(animate: false);
-            ApplySceneState(_stepIndex, animate: false);
-        };
-
+        _localizationService.LanguageChanged += OnLanguageChanged;
+        RootGrid.Loaded += (_, _) => { SetupStep(); RefreshShortcut(); };
         Closed += (_, _) =>
         {
             _isClosed = true;
-            WindowsCompatibilityService.ReleaseTitleBarExtensions(this, _appWindow);
-            StopSceneLoops();
             RemoveMinimumSizeHook();
             _localizationService.LanguageChanged -= OnLanguageChanged;
-            _settingsService.SettingsChanged -= OnFeatureWidgetSettingsChanged;
-            App.Current.OnboardingWidgetsVisibilityChanged -= OnOnboardingWidgetsVisibilityChanged;
+            WindowsCompatibilityService.ReleaseTitleBarExtensions(this, _appWindow);
         };
+        Title = _localizationService.T("Onboarding.WindowTitle");
+    }
+
+    private void ResizeAndCenterForDisplay()
+    {
+        var area = DisplayArea.GetFromWindowId(_appWindow.Id, DisplayAreaFallback.Primary).WorkArea;
+        double scale = GetCurrentDpiScale();
+        int width = Math.Min(ToPhysicalPixels(DesiredWindowWidth, scale), area.Width - 40);
+        int height = Math.Min(ToPhysicalPixels(DesiredWindowHeight, scale), area.Height - 40);
+        _appWindow.Resize(new Windows.Graphics.SizeInt32(Math.Max(1, width), Math.Max(1, height)));
+        _appWindow.Move(new Windows.Graphics.PointInt32(area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2));
+        if (_appWindow.Presenter is OverlappedPresenter presenter) presenter.IsMinimizable = false;
     }
 
     public void RestartIntro(int stepIndex = 0)
     {
-        if (!_hasLoaded)
-        {
-            return;
-        }
-
         _stepIndex = Math.Clamp(stepIndex, 0, StepCount - 1);
-        SetupStep(animate: false);
-        ApplySceneState(_stepIndex, animate: false);
-        StartSceneLoops(_stepIndex);
-        PlaySceneEntrance();
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  Window setup
-    // ════════════════════════════════════════════════════════════
-
-    private void ResizeAndCenterForDisplay(Microsoft.UI.WindowId windowId)
-    {
-        var workArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary).WorkArea;
-        double scale = GetCurrentDpiScale();
-        int desiredWidth = ToPhysicalPixels(DesiredWindowWidth, scale);
-        int desiredHeight = ToPhysicalPixels(DesiredWindowHeight, scale);
-        int minWidth = ToPhysicalPixels(MinWindowWidth, scale);
-        int minHeight = ToPhysicalPixels(MinWindowHeight, scale);
-        int workAreaMargin = ToPhysicalPixels(WindowWorkAreaMargin, scale);
-        int width = Math.Clamp(desiredWidth, minWidth, Math.Max(minWidth, workArea.Width - workAreaMargin));
-        int height = Math.Clamp(desiredHeight, minHeight, Math.Max(minHeight, workArea.Height - workAreaMargin));
-
-        _appWindow.Resize(new Windows.Graphics.SizeInt32(width, height));
-        _appWindow.Move(new Windows.Graphics.PointInt32(
-            workArea.X + Math.Max(0, (workArea.Width - width) / 2),
-            workArea.Y + Math.Max(0, (workArea.Height - height) / 2)));
-    }
-
-    private void ApplyResponsiveLayout()
-    {
-        double width = RootGrid.ActualWidth;
-        double height = RootGrid.ActualHeight;
-        if (width <= 0)
-        {
-            return;
-        }
-
-        bool compact = width < CompactLayoutThreshold || height < 560;
-        _isCompactLayout = compact;
-
-        // Narrower scene canvas column + tighter copy margins on small windows.
-        RootGrid.ColumnDefinitions[0].Width = new GridLength(compact ? 0.36 : 0.42, GridUnitType.Star);
-        var sideMargin = compact ? 26 : 44;
-        TextScrollViewer.Margin = new Thickness(sideMargin, 0, sideMargin, 0);
-        FooterNav.Margin = new Thickness(compact ? 26 : 44, 0, compact ? 26 : 44, compact ? 14 : 24);
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  Step navigation
-    // ════════════════════════════════════════════════════════════
-
-    private FrameworkElement GetStepPanel(int index) => index switch
-    {
-        0 => Step1Panel,
-        1 => Step2Panel,
-        2 => Step3Panel,
-        3 => Step4Panel,
-        4 => Step5Panel,
-        _ => Step1Panel
-    };
-
-    private void BackButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_stepIndex <= 0 || _isAnimating)
-        {
-            return;
-        }
-
-        NavigateToStep(_stepIndex - 1);
-    }
-
-    private async void NextButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_isAnimating)
-        {
-            return;
-        }
-
-        if (_stepIndex < StepCount - 1)
-        {
-            NavigateToStep(_stepIndex + 1);
-            return;
-        }
-
-        await CompleteOnboardingAsync();
-    }
-
-    private async Task CompleteOnboardingAsync()
-    {
-        NextButton.IsEnabled = false;
-        BackButton.IsEnabled = false;
-        SetFeatureTogglesEnabled(false);
-        await _featureWidgetSelectionUpdateTask;
-        _settingsService.Settings.HasCompletedOnboarding = true;
-        _settingsService.Settings.CompletedOnboardingVersion = CurrentOnboardingVersion;
-        _settingsService.Settings.OnboardingStepIndex = 0;
-        await _settingsService.SaveAsync();
-        Close();
+        LayoutPreview.ResetDemo();
+        SetupStep();
+        RefreshShortcut();
     }
 
     private void NavigateToStep(int newStep)
     {
-        if (newStep < 0 || newStep >= StepCount || newStep == _stepIndex || _isAnimating)
-        {
-            return;
-        }
-
-        _isAnimating = true;
-        var currentPanel = GetStepPanel(_stepIndex);
-        var newPanel = GetStepPanel(newStep);
-
-        newPanel.Visibility = Visibility.Visible;
-
-        // The scene stage stays mounted and morphs; only the text column swaps.
-        ApplySceneState(newStep, animate: true);
-        StartSceneLoops(newStep);
-        PlayTextColumnSwap(currentPanel, newPanel);
-
+        if (_completing || newStep < 0 || newStep >= StepCount) return;
         _stepIndex = newStep;
         _settingsService.Settings.OnboardingStepIndex = newStep;
         _settingsService.SaveDebounced(notifySubscribers: false);
-
-        UpdateFooterState();
-        SetupStep(animate: true);
+        SetupStep();
+        RefreshShortcut();
     }
 
-    /// <summary>
-    /// Swaps the copy column in a single layout pass: the outgoing panel
-    /// collapses immediately so the incoming one renders straight at its
-    /// final vertically-centered position. The previous cross-dissolve kept
-    /// both panels laid out for ~460ms — the Grid cell stayed at the taller
-    /// outgoing height, so the incoming copy first appeared at the outgoing
-    /// title's offset and then visibly jumped when the cell re-centered on
-    /// collapse. A short opacity-only fade (at the final position, no offset)
-    /// keeps the swap from reading as a hard cut. Storyboards are used
-    /// instead of raw visual animations because the incoming panel was just
-    /// uncollapsed and its visual can still be rebuilt under StartAnimation,
-    /// silently dropping the animation and leaving the panel blank until the
-    /// completion timeout snaps it on.
-    /// </summary>
-    private void PlayTextColumnSwap(
-        FrameworkElement outgoing,
-        FrameworkElement incoming)
+    private void Step_Click(object sender, RoutedEventArgs e)
     {
-        if (!WindowsCompatibilityService.AreAnimationsEnabled)
-        {
-            outgoing.Visibility = Visibility.Collapsed;
-            incoming.Opacity = 1;
-            _isAnimating = false;
-            return;
-        }
-
-        outgoing.Visibility = Visibility.Collapsed;
-        incoming.Opacity = 0;
-
-        var storyboard = new Storyboard();
-
-        var fadeIn = new DoubleAnimation
-        {
-            To = 1,
-            Duration = new Duration(TimeSpan.FromMilliseconds(180)),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        Storyboard.SetTarget(fadeIn, incoming);
-        Storyboard.SetTargetProperty(fadeIn, nameof(UIElement.Opacity));
-
-        storyboard.Children.Add(fadeIn);
-        storyboard.Begin();
-
-        int generation = ++_transitionGeneration;
-        _ = CompleteSwapAsync(storyboard, outgoing, incoming, generation);
+        if (sender is Button { Tag: string tag } && int.TryParse(tag, out int step)) NavigateToStep(step);
     }
 
-    private int _transitionGeneration;
-
-    private async Task CompleteSwapAsync(
-        Storyboard storyboard,
-        FrameworkElement outgoing,
-        FrameworkElement incoming,
-        int generation)
+    private void BackButton_Click(object sender, RoutedEventArgs e) => NavigateToStep(_stepIndex - 1);
+    private async void NextButton_Click(object sender, RoutedEventArgs e)
     {
-        await Task.Delay(220);
-        if (_isClosed || generation != _transitionGeneration)
-        {
-            return;
-        }
-
-        // Land base values first, then release the storyboard's hold so the
-        // panel settles without a post-animation snap.
-        incoming.Opacity = 1;
-        storyboard.Stop();
-        _isAnimating = false;
+        if (_stepIndex < StepCount - 1) NavigateToStep(_stepIndex + 1);
+        else await CompleteOnboardingAsync();
     }
+    private async void Skip_Click(object sender, RoutedEventArgs e) => await CompleteOnboardingAsync();
 
-    // ════════════════════════════════════════════════════════════
-    //  Step setup dispatch
-    // ════════════════════════════════════════════════════════════
-
-    private void SetupStep(bool animate)
+    private async Task CompleteOnboardingAsync()
     {
-        if (!animate)
+        if (_completing) return;
+        _completing = true;
+        NextButton.IsEnabled = BackButton.IsEnabled = SkipButton.IsEnabled = CreateWidgetButton.IsEnabled = false;
+        try
         {
-            for (int index = 0; index < StepCount; index++)
-            {
-                var panel = GetStepPanel(index);
-                panel.Visibility = index == _stepIndex
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-                panel.Opacity = 1;
-                panel.RenderTransform = null;
-                panel.IsHitTestVisible = true;
-            }
+            await _createWidgetTask;
+            _settingsService.Settings.HasCompletedOnboarding = true;
+            _settingsService.Settings.CompletedOnboardingVersion = CurrentOnboardingVersion;
+            _settingsService.Settings.OnboardingStepIndex = 0;
+            await _settingsService.SaveAsync();
+            if (!_isClosed) Close();
         }
-
-        switch (_stepIndex)
-        {
-            case 1:
-                SetupDropStep();
-                break;
-            case 2:
-                SetupSummonStep();
-                break;
-            case 4:
-                SetupFeatureStep();
-                break;
-        }
+        finally { _completing = false; }
     }
-
-    // ════════════════════════════════════════════════════════════
-    //  Footer
-    // ════════════════════════════════════════════════════════════
-
-    private void UpdateFooterState()
-    {
-        bool canGoBack = _stepIndex > 0;
-        BackButton.Visibility = canGoBack ? Visibility.Visible : Visibility.Collapsed;
-        BackButton.IsEnabled = canGoBack;
-        ToolTipService.SetToolTip(BackButton, _localizationService.T("Onboarding.Back"));
-        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
-            BackButton, _localizationService.T("Onboarding.Back"));
-        NextButton.Content = _stepIndex == StepCount - 1
-            ? _localizationService.T("Onboarding.Start")
-            : _localizationService.T("Onboarding.Next");
-        NextButton.IsEnabled = true;
-        UpdateProgressDots();
-    }
-
-    private void UpdateProgressDots()
-    {
-        if (StepPips.SelectedPageIndex != _stepIndex)
-        {
-            StepPips.SelectedPageIndex = _stepIndex;
-        }
-    }
-
-    private void StepPips_SelectionChanged(
-        PipsPager sender,
-        PipsPagerSelectedIndexChangedEventArgs args)
-    {
-        int target = sender.SelectedPageIndex;
-        if (target == _stepIndex || _isAnimating)
-        {
-            return;
-        }
-
-        NavigateToStep(target);
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  Localization
-    // ════════════════════════════════════════════════════════════
 
     private void OnLanguageChanged()
     {
+        if (_isClosed) return;
         Title = _localizationService.T("Onboarding.WindowTitle");
         Localized.RefreshAll(_localizationService);
-        SetupStep(animate: false);
-        UpdateFooterState();
-        RefreshSummonStatus();
+        SetupStep();
+        RefreshShortcut();
     }
-
-    // ════════════════════════════════════════════════════════════
-    //  Visual helpers
-    // ════════════════════════════════════════════════════════════
-
-    internal static Microsoft.UI.Composition.Visual GetVisual(UIElement element)
-    {
-        ElementCompositionPreview.SetIsTranslationEnabled(element, true);
-        var visual = ElementCompositionPreview.GetElementVisual(element);
-        // Scale/Rotation animations pivot around CenterPoint, whose default
-        // (0,0) makes press/pop keyframes drift toward the top-left — anchor
-        // every scene element at its own center.
-        var size = element.ActualSize;
-        visual.CenterPoint = new Vector3(size.X / 2f, size.Y / 2f, 0f);
-        return visual;
-    }
-
-    // ════════════════════════════════════════════════════════════
-    //  Minimum-size window subclass
-    // ════════════════════════════════════════════════════════════
 
     private void InstallMinimumSizeHook()
     {

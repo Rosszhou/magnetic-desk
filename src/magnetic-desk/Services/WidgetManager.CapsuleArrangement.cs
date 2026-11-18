@@ -284,6 +284,7 @@ public sealed partial class WidgetManager
             SettingsService.NormalizeWidgetCapsuleBarSpacing(settings.WidgetCapsuleBarSpacing) *
             WidgetPositioningService.GetDpiScale(workArea)));
 
+        foreach (string id in memberBounds.Keys) IncludeLayoutOperationMembers(id);
         _capsuleBarDragSession = new CapsuleBarDragSession(
             widgetId,
             activeBounds,
@@ -448,7 +449,7 @@ public sealed partial class WidgetManager
         return true;
     }
 
-    internal void CompleteCapsuleBarDrag(string widgetId)
+    internal void CompleteCapsuleBarDrag(string widgetId, bool preserveActiveBounds = false)
     {
         if (_capsuleBarDragSession is not { } session ||
             !string.Equals(session.ActiveWidgetId, widgetId, StringComparison.Ordinal))
@@ -471,6 +472,8 @@ public sealed partial class WidgetManager
                 continue;
             }
 
+            if (preserveActiveBounds && id == widgetId && FindLoadedWindow(id) is { } active)
+                bounds = active.CoordinatedMoveBounds;
             config.CompactPlacement = CreatePlacement(bounds);
             FindLoadedWindow(id)?.ApplyCompactArrangement(bounds, constrainSize: true);
             SynchronizeGroupLayoutFromMember(config);

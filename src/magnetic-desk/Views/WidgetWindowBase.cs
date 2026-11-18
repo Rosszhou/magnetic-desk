@@ -312,6 +312,8 @@ public abstract partial class WidgetWindowBase : Window
         CancelPendingInteractiveResizeFrame();
         EndInteractiveResizePerformanceSession("closed");
         App.Current?.WidgetManager?.CompleteMagneticResize(this);
+        App.Current?.WidgetManager?.CancelMagneticDockDrag(Config.Id);
+        App.Current?.WidgetManager?.CancelLayoutOperation(Config.Id);
         // A window closed mid-gesture must terminate the overlay session —
         // otherwise the service stays active and highlights freeze on the
         // remaining widgets.  Both calls are no-ops when no session runs.

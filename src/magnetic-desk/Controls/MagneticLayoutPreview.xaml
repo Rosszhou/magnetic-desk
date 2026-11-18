@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl x:Class="MagneticDesk.Controls.MagneticLayoutPreview"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:svc="using:MagneticDesk.Services">
+    <Grid RowSpacing="12">
+        <Grid.RowDefinitions><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+        <Border Background="{ThemeResource MagneticPreviewBrush}" CornerRadius="12" MinHeight="290">
+            <Canvas x:Name="PreviewCanvas" MinHeight="290" IsTabStop="True" Background="Transparent"
+                    SizeChanged="PreviewCanvas_SizeChanged">
+                <Canvas.KeyboardAccelerators>
+                    <KeyboardAccelerator Key="Z" Modifiers="Control" Invoked="Undo_Invoked" />
+                </Canvas.KeyboardAccelerators>
+                <Rectangle x:Name="TargetOutline" Canvas.ZIndex="2" Stroke="{ThemeResource MagneticAccentBrush}" StrokeThickness="2"
+                           StrokeDashArray="4,3" RadiusX="12" RadiusY="12" Visibility="Collapsed" IsHitTestVisible="False" />
+                <Rectangle x:Name="AlignmentLine" Height="1" Fill="{ThemeResource MagneticAccentBrush}"
+                           Visibility="Collapsed" IsHitTestVisible="False" />
+                <Border x:Name="FixedCard" Width="190" Height="170" Style="{StaticResource MagneticSurfaceStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="14,0" VerticalAlignment="Center">
+                            <FontIcon Glyph="&#xE8B7;" FontSize="16" />
+                            <TextBlock svc:Localized.Key="Design.Preview.Files" FontWeight="SemiBold" FontSize="14" />
+                        </StackPanel>
+                        <Border Height="1" Background="{ThemeResource MagneticStrokeBrush}" VerticalAlignment="Bottom" />
+                        <StackPanel Grid.Row="1" Margin="14,15" Spacing="18">
+                            <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE8B7;" Foreground="#D79B2E" FontSize="18" /><TextBlock svc:Localized.Key="Design.Preview.DesignFiles" FontSize="13" /></StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE8B7;" Foreground="#D79B2E" FontSize="18" /><TextBlock svc:Localized.Key="Design.Preview.References" FontSize="13" /></StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border x:Name="MovingCard" Width="190" Height="170" Style="{StaticResource MagneticSurfaceStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions><RowDefinition Height="42" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                        <Grid x:Name="DragHandle" Padding="14,0" Background="Transparent"
+                              PointerPressed="DragHandle_PointerPressed" PointerMoved="DragHandle_PointerMoved"
+                              PointerReleased="DragHandle_PointerReleased" PointerCaptureLost="DragHandle_PointerCaptureLost">
+                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <FontIcon Glyph="&#xE73A;" FontSize="16" />
+                                <TextBlock svc:Localized.Key="Design.Preview.Todo" FontSize="14" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Grid>
+                        <Border Height="1" Background="{ThemeResource MagneticStrokeBrush}" VerticalAlignment="Bottom" IsHitTestVisible="False" />
+                        <StackPanel Grid.Row="1" Margin="14,15" Spacing="18" IsHitTestVisible="False">
+                            <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE739;" FontSize="16" /><TextBlock svc:Localized.Key="Design.Preview.Organize" FontSize="13" /></StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="10"><FontIcon Glyph="&#xE739;" FontSize="16" /><TextBlock svc:Localized.Key="Design.Preview.TryDock" FontSize="13" /></StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Border x:Name="DockProgress" CornerRadius="20" Padding="10,6" Background="{ThemeResource MagneticSelectionBrush}"
+                        Visibility="Collapsed" IsHitTestVisible="False"><TextBlock x:Name="DockProgressText" Foreground="{ThemeResource MagneticAccentBrush}" FontWeight="SemiBold" /></Border>
+            </Canvas>
+        </Border>
+        <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText" VerticalAlignment="Center" FontSize="12" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button Grid.Column="1" Click="Reset_Click" Style="{StaticResource MagneticActionStyle}" svc:Localized.AutomationNameKey="Design.Preview.Reset" svc:Localized.Key="Design.Preview.Reset" />
+        </Grid>
+    </Grid>
+</UserControl>

@@ -34,6 +34,7 @@
             <ResourceDictionary>
                 <ResourceDictionary.MergedDictionaries>
                     <ResourceDictionary Source="ms-appx:///Styles/SettingsOverviewResources.xaml" />
+                    <ResourceDictionary Source="ms-appx:///Styles/MagneticControlResources.xaml" />
                 </ResourceDictionary.MergedDictionaries>
             <x:Double x:Key="NavigationViewCompactPaneLength">58</x:Double>
             <x:Double x:Key="NavigationViewItemOnLeftMinHeight">42</x:Double>
@@ -46,16 +47,16 @@
             <SolidColorBrush x:Key="NavigationViewItemSeparatorForeground" Color="Transparent" />
             <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
             <Thickness x:Key="NavigationViewContentMargin">12,0,0,0</Thickness>
-            <CornerRadius x:Key="NavigationViewContentGridCornerRadius">24</CornerRadius>
+            <CornerRadius x:Key="NavigationViewContentGridCornerRadius">12</CornerRadius>
             <Style TargetType="NavigationViewItem">
-                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="CornerRadius" Value="10" />
             </Style>
             <Thickness x:Key="NavigationViewItemButtonMargin">8,3,8,3</Thickness>
 
             <!-- Shared settings-page metrics keep top-level and drill-down pages aligned. -->
             <controls:SettingsBoolToVisibilityConverter x:Key="SettingsBoolToVisibilityConverter" />
             <controls:SettingsColorStringConverter x:Key="SettingsColorStringConverter" />
-            <x:Double x:Key="SettingsContentMaxWidth">820</x:Double>
+            <x:Double x:Key="SettingsContentMaxWidth">980</x:Double>
             <x:Double x:Key="SettingsRowColumnSpacing">18</x:Double>
 
             <Style x:Key="BreadcrumbTextStyle" TargetType="TextBlock">
@@ -129,7 +130,7 @@
 
         <Border Grid.RowSpan="2" Background="{ThemeResource SettingsGlassBackgroundBrush}" IsHitTestVisible="False" />
         <Border Grid.Row="1" Width="224" HorizontalAlignment="Left" Margin="12,0,0,12"
-                CornerRadius="24" Background="{ThemeResource SettingsGlassPaneBrush}"
+                CornerRadius="12" Background="{ThemeResource SettingsGlassPaneBrush}"
                 BorderBrush="{ThemeResource SettingsGlassStrokeBrush}" BorderThickness="1" IsHitTestVisible="False" />
 
         <Grid
@@ -144,8 +145,8 @@
                 Orientation="Horizontal"
                 Spacing="8">
                 <Image
-                    Width="18"
-                    Height="18"
+                    Width="30"
+                    Height="30"
                     VerticalAlignment="Center">
                     <Image.Source>
                         <media:SvgImageSource UriSource="ms-appx:///Assets/magnetic-desk.svg" />
@@ -190,7 +191,7 @@ Text="magnetic-desk" />
                 MaxWidth="240"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
-                CornerRadius="18"
+                CornerRadius="8"
                 Margin="12,10,12,20"
                 QueryIcon="Find"
                 QuerySubmitted="SettingsSearchBox_QuerySubmitted"
@@ -218,60 +219,22 @@ Text="magnetic-desk" />
             </AutoSuggestBox>
             </NavigationView.PaneHeader>
             <NavigationView.MenuItems>
-                <NavigationViewItem
-                    x:Name="CapsuleModeNavItem"
-                    Tag="CapsuleMode"
-                    svc:Localized.Key="Settings.Nav.CapsuleMode">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE8A0;" FontSize="17" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem x:Name="MagneticLayoutNavItem" Tag="MagneticLayout" svc:Localized.Key="Design.Settings.Layout">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE8A9;" FontSize="17" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem
-                    Tag="Appearance"
-                    svc:Localized.Key="Settings.Nav.Appearance">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE790;" FontSize="17" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem x:Name="CapsuleModeNavItem" Tag="CapsuleMode" svc:Localized.Key="Design.Nav.Collapse">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE8A0;" FontSize="17" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem
-                    x:Name="FileWidgetNavItem"
-                    Tag="AppearanceDetail"
-                    svc:Localized.Key="Settings.Nav.FileWidget">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7F4;" FontSize="17" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem x:Name="FileWidgetNavItem" Tag="AppearanceDetail" svc:Localized.Key="Design.Nav.Content">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE7F4;" FontSize="17" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem
-                    x:Name="FeatureWidgetsNavItem"
-                    Tag="FeatureWidgets"
-                    svc:Localized.Key="Settings.Nav.FeatureWidgets">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xECAA;" FontSize="17" />
-                    </NavigationViewItem.Icon>
+                <NavigationViewItem Tag="Interaction" svc:Localized.Key="Design.Nav.Shortcuts">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE765;" FontSize="17" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="GeneralNavItem" Tag="General" svc:Localized.Key="Design.Nav.Startup">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE713;" FontSize="17" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItemSeparator />
-                <NavigationViewItem
-                    x:Name="GeneralNavItem"
-                    Tag="General"
-                    svc:Localized.Key="Settings.Nav.General">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE713;" FontSize="17" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem
-                    Tag="Interaction"
-                    svc:Localized.Key="Settings.Nav.Interaction">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE765;" FontSize="17" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
-                <NavigationViewItem
-                    Tag="Maintenance"
-                    svc:Localized.Key="Settings.Nav.Maintenance">
-                    <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE90F;" FontSize="17" />
-                    </NavigationViewItem.Icon>
-                </NavigationViewItem>
                 <NavigationViewItem
                     Tag="About"
                     svc:Localized.Key="Settings.Nav.About">
@@ -284,7 +247,7 @@ Text="magnetic-desk" />
                 </NavigationViewItem>
             </NavigationView.MenuItems>
 
-            <Grid x:Name="SettingsContentRoot" Background="{ThemeResource SettingsGlassContentBrush}" CornerRadius="24" BorderBrush="{ThemeResource SettingsGlassStrokeBrush}" BorderThickness="1">
+            <Grid x:Name="SettingsContentRoot" Background="{ThemeResource SettingsGlassContentBrush}" CornerRadius="12" BorderBrush="{ThemeResource SettingsGlassStrokeBrush}" BorderThickness="1">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
@@ -327,10 +290,13 @@ Text="magnetic-desk" />
                         HorizontalAlignment="Center"
                         Spacing="16">
                 <StackPanel.Resources>
+                    <DataTemplate x:Key="MagneticLayoutSectionTemplate" x:DataType="viewModels:SettingsViewModel">
+                        <sections:MagneticLayoutSettingsSection x:Name="MagneticLayoutSection" Visibility="Collapsed" NavigationRequested="SettingsSection_NavigationRequested" />
+                    </DataTemplate>
                     <DataTemplate x:Key="AppearanceSectionTemplate" x:DataType="viewModels:SettingsViewModel">
                         <sections:AppearanceSettingsSection x:Name="AppearanceSection" Visibility="Collapsed" NavigationRequested="SettingsSection_NavigationRequested" />
                     </DataTemplate>
-                    
+
                     <DataTemplate x:Key="AppearanceDensitySettingsSectionTemplate" x:DataType="viewModels:SettingsViewModel">
                         <StackPanel
                     x:Name="AppearanceDensitySettingsSection"
@@ -425,8 +391,8 @@ Text="magnetic-desk" />
                     </StackPanel>
                 </StackPanel>
                     </DataTemplate>
-                    
-                    
+
+
                     <DataTemplate x:Key="WidgetGroupsSectionTemplate" x:DataType="viewModels:SettingsViewModel">
                         <StackPanel
                     x:Name="WidgetGroupsSection"
@@ -1259,44 +1225,7 @@ Text="magnetic-desk" />
                                 Content="{Binding HoverButtonActionsSummary}" />
                         </toolkit:SettingsCard>
 
-                        <toolkit:SettingsExpander
-                            HorizontalContentAlignment="Stretch"
-                            svc:Localized.DescriptionKey="Settings.ResizeSnap.Description"
-                            svc:Localized.HeaderKey="Settings.ResizeSnap.Title"
-                            svc:InfoTip.TitleKey="Settings.ResizeSnap.InfoTip.Title"
-                            svc:InfoTip.BodyKey="Settings.ResizeSnap.InfoTip.Description">
-                            <toolkit:SettingsExpander.HeaderIcon>
-                                <FontIcon Glyph="&#xE742;" />
-                            </toolkit:SettingsExpander.HeaderIcon>
-                            <ToggleSwitch svc:Localized.AutomationNameKey="Settings.ResizeSnap.Title"
-                                MinWidth="0"
-                                IsOn="{Binding SnapEnabled, Mode=TwoWay}"
-                                OffContent=""
-                                OnContent="" />
-                            <toolkit:SettingsExpander.Items>
-                                <toolkit:SettingsCard
-                                    HorizontalContentAlignment="Right"
-                                    IsEnabled="{Binding SnapEnabled}"
-                                    svc:Localized.DescriptionKey="Settings.WidgetSnap.Spacing.Description"
-                                    svc:Localized.HeaderKey="Settings.WidgetSnap.Spacing.Title">
-                                    <StackPanel
-                                        VerticalAlignment="Center"
-                                        Orientation="Horizontal"
-                                        Spacing="8">
-                                        <TextBlock
-                                            Style="{StaticResource SliderSettingValueTextStyle}"
-                                            Text="{Binding SnapSpacingText}" />
-                                        <Slider svc:Localized.AutomationNameKey="Settings.WidgetSnap.Spacing.Title"
-                                            Width="240"
-                                            Maximum="32"
-                                            Minimum="0"
-                                            StepFrequency="1"
-                                            Style="{StaticResource InlineMetricSliderStyle}"
-                                            Value="{Binding SnapSpacing, Mode=TwoWay}" />
-                                    </StackPanel>
-                                </toolkit:SettingsCard>
-                            </toolkit:SettingsExpander.Items>
-                        </toolkit:SettingsExpander>
+
 
                         <toolkit:SettingsCard
                             HorizontalContentAlignment="Right"
@@ -1707,9 +1636,9 @@ Text="magnetic-desk" />
                     </StackPanel>
                 </StackPanel>
                     </DataTemplate>
-                    
-                    
-                    
+
+
+
                     <DataTemplate x:Key="SearchSettingsSectionTemplate" x:DataType="viewModels:SettingsViewModel">
                         <sections:SearchSettingsSection x:Name="SearchSettingsSection" Visibility="Collapsed" />
                     </DataTemplate>
@@ -1863,7 +1792,7 @@ Text="magnetic-desk" />
                             </toolkit:SettingsCard.HeaderIcon>
                         </toolkit:SettingsCard>
 
-                        
+
 
                         <toolkit:SettingsCard
                             Click="NestedSettingsButton_Click"
@@ -2035,7 +1964,7 @@ Text="magnetic-desk" />
                     </StackPanel>
                 </StackPanel>
                     </DataTemplate>
-                    
+
                     <DataTemplate x:Key="DataHealthSettingsSectionTemplate" x:DataType="viewModels:SettingsViewModel">
                         <StackPanel
                     x:Name="DataHealthSettingsSection"
@@ -2298,15 +2227,15 @@ Text="magnetic-desk" />
                                             HorizontalAlignment="Right"
                                             Orientation="Horizontal"
                                             Spacing="6">
-                                            
-                                            
+
+
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </toolkit:SettingsCard>
 
-                        
+
 
                         <toolkit:SettingsCard
                             HorizontalContentAlignment="Right"
@@ -2337,7 +2266,7 @@ Text="magnetic-desk" />
                             </StackPanel>
                         </toolkit:SettingsCard>
 
-                        
+
                     </StackPanel>
                 </StackPanel>
                     </DataTemplate>
@@ -2348,6 +2277,10 @@ Text="magnetic-desk" />
                     Style="{StaticResource SectionPanelStyle}">
                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" AutomationProperties.HeadingLevel="Level1" svc:Localized.Key="Settings.Section.General" />
                     <StackPanel Margin="0,8,0,0" Spacing="4">
+                        <toolkit:SettingsCard Tag="Maintenance" Click="NestedSettingsButton_Click" IsClickEnabled="True"
+                            svc:Localized.HeaderKey="Settings.Section.Maintenance" svc:Localized.DescriptionKey="Design.Settings.DataHint">
+                            <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE90F;" /></toolkit:SettingsCard.HeaderIcon>
+                        </toolkit:SettingsCard>
                         <toolkit:SettingsCard
                             HorizontalContentAlignment="Right"
                             svc:Localized.DescriptionKey="Settings.Language.Description"

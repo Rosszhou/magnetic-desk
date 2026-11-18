@@ -1406,7 +1406,7 @@ public partial class App : Application
             {
                 WidgetManager = new WidgetManager(SettingsService, FileService, OrganizerService,
                     themeService, quickCaptureService, localizationService, _todoSettings,
-                    _quickCaptureSettings, _searchSettings);
+                    _quickCaptureSettings, _searchSettings, layoutGuides: ResizeGuideOverlay);
                 WidgetManager.TrayLayerStateChanged += UpdateTrayLayerStateText;
                 // Lets a quick-reveal raise promote already-open MagneticDesk surfaces
                 // (search popup, settings, desktop organization) above the raised

@@ -14,13 +14,14 @@ public sealed class ToggleSwitchAccessibleNameContractTests
 {
     public static TheoryData<string, int> ToggleSwitchHostFiles => new()
     {
-        { "src/magnetic-desk/Views/SettingsWindow.xaml", 32 },
+        { "src/magnetic-desk/Views/SettingsWindow.xaml", 31 },
         { "src/magnetic-desk/Views/SettingsSections/SearchSettingsSection.xaml", 4 },
+        { "src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml", 1 },
 
         { "src/magnetic-desk/Views/SettingsSections/FileWidgetSettingsSection.xaml", 1 },
         { "src/magnetic-desk/Views/SettingsSections/DesktopOrganizationSettingsSection.xaml", 2 },
         { "src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml", 1 },
-        { "src/magnetic-desk/Views/OnboardingWindow.xaml", 3 },
+        { "src/magnetic-desk/Views/OnboardingWindow.xaml", 0 },
     };
 
     [Theory]

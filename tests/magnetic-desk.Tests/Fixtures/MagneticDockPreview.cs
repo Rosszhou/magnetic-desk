@@ -14,6 +14,11 @@ public partial class App
 
     partial void ShowMagneticDockPreview()
     {
+        if (Environment.GetEnvironmentVariable("MAGNETIC_DESK_LIFECYCLE_TEST") == "1")
+        {
+            if (WidgetManager is { } lifecycleManager) _ = lifecycleManager.VerifyMagneticLifecycleAsync();
+            return;
+        }
         if (Environment.GetEnvironmentVariable("MAGNETIC_DESK_RESIZE_REJECTION_ONLY") == "1")
         {
             if (WidgetManager is { } resizeManager) _ = resizeManager.VerifyResizeRejectionOnlyAsync();

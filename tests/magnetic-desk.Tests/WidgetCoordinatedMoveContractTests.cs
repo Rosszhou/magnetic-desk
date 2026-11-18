@@ -36,7 +36,7 @@ public sealed class WidgetCoordinatedMoveContractTests
     [Fact]
     public void WidgetSpacingSetting_UsesSliderInsteadOfNumberBox()
     {
-        string settingsXaml = Read("src/magnetic-desk/Views/SettingsWindow.xaml");
+        string settingsXaml = Read("src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml");
         int start = settingsXaml.IndexOf(
             "Settings.WidgetSnap.Spacing.Title",
             StringComparison.Ordinal);

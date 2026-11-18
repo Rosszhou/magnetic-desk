@@ -151,6 +151,17 @@ public sealed partial class ContentWidgetWindow
             return;
         }
 
+        if (e.Key == Windows.System.VirtualKey.Z &&
+            Win32Helper.IsKeyPressed(Windows.System.VirtualKey.Control) &&
+            !Win32Helper.IsKeyPressed(Windows.System.VirtualKey.Shift) &&
+            !(e.OriginalSource is DependencyObject editSource &&
+                (HasAncestorOfType<RichEditBox>(editSource) || HasAncestorOfType<WebView2>(editSource))) &&
+            App.Current?.WidgetManager?.UndoLayout() == true)
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (TryHandleCompactActivation(e))
         {
             return;
@@ -216,7 +227,7 @@ public sealed partial class ContentWidgetWindow
                     windowHandle);
             });
         }
-        if (_config.IsPositionLocked || IsCompactTransitionActive) return;
+        if (IsPositionLocked || IsCompactTransitionActive) return;
         BeginWindowDragCore(e, ContentWidgetShell.TitleBar);
     }
 
@@ -281,7 +292,7 @@ public sealed partial class ContentWidgetWindow
 
     private void DragHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (_config.IsPositionLocked) return;
+        if (IsPositionLocked) return;
         var properties = e.GetCurrentPoint(ContentWidgetShell.DragHandleElement).Properties;
         if (!properties.IsLeftButtonPressed) return;
         BeginWindowDragCore(e, ContentWidgetShell.DragHandleElement);

@@ -7,7 +7,7 @@ namespace MagneticDesk.Views;
 public abstract partial class WidgetWindowBase
 {
     public bool CanParticipateInCoordinatedMove =>
-        !IsPositionLocked &&
+        !IsPositionLocked && App.Current?.WidgetManager?.IsMagneticLayoutLocked(Config) != true &&
         !IsClosing &&
         !IsHideAnimationRunning;
 

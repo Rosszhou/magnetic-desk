@@ -293,8 +293,11 @@ public sealed class SettingsAccordionAndOrderingContractTests
             "HeaderKey=\"Settings.ShowDesktopBehavior.Title\"",
             "HeaderKey=\"Settings.OpenMethod.Title\"",
             "HeaderKey=\"Settings.Interaction.Hover.Title\"",
-            "HeaderKey=\"Settings.ResizeSnap.Title\"",
             "HeaderKey=\"Settings.DesktopDoubleClick.Title\"");
+
+        string layout = ReadRepositoryFile("src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml");
+        Assert.Contains("HeaderKey=\"Design.Settings.AlignTitle\"", layout, StringComparison.Ordinal);
+        Assert.DoesNotContain("Settings.ResizeSnap.Title", slice, StringComparison.Ordinal);
 
         AssertAscending(slice, "Interaction elevated notice placement",
             "HeaderKey=\"Settings.GlobalHotkey.Title\"",

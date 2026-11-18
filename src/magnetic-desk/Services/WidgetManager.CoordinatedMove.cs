@@ -77,6 +77,7 @@ public sealed partial class WidgetManager
         _coordinatedMoveSession = session;
         foreach (CoordinatedMoveEntry entry in entries)
         {
+            IncludeLayoutOperationMembers(entry.Window.Config.Id);
             entry.Window.BeginCoordinatedMoveParticipation(entry.IsSource);
             if (magneticGroupId is not null)
             {
@@ -84,6 +85,8 @@ public sealed partial class WidgetManager
             }
         }
 
+        if (source.WindowContentRoot is { } root)
+            _layoutGuides?.BeginDrag(sourceWindowHandle, root, entries.Select(e => e.Window.WindowHandle));
         App.Log(
             $"[CoordinatedMove] Begin source=0x{sourceWindowHandle.ToInt64():X} " +
             $"count={entries.Length} monitor=0x{sourceMonitor.ToInt64():X}");
@@ -105,6 +108,11 @@ public sealed partial class WidgetManager
             session.GroupStartBounds,
             new PointInt32(requestedDeltaX, requestedDeltaY),
             session.WorkArea);
+        var proposed = new RectInt32(session.GroupStartBounds.X + delta.X,
+            session.GroupStartBounds.Y + delta.Y, session.GroupStartBounds.Width, session.GroupStartBounds.Height);
+        RectInt32 snapped = _layoutGuides?.UpdateGuidesAndSnapForDrag(proposed) ?? proposed;
+        delta = WidgetCoordinatedMoveCalculator.ClampDelta(session.GroupStartBounds,
+            new PointInt32(snapped.X - session.GroupStartBounds.X, snapped.Y - session.GroupStartBounds.Y), session.WorkArea);
         if (delta.X == session.LastAppliedDelta.X &&
             delta.Y == session.LastAppliedDelta.Y)
         {
@@ -165,6 +173,7 @@ public sealed partial class WidgetManager
         }
 
         _coordinatedMoveSession = null;
+        _layoutGuides?.EndDrag();
         bool committedMove = hasMoved &&
             (session.LastAppliedDelta.X != 0 || session.LastAppliedDelta.Y != 0);
         foreach (CoordinatedMoveEntry entry in session.Entries)

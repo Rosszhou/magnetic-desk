@@ -12,7 +12,7 @@ namespace MagneticDesk.Controls;
 
 public sealed partial class WidgetTitleIcon : UserControl
 {
-    private const double DesktopTitleIconScale = 1.3d;
+    private const double DesktopTitleIconScale = 1.1d;
     private string? _currentColorAssetName;
     private XamlPath? _activeMonoIconPath;
     private readonly Dictionary<string, XamlPath> _monoIconPaths = new(StringComparer.Ordinal);

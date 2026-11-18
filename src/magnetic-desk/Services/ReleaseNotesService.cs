@@ -167,6 +167,7 @@ public sealed class ReleaseNotesService
     /// </summary>
     public static readonly IReadOnlyList<string> KnownReleaseVersions =
     [
+        "1.1.0",
         "1.0.0"
     ];
 

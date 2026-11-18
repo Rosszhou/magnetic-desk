@@ -150,6 +150,7 @@ public sealed partial class WidgetManager
     private const int LayerRefreshDuringToggleRetryDelayMs = 250;
 
     private readonly SettingsService _settingsService;
+    private readonly ResizeGuideOverlayService? _layoutGuides;
     private readonly FileService _fileService;
     private readonly OrganizerService _organizerService;
     private readonly ThemeService _themeService;
@@ -498,7 +499,8 @@ public sealed partial class WidgetManager
         LocalizationService? localizationService = null,
         TodoSettingsCoordinator? todoSettings = null,
         IQuickCaptureSettings? quickCaptureSettings = null,
-        ISearchFeatureSettings? searchFeatureSettings = null)
+        ISearchFeatureSettings? searchFeatureSettings = null,
+        ResizeGuideOverlayService? layoutGuides = null)
         : this(
             settingsService,
             fileService,
@@ -510,7 +512,8 @@ public sealed partial class WidgetManager
             recycleManagedFolderDeletes: true,
             todoSettings,
             quickCaptureSettings,
-            searchFeatureSettings)
+            searchFeatureSettings,
+            layoutGuides)
     {
     }
 
@@ -545,9 +548,11 @@ public sealed partial class WidgetManager
         bool recycleManagedFolderDeletes,
         TodoSettingsCoordinator? todoSettings = null,
         IQuickCaptureSettings? quickCaptureSettings = null,
-        ISearchFeatureSettings? searchFeatureSettings = null)
+        ISearchFeatureSettings? searchFeatureSettings = null,
+        ResizeGuideOverlayService? layoutGuides = null)
     {
         _settingsService = settingsService;
+        _layoutGuides = layoutGuides;
         _fileSessionRegistration = new(_fileWidgets,
             session => session.Host, session => session.Content);
         _contentWindowRegistration = new(_contentWidgets, _widgetWindowHandles,
@@ -2522,6 +2527,11 @@ public sealed partial class WidgetManager
         StopInteractionLeakWatchdog();
         _sessionManager.InteractionActiveChanged -= OnSessionInteractionActiveChanged;
         DisposeWidgetDetachPlacementPreview();
+        ClearMagneticDockFeedback();
+        _magneticDockOutline.Dispose();
+        _layoutGuides?.Dispose();
+        _layoutOperation = null;
+        _layoutUndoHistory.Clear();
         _settingsService.SettingsChanged -= OnSettingsChanged;
         _settingsService.AppearancePreviewChanged -= ApplyAppearancePreview;
         _themeService.AppearanceChanged -= ApplyAppearancePreview;

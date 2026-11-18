@@ -11,11 +11,12 @@ Upstream copyright notice reproduced from the source
 Copyright (c) DeskBox. All rights reserved.
 
 Modification notice
-Rosszhou modified this work between 2026-11-12 and 2026-11-17 for
+Rosszhou modified this work between 2026-11-12 and 2026-11-18 for
 magnetic-desk. Changes include magnetic widget groups, coordinated resize
 and collapse behavior, capsule appearance, clipboard widgets, branding,
 onboarding, English and Simplified Chinese interfaces, feedback contact,
-local uninstallation, offline distribution, and regression-test migration.
+local uninstallation, offline distribution, regression-test migration,
+layout previews, alignment guides, layout undo, group locks, and the 1.1 interface.
 
 The modified work is distributed under GPL-3.0-only. The full license and
 its warranty disclaimer are provided in LICENSE. Copyright and license

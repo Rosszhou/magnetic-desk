@@ -273,6 +273,7 @@ public sealed class InteractionSettingsEditorTests : IDisposable
     {
         string xaml = File.ReadAllText(
             TestPaths.FromRepository("src/magnetic-desk/Views/SettingsWindow.xaml"));
+        xaml += File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml"));
         string deferred = File.ReadAllText(
             TestPaths.FromRepository("src/magnetic-desk/Views/SettingsWindow.DeferredSections.cs"));
         string bindable = File.ReadAllText(
@@ -322,7 +323,7 @@ public sealed class InteractionSettingsEditorTests : IDisposable
 
         // The deferred-section host switches both section DataContexts to
         // the editor instead of leaving the shell view model in place.
-        Assert.Contains("if (sectionTag is \"Interaction\" or \"InteractionWindowSettings\")", deferred, StringComparison.Ordinal);
+        Assert.Contains("if (sectionTag is \"MagneticLayout\" or \"Interaction\" or \"InteractionWindowSettings\")", deferred, StringComparison.Ordinal);
         Assert.Contains("section.DataContext = _interactionSettingsViewModel;", deferred, StringComparison.Ordinal);
 
         // The shell bridge drops the sixteen interaction entries; the editor

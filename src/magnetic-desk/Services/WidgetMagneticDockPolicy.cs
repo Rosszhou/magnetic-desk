@@ -13,7 +13,8 @@ internal readonly record struct MagneticDockContact(
 internal static class WidgetMagneticDockPolicy
 {
     public static MagneticDockContact? FindContact(
-        RectInt32 source, RectInt32 target, int spacing, int threshold, int minimumOverlap)
+        RectInt32 source, RectInt32 target, int spacing, int threshold, int minimumOverlap,
+        IReadOnlyList<RectInt32>? obstacles = null, IReadOnlyList<RectInt32>? moving = null)
     {
         if (source.Width <= 0 || source.Height <= 0 || target.Width <= 0 || target.Height <= 0)
         {
@@ -47,7 +48,14 @@ internal static class WidgetMagneticDockPolicy
                 Math.Abs(source.Y - topY), new(source.X, topY, source.Width, source.Height)));
         }
         return contacts.Where(contact => contact.Distance <= threshold)
-            .OrderBy(contact => contact.Distance).Select(contact => (MagneticDockContact?)contact).FirstOrDefault();
+            .Select(contact => WidgetMagneticDockPlacement.Resolve(contact, source, target,
+                obstacles ?? [target], moving ?? [source], spacing, minimumOverlap))
+            .OfType<MagneticDockContact>()
+            .OrderBy(contact => contact.Distance)
+            .ThenBy(contact => Math.Abs((long)contact.DockedBounds.X - source.X) +
+                Math.Abs((long)contact.DockedBounds.Y - source.Y))
+            .Select(contact => (MagneticDockContact?)contact)
+            .FirstOrDefault();
     }
 }
 

@@ -13,11 +13,11 @@ namespace MagneticDesk.Services;
 
 /// <summary>
 /// Provides snap-to-edge alignment detection and visual edge highlights
-/// during widget resize operations.  No overlay window is used — highlights
-/// are drawn directly on each widget's own root Grid using Border elements,
-/// avoiding all transparent-window rendering issues.
+/// during widget resize operations. Edge highlights use each widget's root Grid.
+/// Small click-through native surfaces draw drag alignment lines
+/// across the space between widgets.
 /// </summary>
-public sealed class ResizeGuideOverlayService
+public sealed class ResizeGuideOverlayService : IDisposable
 {
     // ── Snap threshold & visual constants ───────────────────────────────
 
@@ -43,6 +43,8 @@ public sealed class ResizeGuideOverlayService
     private Windows.UI.Color _highlightColor;
     private readonly List<WidgetSnapTarget> _resizeSnapTargets = [];
     private readonly List<WidgetSnapTarget> _dragSnapTargets = [];
+    private readonly MagneticDesk.Views.WidgetLayoutGuideOverlay _dragGuides = new();
+    private double _dragDpiScale = 1;
     private RectInt32? _resizeWorkAreaBounds;
     private int _sessionSnapSpacingPhysical;
     private int _sessionSnapEngageThresholdPhysical;
@@ -685,7 +687,7 @@ public sealed class ResizeGuideOverlayService
     /// <summary>
     /// Called when a widget drag-move operation begins.
     /// </summary>
-    public void BeginDrag(IntPtr draggingWidgetHwnd, FrameworkElement draggingWidgetRoot)
+    public void BeginDrag(IntPtr draggingWidgetHwnd, FrameworkElement draggingWidgetRoot, IEnumerable<IntPtr>? excludedHandles = null)
     {
         _draggingWidgetHwnd = draggingWidgetHwnd;
         _draggingWidgetRoot = draggingWidgetRoot;
@@ -693,7 +695,9 @@ public sealed class ResizeGuideOverlayService
         _currentDragHorizontalMatch = null;
         _currentDragVerticalMatch = null;
         _dragSnapTargets.Clear();
-        _dragSnapTargets.AddRange(GetOtherWidgetBounds(draggingWidgetHwnd));
+        var excluded = excludedHandles?.ToHashSet() ?? [];
+        _dragSnapTargets.AddRange(GetOtherWidgetBounds(draggingWidgetHwnd).Where(t => !excluded.Contains(t.WindowHandle)));
+        _dragDpiScale = Win32Helper.GetDpiScaleForWindow(draggingWidgetHwnd, draggingWidgetRoot.XamlRoot);
         _resizeWorkAreaBounds = GetResizeWorkAreaBounds(draggingWidgetHwnd);
         ConfigureSessionSnapMetrics(draggingWidgetHwnd, draggingWidgetRoot);
         IsDragActive = true;
@@ -715,6 +719,7 @@ public sealed class ResizeGuideOverlayService
             if (IsDragActive)
             {
                 ClearAllHighlights();
+                _dragGuides.Hide();
             }
 
             return proposedBounds;
@@ -739,10 +744,8 @@ public sealed class ResizeGuideOverlayService
 
         // ── Update highlights for the active snap matches ────────────────
 
-        var desired = new HashSet<(IntPtr Hwnd, SnapEdge Edge)>();
-        AddMatchHighlights(desired, _draggingWidgetHwnd, result.VerticalMatch);
-        AddMatchHighlights(desired, _draggingWidgetHwnd, result.HorizontalMatch);
-        SyncHighlights(desired);
+        ClearAllHighlights();
+        _dragGuides.Show(WidgetLayoutGuides.Drag(result, _dragSnapTargets, _resizeWorkAreaBounds, _dragDpiScale));
 
         return result.Bounds;
     }
@@ -752,6 +755,7 @@ public sealed class ResizeGuideOverlayService
     /// </summary>
     public void EndDrag()
     {
+        _dragGuides.Hide();
         if (!IsDragActive)
         {
             return;
@@ -774,6 +778,13 @@ public sealed class ResizeGuideOverlayService
         _resizeSnapTargets.Clear();
 
         App.LogVerbose("[ResizeGuide] EndDrag");
+    }
+
+    public void Dispose()
+    {
+        EndDrag();
+        EndResize();
+        _dragGuides.Dispose();
     }
 
     private enum SnapEdge

@@ -94,7 +94,7 @@ public sealed partial class SettingsWindow
         // through the editor's generated custom-property provider under
         // Native AOT, so no per-property shell bridge is needed anymore.
 
-        if (sectionTag is "Interaction" or "InteractionWindowSettings")
+        if (sectionTag is "MagneticLayout" or "Interaction" or "InteractionWindowSettings")
         {
             section.DataContext = _interactionSettingsViewModel;
         }

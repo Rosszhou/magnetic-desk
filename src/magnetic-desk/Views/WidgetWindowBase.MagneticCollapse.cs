@@ -39,11 +39,32 @@ public abstract partial class WidgetWindowBase
     internal void ResetMagneticInteractionState()
     {
         CancelTimer(ref _collapseHoverTimer);
+        CancelTimer(ref _collapseLeaveTimer);
+        CancelPendingCompactExpansion();
+        CancelCompactExpansionWarmup();
         _isSmartPinnedOpen = false;
         _requirePointerExitBeforeHoverExpansion = true;
         _suppressSmartExpansionUntilPointerExit = true;
         _magneticLayoutMoveOrigin = GetActualWindowBounds();
         _magneticLayoutVisibleBounds = GetActualWindowBounds();
+    }
+
+    internal bool InterruptMagneticDrag()
+    {
+        if (!IsDragging) return false;
+        CancelPendingTitleBarDragFrame();
+        CompleteCompactArrangementDrag();
+        _deferTitleBarDragConfigUpdates = false;
+        IsDragging = false;
+        HasMovedTitleBarDrag = false;
+        _isCoordinatedMoveDrag = false;
+        DragCaptureElement?.ReleasePointerCaptures();
+        DragCaptureElement = null;
+        CommitUserPlacementFromWindow(WidgetPlacementSource.Drag);
+        EndWidgetBoundsInteraction();
+        DisplayChangeWatcher?.ResumeRestore();
+        RestoreBackdropAfterInteraction();
+        return true;
     }
 
     internal void RefreshMagneticCollapseBehavior()

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="MagneticWindowBrush" Color="#FAF9F7" />
+            <SolidColorBrush x:Key="MagneticPaneBrush" Color="#F1F2F5" />
+            <SolidColorBrush x:Key="MagneticSurfaceBrush" Color="#FEFEFD" />
+            <SolidColorBrush x:Key="MagneticStrokeBrush" Color="#D9DCE2" />
+            <SolidColorBrush x:Key="MagneticPreviewBrush" Color="#EDF2F9" />
+            <SolidColorBrush x:Key="MagneticSelectionBrush" Color="#E1EBFF" />
+            <SolidColorBrush x:Key="MagneticAccentBrush" Color="#2563EB" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="MagneticWindowBrush" Color="#1D2026" />
+            <SolidColorBrush x:Key="MagneticPaneBrush" Color="#22262E" />
+            <SolidColorBrush x:Key="MagneticSurfaceBrush" Color="#2A2F39" />
+            <SolidColorBrush x:Key="MagneticStrokeBrush" Color="#454C59" />
+            <SolidColorBrush x:Key="MagneticPreviewBrush" Color="#232C3C" />
+            <SolidColorBrush x:Key="MagneticSelectionBrush" Color="#263F66" />
+            <SolidColorBrush x:Key="MagneticAccentBrush" Color="#79ADFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="MagneticWindowBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="MagneticPaneBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="MagneticSurfaceBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="MagneticStrokeBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="MagneticPreviewBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="MagneticSelectionBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="MagneticAccentBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+    <CornerRadius x:Key="MagneticSurfaceRadius">12</CornerRadius>
+    <Style x:Key="MagneticSurfaceStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource MagneticSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource MagneticStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{StaticResource MagneticSurfaceRadius}" />
+    </Style>
+    <Style x:Key="MagneticActionStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="16,8" />
+    </Style>
+</ResourceDictionary>

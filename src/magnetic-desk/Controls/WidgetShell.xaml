@@ -95,6 +95,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Grid
@@ -119,6 +120,7 @@
                         <TextBlock
                             x:Name="TitleText"
                             FontSize="{Binding TitleTextSize}"
+                            FontWeight="SemiBold"
                             Text="{Binding DisplayName}"
                             TextTrimming="CharacterEllipsis"
                             VerticalAlignment="Center" />
@@ -145,15 +147,21 @@
                      The standard header divider is hidden only for group tabs. -->
                 <Border
                     x:Name="TabActionsDivider"
-                    Grid.Column="1"
+                    Grid.Column="2"
                     Height="1"
                     VerticalAlignment="Bottom"
                     Background="{ThemeResource WidgetGroupTabStripBorderBrush}"
                     IsHitTestVisible="False"
                     Visibility="Collapsed" />
+                <Button x:Name="MagneticGroupButton" Grid.Column="1" Margin="4,0,6,0"
+                        Width="28" Height="28" MinWidth="28" Padding="0" CornerRadius="8"
+                        Background="{ThemeResource MagneticSelectionBrush}" Foreground="{ThemeResource MagneticAccentBrush}"
+                        BorderThickness="0" VerticalAlignment="Center" Visibility="Collapsed" Click="MagneticGroupButton_Click">
+                    <FontIcon x:Name="MagneticGroupGlyph" Glyph="&#xE71B;" FontSize="13" />
+                </Button>
                 <Grid
                     x:Name="RightActionButtonsHost"
-                    Grid.Column="1"
+                    Grid.Column="2"
                     VerticalAlignment="Center">
                     <StackPanel
                         x:Name="RightActionButtons"
