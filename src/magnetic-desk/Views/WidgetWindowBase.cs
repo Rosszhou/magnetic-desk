@@ -260,7 +260,7 @@ public abstract partial class WidgetWindowBase : Window
 
     protected Windows.Foundation.Rect GetCurrentAnimationBounds()
     {
-        RectInt32 bounds = GetActualWindowBounds();
+        RectInt32 bounds = _compositionHostBounds is null ? GetActualWindowBounds() : _collapseAnimationTo;
         return new Windows.Foundation.Rect(
             bounds.X,
             bounds.Y,

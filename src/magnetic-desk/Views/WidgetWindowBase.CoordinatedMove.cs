@@ -11,7 +11,7 @@ public abstract partial class WidgetWindowBase
         !IsClosing &&
         !IsHideAnimationRunning;
 
-    public RectInt32 CoordinatedMoveBounds => GetActualWindowBounds();
+    public RectInt32 CoordinatedMoveBounds => GetCurrentWindowBounds();
 
     public void BeginCoordinatedMoveParticipation(bool isSource)
     {

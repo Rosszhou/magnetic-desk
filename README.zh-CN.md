@@ -6,7 +6,7 @@ Windows 桌面整理工具，支持文件格子、磁吸组合、胶囊收纳、
 
 ## 下载与安装
 
-在 [Releases 下载页](https://github.com/Rosszhou/magnetic-desk/releases/latest) 下载 `magnetic-desk_Setup_1.1.0_x64.exe`，双击运行安装程序。
+在 [Releases 下载页](https://github.com/Rosszhou/magnetic-desk/releases/latest) 下载 `magnetic-desk_Setup_1.4.0_x64.exe`，双击运行安装程序。
 
 - 适用于 Windows 10 2004（内部版本 19041）及更新版本、Windows 11 的 x64 系统。
 - 安装包自带运行组件，支持离线安装。
@@ -24,7 +24,7 @@ Windows 桌面整理工具，支持文件格子、磁吸组合、胶囊收纳、
 - 标题栏加号菜单提供便签、剪贴板、待办和搜索等功能格子。
 - 本地备份与恢复。支持简体中文和英文，跟随系统时中文系统使用简体中文，其余使用英文。
 
-当前版本为 1.1.0。本版本已移除天气、音乐、时光格子、WebDAV 云备份及应用更新入口，保留旧配置模型以读取历史配置。完整使用说明见 [magnetic-desk.md](magnetic-desk.md)。
+当前版本为 1.4.0。本版本已移除天气、音乐、时光格子、WebDAV 云备份及应用更新入口，保留旧配置模型以读取历史配置。完整使用说明见 [magnetic-desk.md](magnetic-desk.md)。
 
 ## 构建和检查
 

@@ -59,6 +59,78 @@ public sealed class WidgetMagneticResizeLayoutTests
         Assert.Equal(810, Arrange(original, "a", new(0, 0, 300, 800))["b"].Y);
     }
 
+    [Theory]
+    [InlineData(300, 799)]
+    [InlineData(337, 860)]
+    public void ResizeFillsTheGapInTheSavedFiveWidgetLayout(int width, int height)
+    {
+        var attachment = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2251, 0, 420, 600), ["middle"] = new(2679, 0, 549, 799),
+            ["upper-right"] = new(3236, 0, 604, 576), ["lower-right"] = new(3236, 584, 580, 616),
+            ["lower-middle"] = new(2808, 807, 420, 616)
+        };
+        var original = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2151, 118, 420, 600), ["middle"] = new(2579, 124, 337, 799),
+            ["upper-right"] = new(3344, 118, 373, 576), ["lower-right"] = new(3344, 702, 373, 616),
+            ["lower-middle"] = new(2916, 925, 420, 616)
+        };
+        var proposed = new RectInt32(2579, 124, width, height);
+        var result = WidgetMagneticResizeLayout.ArrangeInteractive(original, "middle", proposed, attachment,
+            "RightTop", 8, 18, out bool reattached);
+
+        Assert.True(reattached);
+        Assert.Equal(proposed, result["middle"]);
+        Assert.Equal(original["left"], result["left"]);
+        Assert.Equal(proposed.X + proposed.Width + 8, result["upper-right"].X);
+        Assert.Equal(result["upper-right"].X, result["lower-right"].X);
+        Assert.Equal(result["upper-right"].Y + 584, result["lower-right"].Y);
+        Assert.Equal(result["lower-right"].X - 428, result["lower-middle"].X);
+        Assert.Equal(result["lower-right"].Y + 223, result["lower-middle"].Y);
+
+        var size = result.ToDictionary(pair => pair.Key, pair => new SizeInt32(pair.Value.Width, 78));
+        var compact = WidgetMagneticCollapseLayout.RestoreCompact(result,
+            new Dictionary<string, RectInt32>(), size, "RightTop", 8, 18);
+        var origin = WidgetCoordinatedMoveCalculator.GetUnion(compact.Values);
+        Assert.Equal(result, WidgetMagneticCollapseLayout.RestoreExpanded(result,
+            new(origin.X, origin.Y), result, "RightTop", 8, 18));
+    }
+
+    [Fact]
+    public void FillingAGapDoesNotMoveAMemberThroughAnOccupiedSpace()
+    {
+        var original = new Dictionary<string, RectInt32>
+        {
+            ["source"] = new(0, 0, 200, 400), ["blocker"] = new(420, 0, 200, 400),
+            ["detached"] = new(700, 0, 200, 400)
+        };
+        var attachment = original.ToDictionary();
+        attachment["detached"] = new(210, 0, 200, 400);
+        var result = WidgetMagneticResizeLayout.ArrangeInteractive(original, "source", new(0, 0, 180, 400), attachment,
+            "LeftTop", 10, 12, out bool reattached);
+        Assert.False(reattached);
+        Assert.Equal(original["blocker"], result["blocker"]);
+        Assert.Equal(original["detached"], result["detached"]);
+    }
+
+    [Fact]
+    public void ShorteningAnEdgeSlidesItsConnectedRowUpIntoTheFreeSpace()
+    {
+        var original = new Dictionary<string, RectInt32>
+        {
+            ["source"] = new(0, 0, 300, 600), ["first"] = new(310, 400, 250, 240),
+            ["second"] = new(570, 400, 250, 240)
+        };
+        var result = WidgetMagneticResizeLayout.ArrangeInteractive(original, "source", new(0, 0, 300, 350),
+            original, "LeftTop", 10, 18, out bool reattached);
+        Assert.True(reattached);
+        Assert.Equal(310, result["first"].X);
+        Assert.Equal(332, result["first"].Y);
+        Assert.Equal(570, result["second"].X);
+        Assert.Equal(result["first"].Y, result["second"].Y);
+    }
+
     [Fact]
     public void GrowingTheTopEdgePushesOnlyTheOverlappingUpperColumn()
     {
@@ -144,5 +216,5 @@ public sealed class WidgetMagneticResizeLayoutTests
 
     private static IReadOnlyDictionary<string, RectInt32> Arrange(
         Dictionary<string, RectInt32> original, string sourceId, RectInt32 proposed) =>
-        WidgetMagneticResizeLayout.Arrange(original, sourceId, proposed, original, "LeftTop", 10, 18);
+        WidgetMagneticResizeLayout.ArrangeInteractive(original, sourceId, proposed, original, "LeftTop", 10, 18, out _);
 }

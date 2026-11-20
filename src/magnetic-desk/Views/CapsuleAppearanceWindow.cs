@@ -1,5 +1,6 @@
 ﻿using MagneticDesk.Controls;
 using MagneticDesk.Models;
+using MagneticDesk.Platform;
 using MagneticDesk.Services;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
@@ -13,6 +14,12 @@ namespace MagneticDesk.Views;
 
 internal sealed class CapsuleAppearanceWindow : Window
 {
+    private const int PreferredColumns = 3;
+    private const double PreviewWidth = 250;
+    private const double MinimumColumnWidth = 220;
+    private const double GallerySpacing = 12;
+    private const double PagePadding = 14;
+
     private readonly WidgetConfig _config;
     private readonly Action<WidgetCapsuleStyle, bool> _apply;
     private readonly StackPanel _root;
@@ -29,38 +36,50 @@ internal sealed class CapsuleAppearanceWindow : Window
         _apply = apply;
         var strings = App.Current.LocalizationService;
         Title = $"magnetic-desk · {strings.T("Capsule.Gallery.Title")}";
-        _root = new StackPanel { Padding = new Thickness(20), Spacing = 18 };
-        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 20 };
+        _root = new StackPanel { Padding = new Thickness(PagePadding), Spacing = GallerySpacing };
+        var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = GallerySpacing };
         toolbar.Children.Add(new TextBlock { Text = config.Name, FontSize = 22,
-            MaxWidth = 280, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
+            MaxWidth = 215, TextTrimming = TextTrimming.CharacterEllipsis,
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center });
         _scope = new ComboBox { Header = strings.T("Capsule.Gallery.Scope"), MinWidth = 180 };
         _scope.Items.Add(strings.T("Magnetic.Collapse.Current"));
         if (hasGroup) _scope.Items.Add(strings.T("Magnetic.Collapse.Group"));
         _scope.SelectedIndex = hasGroup ? 1 : 0;
         toolbar.Children.Add(_scope);
-        var themeButton = new Button { Content = strings.T("Capsule.Gallery.Theme"), VerticalAlignment = VerticalAlignment.Bottom };
+        var themeButton = new Button { Content = strings.T("Capsule.Gallery.Theme"),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Bottom };
         themeButton.Click += (_, _) => _root.RequestedTheme = _root.ActualTheme == ElementTheme.Dark ? ElementTheme.Light : ElementTheme.Dark;
         toolbar.Children.Add(themeButton);
         _root.Children.Add(toolbar);
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 18 };
-        _root.Children.Add(row);
+        var gallery = new Grid
+        {
+            ColumnSpacing = GallerySpacing,
+            RowSpacing = GallerySpacing
+        };
+        _root.Children.Add(gallery);
+        var sampleText = strings.T("Capsule.Gallery.Sample");
         foreach (var style in Enum.GetValues<WidgetCapsuleStyle>())
         {
-            var column = new StackPanel { Spacing = 12, Width = 290 };
-            column.Children.Add(new TextBlock { Text = strings.T($"Capsule.Style.{style}"), FontSize = 20 });
-            var expanded = new WidgetShell { Width = 290, Height = 210, ShowHoverButtons = false, IsHitTestVisible = false,
-                ShellContent = new TextBlock { Text = strings.T("Capsule.Gallery.Sample"), Margin = new Thickness(16), TextWrapping = TextWrapping.Wrap } };
+            var column = new StackPanel { Spacing = 5, MaxWidth = PreviewWidth };
+            column.Children.Add(new TextBlock { Text = strings.T($"Capsule.Style.{style}"), FontSize = 16 });
+            var expanded = new WidgetShell { Height = 102, ShowHoverButtons = false, IsHitTestVisible = false,
+                ShellContent = new TextBlock { Text = sampleText, FontSize = 13, Margin = new Thickness(10, 5, 10, 5),
+                    TextWrapping = TextWrapping.Wrap } };
             expanded.TitleTextElement.Text = strings.T("QuickCapture.Name");
             expanded.SetCapsuleStyle(style.ToString());
             column.Children.Add(expanded);
             _previews.Add(expanded);
             _expandedPreviews.Add(expanded);
-            foreach (int width in new[] { 290, 230 })
+            foreach (bool useWidgetTitle in new[] { true, false })
             {
-                var compact = new WidgetShell { Width = width, Height = 52, ShowHoverButtons = false, IsHitTestVisible = false };
+                var compact = new WidgetShell
+                {
+                    Height = 40, ShowHoverButtons = false, IsHitTestVisible = false,
+                    Margin = new Thickness(0, 0, useWidgetTitle ? 0 : 46, 0)
+                };
                 compact.SetCapsuleStyle(style.ToString());
                 compact.SetCompactPresentation(new WidgetCompactPresentation(
-                    width == 290 ? config.Name : strings.T("QuickCapture.Name"), "", "\uE8A5", ""));
+                    useWidgetTitle ? config.Name : strings.T("QuickCapture.Name"), "", "\uE8A5", ""));
                 compact.SetCollapsed(true, SettingsService.WidgetCompactContentModeSummary);
                 column.Children.Add(compact);
                 _previews.Add(compact);
@@ -73,17 +92,28 @@ internal sealed class CapsuleAppearanceWindow : Window
             };
             _applyButtons.Add(style, applyButton);
             column.Children.Add(applyButton);
-            row.Children.Add(column);
+            gallery.Children.Add(column);
         }
+        LayoutGallery(gallery, PreferredColumns);
+        _root.SizeChanged += (_, args) =>
+        {
+            double availableWidth = args.NewSize.Width - 2 * PagePadding;
+            // Keep the toolbar buttons reachable on narrow windows as the cards wrap.
+            toolbar.Orientation = availableWidth >= 650 ? Orientation.Horizontal : Orientation.Vertical;
+            int columns = Math.Clamp((int)((availableWidth + GallerySpacing) / (MinimumColumnWidth + GallerySpacing)),
+                1, PreferredColumns);
+            if (columns != gallery.ColumnDefinitions.Count) LayoutGallery(gallery, columns);
+        };
         _root.ActualThemeChanged += (_, _) => UpdatePalette();
-        Content = new ScrollViewer { Content = _root, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollMode = ScrollMode.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        Content = new ScrollViewer { Content = _root, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalScrollMode = ScrollMode.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         App.Current.ThemeService?.TrackWindow(this);
         UpdatePalette();
         RefreshSelection();
         var area = DisplayArea.Primary.WorkArea;
-        int windowWidth = Math.Min(2420, Math.Max(400, area.Width - 48));
-        int windowHeight = Math.Min(940, Math.Max(400, area.Height - 48));
+        double dpiScale = Win32Helper.GetDpiScaleForPoint(area.X + area.Width / 2, area.Y + area.Height / 2);
+        int windowWidth = Math.Min((int)Math.Ceiling(824 * dpiScale), Math.Max(1, area.Width - 24));
+        int windowHeight = Math.Min((int)Math.Ceiling(660 * dpiScale), Math.Max(1, area.Height - 24));
         AppWindow.MoveAndResize(new RectInt32(area.X + (area.Width - windowWidth) / 2,
             area.Y + (area.Height - windowHeight) / 2, windowWidth, windowHeight));
         _timer = DispatcherQueue.CreateTimer();
@@ -97,6 +127,24 @@ internal sealed class CapsuleAppearanceWindow : Window
         };
         Closed += (_, _) => _timer.Stop();
         _timer.Start();
+    }
+
+    private static void LayoutGallery(Grid gallery, int columns)
+    {
+        // Equal-width cards remain aligned across rows, including the last partial row.
+        gallery.MaxWidth = columns * PreviewWidth + (columns - 1) * GallerySpacing;
+        gallery.ColumnDefinitions.Clear();
+        for (int column = 0; column < columns; column++)
+            gallery.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        gallery.RowDefinitions.Clear();
+        for (int index = 0; index < gallery.Children.Count; index++)
+        {
+            int row = index / columns;
+            if (index % columns == 0) gallery.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var card = (FrameworkElement)gallery.Children[index];
+            Grid.SetRow(card, row);
+            Grid.SetColumn(card, index % columns);
+        }
     }
 
     private void RefreshSelection()

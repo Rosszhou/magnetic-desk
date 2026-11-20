@@ -116,9 +116,9 @@ public abstract partial class WidgetWindowBase
     internal void ApplyMagneticReflowBounds(RectInt32 bounds, bool animate = false)
     {
         _magneticLayoutVisibleBounds = bounds;
-        if (BoundsEqual(GetActualWindowBounds(), bounds) && !IsCompactTransitionActive) return;
+        if (BoundsEqual(GetCurrentWindowBounds(), bounds) && !IsCompactTransitionActive) return;
         if (IsCompactBoundsStateActive) _stableCompactBounds = bounds;
-        StartBoundsTransition(GetActualWindowBounds(), bounds, IsWidgetCollapsed,
+        StartBoundsTransition(GetCurrentWindowBounds(), bounds, IsWidgetCollapsed,
             animate ? ResolveCompactTransitionDuration(null) : 0);
         _magneticLayoutVisibleBounds = bounds;
         _magneticLayoutMoveOrigin = bounds;

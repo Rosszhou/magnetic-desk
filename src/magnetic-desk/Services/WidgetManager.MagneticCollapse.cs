@@ -19,14 +19,13 @@ public sealed partial class WidgetManager
         return reference;
     }
 
-    private WidgetMagneticLayout MagneticAttachmentLayout(WidgetWindowBase[] windows,
-        IReadOnlyDictionary<string, RectInt32> reference)
+    private string? ResolveMagneticAttachmentAnchor(WidgetWindowBase[] windows)
     {
         string? anchor = windows.Select(w => w.Config.MagneticAttachmentAnchor).FirstOrDefault(a => a is not null)
             ?? windows[0].Config.PositionAnchor;
         foreach (var window in windows)
             foreach (var config in MagneticSurfaceConfigs(window.Config)) config.MagneticAttachmentAnchor ??= anchor;
-        return WidgetMagneticLayout.Capture(reference, preferredAnchor: anchor);
+        return anchor;
     }
 
     internal bool HasMagneticGroup(WidgetConfig config) => GetMagneticGroupId(config) is not null;
@@ -156,6 +155,7 @@ public sealed partial class WidgetManager
         bool pinnedOpen = false, bool restoreOnly = false)
     {
         if (windows.Length == 0) return;
+        using var boundsPreparation = WidgetCompactAnimationCoordinator.PrepareBoundsBatch();
         _applyingMagneticCollapse = true;
         try
         {
@@ -169,29 +169,28 @@ public sealed partial class WidgetManager
                 member.Config.MagneticExpandedPlacement ??= MagneticExpandedPlacement.FromBounds(member.MagneticExpandedBounds);
             var expanded = members.ToDictionary(w => w.Config.Id, w => w.Config.MagneticExpandedPlacement!.ToBounds());
             var attachment = MagneticAttachmentBounds(members);
-            var attachmentLayout = MagneticAttachmentLayout(members, attachment);
+            string? anchor = ResolveMagneticAttachmentAnchor(members);
+            double scale = Platform.Win32Helper.GetDpiScaleForWindow(WinRT.Interop.WindowNative.GetWindowHandle(members[0]), members[0].WindowContentRoot?.XamlRoot);
+            int expandedGap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * scale));
+            int tolerance = Math.Max(1, (int)Math.Round(12 * scale));
             var compactSizes = members.ToDictionary(w => w.Config.Id, w => w.MagneticCompactSize);
             var homes = members.Where(w => w.Config.MagneticCompactPlacement is not null)
                 .ToDictionary(w => w.Config.Id, w => w.Config.MagneticCompactPlacement!.ToBounds());
-            var compactHomes = WidgetMagneticCollapseLayout.RestoreCompact(expanded, homes, compactSizes, attachment, attachmentLayout);
+            var compactHomes = WidgetMagneticCollapseLayout.RestoreCompact(expanded, homes, compactSizes, anchor, expandedGap, tolerance);
             compactHomes = WidgetMagneticCollapseLayout.KeepVisible(compactHomes, members[0].MagneticWorkArea);
             foreach (var member in members)
                 member.Config.MagneticCompactPlacement = MagneticExpandedPlacement.FromBounds(compactHomes[member.Config.Id]);
             var homeBounds = WidgetCoordinatedMoveCalculator.GetUnion(compactHomes.Values);
             var origin = new PointInt32(homeBounds.X, homeBounds.Y);
-            double scale = Platform.Win32Helper.GetDpiScaleForWindow(WinRT.Interop.WindowNative.GetWindowHandle(members[0]), members[0].WindowContentRoot?.XamlRoot);
-            int expandedGap = Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * scale));
             expanded = WidgetMagneticCollapseLayout.KeepVisible(
-                WidgetMagneticCollapseLayout.RestoreExpanded(expanded, origin, attachment,
-                    members[0].Config.MagneticAttachmentAnchor, expandedGap, Math.Max(1, (int)Math.Round(12 * scale))),
+                WidgetMagneticCollapseLayout.RestoreExpanded(expanded, origin, attachment, anchor, expandedGap, tolerance),
                 members[0].MagneticWorkArea).ToDictionary();
             foreach (var member in members)
                 member.Config.MagneticExpandedPlacement = MagneticExpandedPlacement.FromBounds(expanded[member.Config.Id]);
             var sizes = members.ToDictionary(w => w.Config.Id, w => states[w.Config.Id]
                 ? compactSizes[w.Config.Id] : new SizeInt32(expanded[w.Config.Id].Width, expanded[w.Config.Id].Height));
             var targets = states.Values.Any(value => value)
-                ? WidgetMagneticCollapseLayout.ArrangeTransition(expanded, sizes,
-                    members[0].Config.MagneticAttachmentAnchor, expandedGap, Math.Max(1, (int)Math.Round(12 * scale)))
+                ? WidgetMagneticCollapseLayout.ArrangeTransition(expanded, sizes, anchor, expandedGap, tolerance)
                 : expanded;
             if (states.Values.All(value => value)) targets = compactHomes;
             targets = WidgetMagneticCollapseLayout.KeepVisible(targets, members[0].MagneticWorkArea);

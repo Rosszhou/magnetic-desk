@@ -1013,8 +1013,10 @@ public sealed partial class WidgetManager
         // target, so after the bounded defers the residue from the just-ended
         // expanded lease (#302) is applied with deterministic keys instead of
         // being abandoned to an unrelated future trigger.
-        if (!cohesionExit &&
-            candidates.Any(window => window.IsBoundsTransitionActive))
+        bool hasActiveBoundsTransition = candidates.Any(window =>
+            window.IsBoundsTransitionActive ||
+            window is WidgetWindowBase { MagneticBoundsTransitionActive: true });
+        if (!cohesionExit && hasActiveBoundsTransition)
         {
             if (_idleNormalizeAnimationDefers < MaxIdleNormalizeAnimationDefers)
             {
@@ -1035,7 +1037,7 @@ public sealed partial class WidgetManager
             return false;
         }
 
-        if (cohesionExit && candidates.Any(window => window.IsBoundsTransitionActive))
+        if (cohesionExit && hasActiveBoundsTransition)
         {
             App.LogVerbose(
                 $"[ZOrder] Cohesion-exit normalize applied while animating reason={reason} " +

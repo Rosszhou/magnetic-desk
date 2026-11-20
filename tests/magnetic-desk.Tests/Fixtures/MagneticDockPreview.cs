@@ -14,6 +14,11 @@ public partial class App
 
     partial void ShowMagneticDockPreview()
     {
+        if (Environment.GetEnvironmentVariable("MAGNETIC_DESK_ANIMATION_PERF_TEST") == "1")
+        {
+            if (WidgetManager is { } animationManager) _ = animationManager.MeasureCompactAnimationAsync();
+            return;
+        }
         if (Environment.GetEnvironmentVariable("MAGNETIC_DESK_LIFECYCLE_TEST") == "1")
         {
             if (WidgetManager is { } lifecycleManager) _ = lifecycleManager.VerifyMagneticLifecycleAsync();

@@ -99,12 +99,12 @@ internal sealed class WidgetMagneticLayout
     }
 
     internal IReadOnlyDictionary<string, RectInt32> Arrange(IReadOnlyDictionary<string, SizeInt32> sizes,
-        int x, int y, int? gapOverride = null)
+        int x, int y, int? gapOverride = null, int? horizontalGapLimit = null)
     {
         var measured = new Dictionary<WidgetMagneticLayout, SizeInt32>();
-        Measure(sizes, gapOverride, measured);
+        Measure(sizes, gapOverride, horizontalGapLimit, measured);
         var result = new Dictionary<string, RectInt32>(StringComparer.Ordinal);
-        Place(x, y, gapOverride, measured, result);
+        Place(x, y, gapOverride, horizontalGapLimit, measured, result);
         return result;
     }
 
@@ -134,7 +134,11 @@ internal sealed class WidgetMagneticLayout
             WidgetCoordinatedMoveCalculator.GetUnion(new[] { a.Bounds, b.Bounds }));
     }
 
-    private SizeInt32 Measure(IReadOnlyDictionary<string, SizeInt32> sizes, int? gapOverride,
+    // Keep open space between separated columns while tightening adjacent capsules.
+    private int ResolveGap(int? gapOverride, int? horizontalGapLimit) =>
+        !_horizontal && _gap > horizontalGapLimit ? _gap : Math.Max(0, gapOverride ?? _gap);
+
+    private SizeInt32 Measure(IReadOnlyDictionary<string, SizeInt32> sizes, int? gapOverride, int? horizontalGapLimit,
         Dictionary<WidgetMagneticLayout, SizeInt32> measured)
     {
         SizeInt32 size;
@@ -145,9 +149,9 @@ internal sealed class WidgetMagneticLayout
         }
         else
         {
-            var a = _first!.Measure(sizes, gapOverride, measured);
-            var b = _second!.Measure(sizes, gapOverride, measured);
-            int gap = Math.Max(0, gapOverride ?? _gap);
+            var a = _first!.Measure(sizes, gapOverride, horizontalGapLimit, measured);
+            var b = _second!.Measure(sizes, gapOverride, horizontalGapLimit, measured);
+            int gap = ResolveGap(gapOverride, horizontalGapLimit);
             size = _horizontal
                 ? new SizeInt32(Math.Max(a.Width, b.Width), a.Height + b.Height + gap)
                 : new SizeInt32(a.Width + b.Width + gap, Math.Max(a.Height, b.Height));
@@ -156,7 +160,7 @@ internal sealed class WidgetMagneticLayout
         return size;
     }
 
-    private void Place(int x, int y, int? gapOverride, Dictionary<WidgetMagneticLayout, SizeInt32> measured,
+    private void Place(int x, int y, int? gapOverride, int? horizontalGapLimit, Dictionary<WidgetMagneticLayout, SizeInt32> measured,
         Dictionary<string, RectInt32> result)
     {
         var size = measured[this];
@@ -167,16 +171,16 @@ internal sealed class WidgetMagneticLayout
         }
         var a = measured[_first!];
         var b = measured[_second!];
-        int gap = Math.Max(0, gapOverride ?? _gap);
+        int gap = ResolveGap(gapOverride, horizontalGapLimit);
         if (_horizontal)
         {
-            _first!.Place(x + (int)Math.Round((size.Width - a.Width) * _firstAlignment), y, gapOverride, measured, result);
-            _second!.Place(x + (int)Math.Round((size.Width - b.Width) * _secondAlignment), y + a.Height + gap, gapOverride, measured, result);
+            _first!.Place(x + (int)Math.Round((size.Width - a.Width) * _firstAlignment), y, gapOverride, horizontalGapLimit, measured, result);
+            _second!.Place(x + (int)Math.Round((size.Width - b.Width) * _secondAlignment), y + a.Height + gap, gapOverride, horizontalGapLimit, measured, result);
         }
         else
         {
-            _first!.Place(x, y + (int)Math.Round((size.Height - a.Height) * _firstAlignment), gapOverride, measured, result);
-            _second!.Place(x + a.Width + gap, y + (int)Math.Round((size.Height - b.Height) * _secondAlignment), gapOverride, measured, result);
+            _first!.Place(x, y + (int)Math.Round((size.Height - a.Height) * _firstAlignment), gapOverride, horizontalGapLimit, measured, result);
+            _second!.Place(x + a.Width + gap, y + (int)Math.Round((size.Height - b.Height) * _secondAlignment), gapOverride, horizontalGapLimit, measured, result);
         }
     }
 }

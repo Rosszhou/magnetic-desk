@@ -29,7 +29,8 @@ public sealed partial class WidgetManager
         var windows = GetLoadedDesktopWindows().ToDictionary(w => w.Config.Id);
         return _settingsService.Settings.WidgetLayout.Widgets.Where(w => !IsDeleted(w.Id)).ToDictionary(
             w => w.Id, w => new LayoutSnapshot(WidgetLayoutState.Capture(w) with { MagneticGroupId = GetMagneticGroupId(w) },
-                windows.GetValueOrDefault(w.Id)?.CoordinatedMoveBounds,
+                windows.GetValueOrDefault(w.Id) is WidgetWindowBase view
+                    ? view.RestingBoundsForLayout : windows.GetValueOrDefault(w.Id)?.CoordinatedMoveBounds,
                 windows.GetValueOrDefault(w.Id)?.IsCompactArrangementActive ?? w.IsCollapsed,
                 LayoutSurfaceKey(w), WidgetGroupSettings.FindByMember(_settingsService.Settings, w.Id)?.CollapseBehavior));
     }

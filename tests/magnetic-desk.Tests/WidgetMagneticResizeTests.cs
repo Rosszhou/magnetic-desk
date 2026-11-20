@@ -165,7 +165,7 @@ public sealed class WidgetMagneticResizeTests
     }
 
     [Fact]
-    public void AttachmentReference_DoesNotResetAMovedGroupsOrigin()
+    public void CompactionPreservesAMovedGroupsOrigin()
     {
         var reference = new Dictionary<string, RectInt32>
         { ["a"] = new(100, 100, 300, 400), ["b"] = new(410, 100, 300, 400) };
@@ -173,7 +173,7 @@ public sealed class WidgetMagneticResizeTests
             p => new RectInt32(p.Value.X + 120, p.Value.Y + 80, p.Value.Width, p.Value.Height));
         var sizes = moved.ToDictionary(p => p.Key, p => new SizeInt32(p.Value.Width, 52));
         var compact = WidgetMagneticCollapseLayout.RestoreCompact(moved,
-            new Dictionary<string, RectInt32>(), sizes, reference);
+            new Dictionary<string, RectInt32>(), sizes);
         Assert.Equal(220, compact["a"].X);
         Assert.Equal(180, compact["a"].Y);
         Assert.Equal(522, compact["b"].X);

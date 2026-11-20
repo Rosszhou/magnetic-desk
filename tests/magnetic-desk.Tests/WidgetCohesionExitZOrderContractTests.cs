@@ -55,13 +55,13 @@ public sealed class WidgetCohesionExitZOrderContractTests
 
         // The defer/abandon ladder only applies to idle requests.
         Assert.Contains(
-            "if (!cohesionExit &&\r\n            candidates.Any(window => window.IsBoundsTransitionActive))",
+            "if (!cohesionExit && hasActiveBoundsTransition)",
             normalize,
             StringComparison.Ordinal);
         // A cohesion exit that meets an in-flight animation still applies the
         // order (sorted on resting/target bounds) instead of being dropped.
         Assert.Contains(
-            "cohesionExit && candidates.Any(window => window.IsBoundsTransitionActive)",
+            "cohesionExit && hasActiveBoundsTransition",
             normalize,
             StringComparison.Ordinal);
     }

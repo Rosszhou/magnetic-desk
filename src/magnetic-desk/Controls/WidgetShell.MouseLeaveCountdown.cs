@@ -19,6 +19,7 @@ public sealed partial class WidgetShell
     private SolidColorBrush? _capsuleAccent;
     private readonly List<Border> _countdownSegments = [];
     private RectangleClip? _capsuleClipGeometry;
+    private (float Width, float Height, float Radius)? _lastCapsuleClip;
 
     internal void SetCapsuleStyle(string? value)
     {
@@ -71,7 +72,7 @@ public sealed partial class WidgetShell
         ActualThemeChanged -= CapsuleCountdown_ThemeChanged;
         ActualThemeChanged += CapsuleCountdown_ThemeChanged;
         ApplyCapsuleSkin();
-        SetMouseLeaveCountdown(_countdownVisible, _countdownFraction);
+        SetMouseLeaveCountdown(_countdownVisible, _countdownFraction, force: true);
     }
 
     private void CapsuleCountdown_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -84,21 +85,24 @@ public sealed partial class WidgetShell
 
     private void UpdateCapsuleClip()
     {
+        if (_compositionBoundsProgress is not null) return;
         if (_capsuleClipGeometry is null)
         {
             var visual = ElementCompositionPreview.GetElementVisual(ShellRoot);
             _capsuleClipGeometry = visual.Compositor.CreateRectangleClip();
+            _capsuleClipGeometry.Left = _capsuleClipGeometry.Top = 0;
             visual.Clip = _capsuleClipGeometry;
             BackgroundPlate.RegisterPropertyChangedCallback(Border.CornerRadiusProperty, (_, _) => UpdateCapsuleClip());
         }
         float width = (float)Math.Max(0, ActualWidth);
         float height = (float)Math.Max(0, ActualHeight);
         float radius = (float)Math.Min(BackgroundPlate.CornerRadius.TopLeft, Math.Min(width, height) / 2);
-        _capsuleClipGeometry.Left = _capsuleClipGeometry.Top = 0;
-        _capsuleClipGeometry.Right = width;
-        _capsuleClipGeometry.Bottom = height;
-        _capsuleClipGeometry.TopLeftRadius = _capsuleClipGeometry.TopRightRadius =
-            _capsuleClipGeometry.BottomLeftRadius = _capsuleClipGeometry.BottomRightRadius = new System.Numerics.Vector2(radius);
+        if (_lastCapsuleClip?.Width != width) _capsuleClipGeometry.Right = width;
+        if (_lastCapsuleClip?.Height != height) _capsuleClipGeometry.Bottom = height;
+        if (_lastCapsuleClip?.Radius != radius)
+            _capsuleClipGeometry.TopLeftRadius = _capsuleClipGeometry.TopRightRadius =
+                _capsuleClipGeometry.BottomLeftRadius = _capsuleClipGeometry.BottomRightRadius = new System.Numerics.Vector2(radius);
+        _lastCapsuleClip = (width, height, radius);
     }
 
     private void CapsuleCountdown_ThemeChanged(FrameworkElement sender, object args) => ApplyCapsuleSkin();
@@ -131,14 +135,17 @@ public sealed partial class WidgetShell
 
     private void UpdateCountdownFill()
     {
+        if (!_countdownVisible || _capsuleStyle != WidgetCapsuleStyle.Fill) return;
         CountdownFill.Width = Math.Max(0, ActualWidth * _countdownFraction);
         CountdownFillTrack.Height = _isCollapsed ? ActualHeight : Math.Max(40, TitleBarGrid.ActualHeight);
     }
 
-    internal void SetMouseLeaveCountdown(bool visible, double remainingFraction)
+    internal void SetMouseLeaveCountdown(bool visible, double remainingFraction, bool force = false)
     {
+        double fraction = Math.Clamp(remainingFraction, 0, 1);
+        if (!force && _countdownSeconds is not null && _countdownVisible == visible && _countdownFraction == fraction) return;
         _countdownVisible = visible;
-        _countdownFraction = Math.Clamp(remainingFraction, 0, 1);
+        _countdownFraction = fraction;
         if (_countdownSeconds is null) { SetCapsuleStyle(null); return; }
         MouseLeaveCountdownHost.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         CountdownFillTrack.Visibility = visible && _capsuleStyle == WidgetCapsuleStyle.Fill ? Visibility.Visible : Visibility.Collapsed;

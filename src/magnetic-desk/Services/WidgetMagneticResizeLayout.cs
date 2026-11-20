@@ -1,10 +1,11 @@
+using MagneticDesk.Models;
 using Windows.Graphics;
 
 namespace MagneticDesk.Services;
 
 internal static class WidgetMagneticResizeLayout
 {
-    internal static IReadOnlyDictionary<string, RectInt32> Arrange(
+    internal static Dictionary<string, RectInt32> Arrange(
         IReadOnlyDictionary<string, RectInt32> original, string sourceId, RectInt32 proposed,
         IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance)
     {
@@ -22,6 +23,127 @@ internal static class WidgetMagneticResizeLayout
             forward: false, changed: proposed.Y != source.Y);
         return targets;
     }
+
+    internal static IReadOnlyDictionary<string, RectInt32> ArrangeInteractive(
+        IReadOnlyDictionary<string, RectInt32> original, string sourceId, RectInt32 proposed,
+        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance,
+        out bool reattached)
+    {
+        var targets = Arrange(original, sourceId, proposed, attachment, anchor, spacing, tolerance);
+        reattached = !proposed.Equals(original[sourceId]) &&
+            ReconnectDetachedMembers(original, targets, sourceId, attachment, spacing, tolerance);
+        return targets;
+    }
+
+    private static bool ReconnectDetachedMembers(IReadOnlyDictionary<string, RectInt32> original,
+        Dictionary<string, RectInt32> targets, string sourceId,
+        IReadOnlyDictionary<string, RectInt32> attachment, int spacing, int tolerance)
+    {
+        bool reattached = false;
+        var ids = targets.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        while (true)
+        {
+            var connected = FindConnectedMembers(sourceId);
+            if (connected.Count == targets.Count) return reattached;
+
+            HashSet<string>? closestBranch = null;
+            PointInt32 closestDelta = default;
+            (int AlignmentShift, double Distance) best = (int.MaxValue, double.MaxValue);
+            var examined = new HashSet<string>(connected, StringComparer.Ordinal);
+            foreach (string seed in ids)
+            {
+                if (examined.Contains(seed)) continue;
+                // A detached column can still be joined internally. Move those members as a unit.
+                var branch = FindConnectedMembers(seed);
+                examined.UnionWith(branch);
+                var moving = ids.Where(branch.Contains).Select(id => targets[id]).ToArray();
+                var obstacles = ids.Where(id => !branch.Contains(id)).Select(id => targets[id]).ToArray();
+                foreach (string nearId in ids.Where(connected.Contains))
+                foreach (string farId in ids.Where(branch.Contains))
+                foreach (bool horizontal in new[] { true, false })
+                {
+                    var near = targets[nearId];
+                    var far = targets[farId];
+                    var reference = Touches(original[nearId], original[farId], horizontal, spacing, tolerance)
+                        ? original : attachment;
+                    if (!Touches(reference[nearId], reference[farId], horizontal, spacing, tolerance)) continue;
+                    bool after = Start(reference[nearId], horizontal) < Start(reference[farId], horizontal);
+                    MagneticDockEdge edge = horizontal
+                        ? (after ? MagneticDockEdge.Left : MagneticDockEdge.Right)
+                        : (after ? MagneticDockEdge.Top : MagneticDockEdge.Bottom);
+                    MagneticDockEdge opposite = horizontal
+                        ? (after ? MagneticDockEdge.Right : MagneticDockEdge.Left)
+                        : (after ? MagneticDockEdge.Bottom : MagneticDockEdge.Top);
+                    var contact = new MagneticDockContact(edge, opposite, 0, 0, far);
+                    int minimumOverlap = Math.Min(tolerance, Math.Min(Length(near, !horizontal), Length(far, !horizontal)));
+                    var docked = WidgetMagneticDockPlacement.Resolve(contact, far, near, obstacles, moving,
+                        spacing, minimumOverlap);
+                    if (docked is not { } dock) continue;
+
+                    var delta = new PointInt32(dock.DockedBounds.X - far.X, dock.DockedBounds.Y - far.Y);
+                    int requiresAlignment = Overlaps(near, far, !horizontal) ? 0 : 1;
+                    var score = (requiresAlignment, (double)delta.X * delta.X + (double)delta.Y * delta.Y);
+                    if (score.CompareTo(best) >= 0 || !CanSlide(moving, obstacles, delta)) continue;
+                    best = score;
+                    closestBranch = branch;
+                    closestDelta = delta;
+                }
+            }
+            if (closestBranch is null) return reattached;
+            foreach (string id in closestBranch)
+                targets[id] = Offset(targets[id], closestDelta.X, closestDelta.Y);
+            reattached = true;
+        }
+
+        bool HasRetainedContact(string first, string second, bool horizontal) =>
+            Touches(targets[first], targets[second], horizontal, spacing, tolerance) &&
+            (Touches(original[first], original[second], horizontal, spacing, tolerance) ||
+             Touches(attachment[first], attachment[second], horizontal, spacing, tolerance));
+
+        HashSet<string> FindConnectedMembers(string seed)
+        {
+            var connected = new HashSet<string>(StringComparer.Ordinal) { seed };
+            var pending = new Queue<string>();
+            pending.Enqueue(seed);
+            while (pending.TryDequeue(out string? id))
+            {
+                foreach (string other in ids)
+                {
+                    if (connected.Contains(other)) continue;
+                    if (!HasRetainedContact(id, other, true) && !HasRetainedContact(id, other, false)) continue;
+                    connected.Add(other);
+                    pending.Enqueue(other);
+                }
+            }
+            return connected;
+        }
+    }
+
+    private static bool CanSlide(RectInt32[] moving, RectInt32[] obstacles, PointInt32 delta)
+    {
+        bool HasClearPath(bool horizontalFirst)
+        {
+            foreach (var start in moving)
+            {
+                RectInt32 turn = horizontalFirst ? Offset(start, delta.X, 0) : Offset(start, 0, delta.Y);
+                RectInt32 end = Offset(start, delta.X, delta.Y);
+                if (!Clear(start, turn) || !Clear(turn, end)) return false;
+            }
+            return true;
+        }
+
+        bool Clear(RectInt32 start, RectInt32 end)
+        {
+            RectInt32 swept = new(Math.Min(start.X, end.X), Math.Min(start.Y, end.Y),
+                start.Width + Math.Abs(end.X - start.X), start.Height + Math.Abs(end.Y - start.Y));
+            return !obstacles.Any(other => Overlaps(swept, other, true) && Overlaps(swept, other, false));
+        }
+
+        return HasClearPath(horizontalFirst: true) || HasClearPath(horizontalFirst: false);
+    }
+
+    private static RectInt32 Offset(RectInt32 bounds, int dx, int dy) =>
+        new(bounds.X + dx, bounds.Y + dy, bounds.Width, bounds.Height);
 
     private static void AlignStackedWidths(IReadOnlyDictionary<string, RectInt32> original,
         Dictionary<string, RectInt32> targets, string sourceId,

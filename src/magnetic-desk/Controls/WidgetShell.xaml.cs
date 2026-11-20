@@ -1987,7 +1987,8 @@ public sealed partial class WidgetShell : UserControl
         double compactOuterRadius,
         double compactInnerRadius,
         double compactMediaRadius,
-        WidgetCompactTransitionVisualProfile? visualProfile = null)
+        WidgetCompactTransitionVisualProfile? visualProfile = null,
+        bool deferAnimationStart = false)
     {
         if (_isCollapsed == collapsed)
         {
@@ -2033,8 +2034,14 @@ public sealed partial class WidgetShell : UserControl
         SetBackgroundCornerRadius(_transitionOuterCornerRadiusFrom);
         _lastCompactTransitionCornerRadius = _transitionOuterCornerRadiusFrom;
         _isCompactCompositionTransitionActive =
-            StartCompactCompositionTransition(collapsed);
+            !deferAnimationStart && StartCompactCompositionTransition(collapsed);
         return true;
+    }
+
+    internal void StartPreparedCompactVisuals(bool collapsed)
+    {
+        if (_isCompactTransitionActive)
+            _isCompactCompositionTransitionActive = StartCompactCompositionTransition(collapsed);
     }
 
     public void SetCompactTransitionProgress(bool collapsed, double progress)

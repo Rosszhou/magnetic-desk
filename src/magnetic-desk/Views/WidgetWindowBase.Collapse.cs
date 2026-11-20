@@ -683,6 +683,7 @@ public abstract partial class WidgetWindowBase
 
     protected void BeginWidgetBoundsInteraction()
     {
+        if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("input-settled");
         CaptureExpandedPairInteraction();
         _isBoundsInteractionActive = true;
         BeginCompactInteraction();
@@ -1383,6 +1384,7 @@ public abstract partial class WidgetWindowBase
     /// </summary>
     protected void PrepareCompactHostForTrayHide()
     {
+        if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("tray-hide-settled");
         if (!_collapseInitialized ||
             IsClosing ||
             _targetCollapsed ||
@@ -3553,7 +3555,8 @@ public abstract partial class WidgetWindowBase
             WidgetCompactBoundsCalculator.ResolveMediaCornerRadius(
                 mediaCornerMode,
                 cornerPreference),
-            _collapseAnimationVisualProfile);
+            _collapseAnimationVisualProfile,
+            deferAnimationStart: true);
         // Anchor the animation clock after preparation: the refresh-rate
         // query, border visuals, and composition animation starts above used
         // to consume the opening progress, skipping the first eased frames.
@@ -3565,6 +3568,9 @@ public abstract partial class WidgetWindowBase
         _compactAnimationFrameTracker = new WidgetCompactAnimationFrameTracker(
             _collapseAnimationStarted,
             refreshRateHz);
+        bool compositionBounds = TryPrepareCompositionBounds(from, to, collapsed, Math.Max(0.01, dpiScale), generation);
+        QueueBoundsTransitionStart(generation, compositionBounds);
+        App.LogVerbose($"[CompactComposition] mode={(compositionBounds ? "Composition" : "NativeBounds")} id={Config.Id}");
         _isCollapseAnimationRendering = true;
         _collapseAnimationFrameRegistration?.Dispose();
         _collapseAnimationFrameRegistration =
@@ -3579,6 +3585,11 @@ public abstract partial class WidgetWindowBase
 
     private void CompleteBoundsTransitionAfterTimeout()
     {
+        CompleteBoundsTransitionImmediately("watchdog-recovered");
+    }
+
+    private void CompleteBoundsTransitionImmediately(string outcome)
+    {
         if (!_isCollapseAnimationRendering)
         {
             return;
@@ -3586,13 +3597,13 @@ public abstract partial class WidgetWindowBase
 
         bool collapsed = _targetCollapsed;
         long generation = _collapseAnimationGeneration;
-        App.Log($"[Compact] Bounds transition watchdog recovered generation={generation}");
+        App.LogVerbose($"[Compact] Bounds transition finalized generation={generation} outcome={outcome}");
         StopCollapseAnimation(cancelShellTransition: false, completeMetrics: false);
         CommitCollapseAnimationBounds(
             _collapseAnimationTo,
             Stopwatch.GetTimestamp(),
             generation,
-            () => FinishBoundsTransition(collapsed, generation, "watchdog-recovered"));
+            () => FinishBoundsTransition(collapsed, generation, outcome));
     }
 
     /// <summary>
@@ -3607,6 +3618,7 @@ public abstract partial class WidgetWindowBase
 
     private void CollapseAnimationRendering()
     {
+        if (_compositionBoundsPending) return;
         long frameTimestamp = Stopwatch.GetTimestamp();
         double frameBudgetMs = WidgetCompactAnimationCoordinator.GetFrameBudgetMilliseconds(HWnd);
         _compactAnimationFrameTracker?.RecordTick(frameTimestamp, frameBudgetMs);
@@ -3629,7 +3641,22 @@ public abstract partial class WidgetWindowBase
                 expansionAnchor,
                 eased)
             : InterpolateBounds(_collapseAnimationFrom, _collapseAnimationTo, eased);
-        WidgetShellControl.SetCompactTransitionProgress(_targetCollapsed, eased);
+        if (_compositionHostBounds is not null && progress < 1)
+        {
+            long started = Stopwatch.GetTimestamp();
+            bool changed = !BoundsEqual(bounds, _collapseAnimationLastCommittedBounds);
+            if (changed && !ApplyCompositionWindowClip(bounds))
+            {
+                CompleteBoundsTransitionAfterTimeout();
+                return;
+            }
+            double work = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+            _collapseAnimationPacing.RecordSubmission(elapsedMs, work);
+            _collapseAnimationLastCommittedBounds = bounds;
+            if (changed) _compactAnimationFrameTracker?.RecordBoundsUpdate(Stopwatch.GetTimestamp(), work);
+            return;
+        }
+        if (_compositionHostBounds is null) WidgetShellControl.SetCompactTransitionProgress(_targetCollapsed, eased);
 
         if (progress < 1)
         {
@@ -3654,7 +3681,8 @@ public abstract partial class WidgetWindowBase
         Action? completed = null)
     {
         bool boundsChanged = !BoundsEqual(_collapseAnimationLastCommittedBounds, bounds);
-        void OnCommitted()
+        double preparationWorkMs = Stopwatch.GetElapsedTime(frameTimestamp).TotalMilliseconds;
+        void OnCommitted(double nativeWorkMilliseconds)
         {
             if (generation != _collapseAnimationGeneration)
             {
@@ -3662,7 +3690,7 @@ public abstract partial class WidgetWindowBase
             }
 
             long timestamp = Stopwatch.GetTimestamp();
-            double workMs = Stopwatch.GetElapsedTime(frameTimestamp, timestamp).TotalMilliseconds;
+            double workMs = preparationWorkMs + nativeWorkMilliseconds;
             _collapseAnimationPacing.RecordSubmission(
                 Stopwatch.GetElapsedTime(_collapseAnimationStarted, frameTimestamp).TotalMilliseconds,
                 workMs);
@@ -3691,13 +3719,13 @@ public abstract partial class WidgetWindowBase
         if (boundsChanged || completed is not null)
         {
             MoveWindowWithoutPersisting(bounds,
-                suppressRedraw: completed is null,
+                isAnimationFrame: completed is null,
                 committed: OnCommitted,
                 commitFailed: OnCommitFailed);
         }
         else
         {
-            OnCommitted();
+            OnCommitted(0);
         }
     }
 
@@ -3715,10 +3743,14 @@ public abstract partial class WidgetWindowBase
             return;
         }
 
+        bool compositionBounds = _compositionHostBounds is not null;
+        EndCompositionBounds(settle: _collapseAnimationTo);
+
         WidgetShellControl.CompleteCompactTransition(
             collapsed,
             SettingsService.Settings.WidgetCompactContentMode);
         WidgetShellControl.CompleteResponsiveLayoutTransition();
+        if (compositionBounds) RootElement.UpdateLayout();
         _isShellTransitionActive = false;
         IsWidgetCollapsedBoundsActive = collapsed;
         OnCompactVisualStateChanged(collapsed);
@@ -4315,22 +4347,23 @@ public abstract partial class WidgetWindowBase
 
     private RectInt32 GetCurrentWindowBounds()
     {
-        return GetActualWindowBounds();
+        return _compositionHostBounds is null ? GetActualWindowBounds() : CompositionVisibleBounds();
     }
 
     private void MoveWindowWithoutPersisting(
         RectInt32 bounds,
-        bool suppressRedraw = false,
-        Action? committed = null,
-        Action? commitFailed = null)
+        bool isAnimationFrame = false,
+        Action<double>? committed = null,
+        Action? commitFailed = null,
+        bool deferUntilPrepared = false)
     {
         uint flags = Win32Helper.SWP_NOZORDER | Win32Helper.SWP_NOACTIVATE;
-        if (suppressRedraw)
+        if (isAnimationFrame)
         {
-            // During the per-frame morph the swapchain already holds the
-            // pre-laid-out content, so skip the internal BitBlt and the
-            // WM_PAINT invalidation that SetWindowPos would otherwise emit.
-            flags |= Win32Helper.SWP_NOREDRAW | Win32Helper.SWP_NOCOPYBITS;
+            // Newly exposed pixels need a paint even with frozen content
+            // layout. Discard stale copied pixels and defer synchronous erase,
+            // while allowing XAML to repaint the resized composition surface.
+            flags |= Win32Helper.SWP_NOCOPYBITS | Win32Helper.SWP_DEFERERASE;
         }
 
         if (WidgetCompactAnimationCoordinator.TryQueueBoundsMove(
@@ -4338,23 +4371,25 @@ public abstract partial class WidgetWindowBase
             bounds,
             flags,
             beforeCommit: () => IsApplyingBounds = true,
-            afterCommit: success =>
+            afterCommit: (success, nativeWorkMilliseconds) =>
             {
                 IsApplyingBounds = false;
                 if (success)
                 {
-                    committed?.Invoke();
+                    committed?.Invoke(nativeWorkMilliseconds);
                 }
                 else
                 {
                     commitFailed?.Invoke();
                 }
             },
-            fallback: () => AppWindow.MoveAndResize(bounds)))
+            fallback: () => AppWindow.MoveAndResize(bounds),
+            deferUntilPrepared: deferUntilPrepared))
         {
             return;
         }
 
+        long submissionStarted = Stopwatch.GetTimestamp();
         IsApplyingBounds = true;
         try
         {
@@ -4381,11 +4416,15 @@ public abstract partial class WidgetWindowBase
         {
             IsApplyingBounds = false;
         }
-        committed?.Invoke();
+        committed?.Invoke(Stopwatch.GetElapsedTime(submissionStarted).TotalMilliseconds);
     }
 
     private void StopCollapseAnimation(bool cancelShellTransition = true, bool completeMetrics = true)
     {
+        _compositionBoundsStartRegistration?.Dispose();
+        _compositionBoundsStartRegistration = null;
+        if (cancelShellTransition) EndCompositionBounds();
+        _compositionBoundsPending = false;
         CancelTimer(ref _collapseAnimationWatchdogTimer);
         if (completeMetrics)
         {
@@ -4828,7 +4867,7 @@ public abstract partial class WidgetWindowBase
             return _isPointerOverWidget;
         }
 
-        RectInt32 bounds = GetActualWindowBounds();
+        RectInt32 bounds = GetCurrentWindowBounds();
         return cursor.X >= bounds.X &&
             cursor.X < bounds.X + bounds.Width &&
             cursor.Y >= bounds.Y &&

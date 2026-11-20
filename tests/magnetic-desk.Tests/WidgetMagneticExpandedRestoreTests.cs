@@ -6,6 +6,60 @@ namespace MagneticDesk.Tests;
 public sealed class WidgetMagneticExpandedRestoreTests
 {
     [Fact]
+    public void FiveResizedMembersKeepTheirCurrentColumnsWhenCollapsedAndReopened()
+    {
+        var attachment = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2251, 0, 420, 600), ["middle"] = new(2679, 0, 549, 799),
+            ["upper-right"] = new(3236, 0, 604, 576), ["lower-right"] = new(3236, 584, 580, 616),
+            ["lower-middle"] = new(2808, 807, 420, 616)
+        };
+        var expanded = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2151, 118, 420, 600), ["middle"] = new(2579, 124, 337, 799),
+            ["upper-right"] = new(3344, 118, 373, 576), ["lower-right"] = new(3344, 702, 373, 616),
+            ["lower-middle"] = new(2916, 925, 420, 616)
+        };
+        var sizes = expanded.ToDictionary(pair => pair.Key, pair => new SizeInt32(pair.Value.Width, 78));
+        IReadOnlyDictionary<string, RectInt32> homes = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2151, 118, 420, 78), ["middle"] = new(2656, 118, 337, 78),
+            ["upper-right"] = new(2995, 118, 373, 78), ["lower-right"] = new(2995, 198, 373, 78),
+            ["lower-middle"] = new(2573, 198, 420, 78)
+        };
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            homes = WidgetMagneticCollapseLayout.RestoreCompact(expanded, homes, sizes, "RightTop");
+            var origin = WidgetCoordinatedMoveCalculator.GetUnion(homes.Values);
+            Assert.Equal(expanded, WidgetMagneticCollapseLayout.RestoreExpanded(expanded,
+                new(origin.X, origin.Y), attachment, "RightTop"));
+            Assert.Equal(homes["left"].X + homes["left"].Width + 2, homes["middle"].X);
+            Assert.True(homes["lower-middle"].X >= homes["middle"].X + homes["middle"].Width);
+            Assert.Equal(homes["upper-right"].X, homes["lower-right"].X);
+            Assert.Equal(homes["upper-right"].Y + 80, homes["lower-right"].Y);
+            Assert.Equal(homes["lower-middle"].X + homes["lower-middle"].Width + 2, homes["lower-right"].X);
+            Assert.Equal(homes["lower-middle"].Y, homes["lower-right"].Y);
+        }
+    }
+
+    [Fact]
+    public void CompactionPreservesHorizontalClearanceBetweenSeparatedColumns()
+    {
+        var expanded = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(100, 100, 420, 600),
+            ["right"] = new(800, 100, 373, 576),
+            ["lower-right"] = new(800, 684, 373, 616)
+        };
+        var sizes = expanded.ToDictionary(pair => pair.Key, pair => new SizeInt32(pair.Value.Width, 78));
+        var homes = WidgetMagneticCollapseLayout.RestoreCompact(expanded,
+            new Dictionary<string, RectInt32>(), sizes);
+        Assert.Equal(800, homes["right"].X);
+        Assert.Equal(800, homes["lower-right"].X);
+        Assert.Equal(180, homes["lower-right"].Y);
+    }
+
+    [Fact]
     public void RestorePreservesIndependentNeighborPositions()
     {
         var expanded = FourWidgets();

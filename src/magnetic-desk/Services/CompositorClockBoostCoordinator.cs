@@ -78,10 +78,9 @@ internal static class CompositorClockBoostCoordinator
         new(enabled =>
         {
             _ = Win32Helper.TrySetCompositorClockBoost(enabled);
-            if (!WindowsCompatibilityService.IsWindows11OrLater)
-            {
-                _ = Win32Helper.TrySetHighResolutionTimer(enabled);
-            }
+            // Both Windows versions can use the display-timed fallback while
+            // a native animation owns this lease.
+            _ = Win32Helper.TrySetHighResolutionTimer(enabled);
         });
 
     public static IDisposable Acquire() => LeasePool.Acquire();

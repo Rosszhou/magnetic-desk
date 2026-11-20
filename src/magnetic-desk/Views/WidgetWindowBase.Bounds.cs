@@ -594,6 +594,7 @@ public abstract partial class WidgetWindowBase
 
         double previous = _observedRasterizationScale;
         _observedRasterizationScale = scale;
+        if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("dpi-changed");
         RefreshSurfaceClip();
         App.LogVerbose(
             $"[DisplayTopology] {LogPrefix} XamlRoot scale {previous:F3}->{scale:F3}");
@@ -602,6 +603,7 @@ public abstract partial class WidgetWindowBase
 
     protected void ApplyWindowBounds(int x, int y, int width, int height, bool persist, bool updateConfig = true)
     {
+        if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("external-bounds-settled");
         if (_isDisplayTopologyTransitionActive)
         {
             persist = false;

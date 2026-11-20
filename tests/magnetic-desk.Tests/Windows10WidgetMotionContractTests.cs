@@ -170,16 +170,28 @@ public sealed class Windows10WidgetMotionContractTests
     }
 
     [Fact]
-    public void CompactTransition_RetainsAnimatedBoundsAndSharedCapacity()
+    public void CompactTransition_UsesCompositionBetweenPhysicalBoundsEndpoints()
     {
         string collapse = File.ReadAllText(TestPaths.FromRepository(
             "src/magnetic-desk/Views/WidgetWindowBase.Collapse.cs"));
         string coordinator = File.ReadAllText(TestPaths.FromRepository(
             "src/magnetic-desk/Services/WidgetCompactAnimationCoordinator.cs"));
+        string zOrder = File.ReadAllText(TestPaths.FromRepository(
+            "src/magnetic-desk/Services/WidgetManager.ZOrder.cs"));
+        string composition = File.ReadAllText(TestPaths.FromRepository(
+            "src/magnetic-desk/Views/WidgetWindowBase.CompositionBounds.cs"));
 
         Assert.DoesNotContain("_collapseAnimationUsesVisualOnlyBounds", collapse, StringComparison.Ordinal);
         Assert.Contains("CommitCollapseAnimationBounds", collapse, StringComparison.Ordinal);
-        Assert.Contains("suppressRedraw: completed is null", collapse, StringComparison.Ordinal);
+        Assert.Contains("TryPrepareCompositionBounds", collapse, StringComparison.Ordinal);
+        Assert.Contains("MoveWindowWithoutPersisting(host, committed:", composition, StringComparison.Ordinal);
+        Assert.Contains("deferUntilPrepared: true", composition, StringComparison.Ordinal);
+        Assert.Contains("SetAnimationWindowClip", composition, StringComparison.Ordinal);
+        Assert.Contains("StartOnPreparedFrame", composition, StringComparison.Ordinal);
+        Assert.Contains("isAnimationFrame: completed is null", collapse, StringComparison.Ordinal);
+        Assert.Contains("Win32Helper.SWP_NOCOPYBITS | Win32Helper.SWP_DEFERERASE", collapse, StringComparison.Ordinal);
+        Assert.DoesNotContain("SWP_NOREDRAW", collapse, StringComparison.Ordinal);
+        Assert.Contains("MagneticBoundsTransitionActive: true", zOrder, StringComparison.Ordinal);
         Assert.Contains("WidgetCompactAnimationCoordinator.TryQueueBoundsMove", collapse, StringComparison.Ordinal);
         Assert.Contains("internal const int MaximumConcurrentBoundsTransitions = int.MaxValue", coordinator, StringComparison.Ordinal);
         Assert.Contains("Win32Helper.BeginDeferWindowPos", coordinator, StringComparison.Ordinal);
@@ -189,17 +201,21 @@ public sealed class Windows10WidgetMotionContractTests
     }
 
     [Fact]
-    public void Win10CompactVisuals_UseCompositionWithoutReplacingRealBoundsMotion()
+    public void CompactVisuals_AnimateGeometryAndRetainPhysicalEndpoints()
     {
         string shell = File.ReadAllText(TestPaths.FromRepository(
             "src/magnetic-desk/Controls/WidgetShell.xaml.cs"));
         string collapse = File.ReadAllText(TestPaths.FromRepository(
             "src/magnetic-desk/Views/WidgetWindowBase.Collapse.cs"));
+        string geometry = File.ReadAllText(TestPaths.FromRepository(
+            "src/magnetic-desk/Controls/WidgetShell.CompositionBounds.cs"));
 
         Assert.Contains("StartCompactOpacityAnimation", shell, StringComparison.Ordinal);
         Assert.Contains("StartCompactTranslationAnimation", shell, StringComparison.Ordinal);
         Assert.Contains("ScalarKeyFrameAnimation", shell, StringComparison.Ordinal);
         Assert.Contains("CommitCollapseAnimationBounds", collapse, StringComparison.Ordinal);
+        Assert.Contains("CreateGeometricClip", geometry, StringComparison.Ordinal);
+        Assert.Contains("CreateRoundedRectangleGeometry", geometry, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -216,7 +232,12 @@ public sealed class Windows10WidgetMotionContractTests
 
         // DWM completion is a pacing hint; it is not a per-display present counter.
         Assert.Contains("Win32Helper.TryDwmFlush", coordinator, StringComparison.Ordinal);
-        Assert.Contains("DispatchWindows10FlushTick", coordinator, StringComparison.Ordinal);
+        Assert.Contains("DispatchDwmFlushTick", coordinator, StringComparison.Ordinal);
+        Assert.Contains("TryEnqueue(DispatcherQueuePriority.Low, () => DispatchDwmFlushTick(run))", coordinator, StringComparison.Ordinal);
+        Assert.Contains("App.NotifyMemoryCleanupActivity();", coordinator, StringComparison.Ordinal);
+        int clockStart = coordinator.IndexOf("private static void StartFrameClock()", StringComparison.Ordinal);
+        int clockEnd = coordinator.IndexOf("private static void StartDwmFlushClock()", clockStart, StringComparison.Ordinal);
+        Assert.DoesNotContain("IsWindows11OrLater", coordinator[clockStart..clockEnd], StringComparison.Ordinal);
         // Fallback clock: timer interval derived from the measured refresh rate.
         Assert.Contains("DispatcherQueueTimer", coordinator, StringComparison.Ordinal);
         Assert.Contains("RefreshFrameBudgets", coordinator, StringComparison.Ordinal);
