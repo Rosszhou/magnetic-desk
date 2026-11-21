@@ -28,7 +28,7 @@ public sealed class ReleaseNotesKnownVersionsTests
     [Fact]
     public void KnownReleaseVersions_CoverTheFirstMagneticDeskRelease()
     {
-        Assert.Equal(new[] { "1.4.0", "1.1.0", "1.0.0" }, ReleaseNotesService.KnownReleaseVersions);
+        Assert.Equal(new[] { "1.5.0", "1.4.0", "1.1.0", "1.0.0" }, ReleaseNotesService.KnownReleaseVersions);
     }
 
     [Fact]

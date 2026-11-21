@@ -158,6 +158,7 @@ public abstract partial class WidgetWindowBase
     private readonly WidgetAnimationFramePacingPolicy _collapseAnimationPacing = new();
     private RectInt32 _collapseAnimationLastCommittedBounds;
     private bool _isShellTransitionActive;
+    private bool _isBoundsTransitionContentPaused;
     private bool _isBoundsInteractionActive;
     private bool _isRaisedForExpandedState;
     private bool _restoreDesktopLayerAfterExpandedState;
@@ -3575,7 +3576,7 @@ public abstract partial class WidgetWindowBase
         _collapseAnimationFrameRegistration?.Dispose();
         _collapseAnimationFrameRegistration =
             WidgetCompactAnimationCoordinator.RegisterBoundsTransition(CollapseAnimationRendering, HWnd);
-        OnCompactBoundsTransitionActiveChanged(true);
+        SetBoundsTransitionContentPaused(true);
         SimplifyBackdropForInteraction();
         ScheduleTimer(
             ref _collapseAnimationWatchdogTimer,
@@ -3616,6 +3617,13 @@ public abstract partial class WidgetWindowBase
     {
     }
 
+    private void SetBoundsTransitionContentPaused(bool paused)
+    {
+        if (_isBoundsTransitionContentPaused == paused) return;
+        _isBoundsTransitionContentPaused = paused;
+        OnCompactBoundsTransitionActiveChanged(paused);
+    }
+
     private void CollapseAnimationRendering()
     {
         if (_compositionBoundsPending) return;
@@ -3645,7 +3653,7 @@ public abstract partial class WidgetWindowBase
         {
             long started = Stopwatch.GetTimestamp();
             bool changed = !BoundsEqual(bounds, _collapseAnimationLastCommittedBounds);
-            if (changed && !ApplyCompositionWindowClip(bounds))
+            if (changed && !ApplyCompositionWindowFrame(bounds, _collapseAnimationGeneration))
             {
                 CompleteBoundsTransitionAfterTimeout();
                 return;
@@ -3667,10 +3675,11 @@ public abstract partial class WidgetWindowBase
         bool collapsed = _targetCollapsed;
         long generation = _collapseAnimationGeneration;
         StopCollapseAnimation(cancelShellTransition: false, completeMetrics: false);
-        CommitCollapseAnimationBounds(
-            _collapseAnimationTo,
-            frameTimestamp,
-            generation,
+        if (!collapsed && QueueCompositionExpansionFinish(_collapseAnimationTo, generation, CommitFinalBounds)) return;
+        CommitFinalBounds();
+
+        void CommitFinalBounds() => CommitCollapseAnimationBounds(
+            _collapseAnimationTo, Stopwatch.GetTimestamp(), generation,
             () => FinishBoundsTransition(collapsed, generation));
     }
 
@@ -3716,7 +3725,11 @@ public abstract partial class WidgetWindowBase
             FinishBoundsTransition(_targetCollapsed, generation, "bounds-failed");
         }
 
-        if (boundsChanged || completed is not null)
+        if (completed is not null && BoundsEqual(GetActualWindowBounds(), bounds))
+        {
+            OnCommitted(0);
+        }
+        else if (boundsChanged || completed is not null)
         {
             MoveWindowWithoutPersisting(bounds,
                 isAnimationFrame: completed is null,
@@ -3737,20 +3750,20 @@ public abstract partial class WidgetWindowBase
 
     private void CompleteBoundsTransition(bool collapsed, long generation)
     {
-        RestoreBackdropAfterInteraction();
         if (generation != _collapseAnimationGeneration || collapsed != _targetCollapsed)
         {
             return;
         }
 
         bool compositionBounds = _compositionHostBounds is not null;
-        EndCompositionBounds(settle: _collapseAnimationTo);
-
+        if (collapsed) EndCompositionBounds(settle: _collapseAnimationTo);
         WidgetShellControl.CompleteCompactTransition(
             collapsed,
             SettingsService.Settings.WidgetCompactContentMode);
         WidgetShellControl.CompleteResponsiveLayoutTransition();
-        if (compositionBounds) RootElement.UpdateLayout();
+        if (!collapsed) EndCompositionBounds(settle: _collapseAnimationTo);
+        else if (compositionBounds) RootElement.UpdateLayout();
+        RestoreBackdropAfterInteraction();
         _isShellTransitionActive = false;
         IsWidgetCollapsedBoundsActive = collapsed;
         OnCompactVisualStateChanged(collapsed);
@@ -3787,6 +3800,7 @@ public abstract partial class WidgetWindowBase
             }
         }
 
+        SetBoundsTransitionContentPaused(false);
         OnCompactExpansionReady();
     }
 
@@ -3811,7 +3825,7 @@ public abstract partial class WidgetWindowBase
     protected bool CanResizeCurrentWidgetState(string? direction)
     {
         return WidgetCompactInteractionPolicy.CanResize(
-            _isCollapseAnimationRendering,
+            IsCompactTransitionActive,
             IsCompactBoundsStateActive,
             direction);
     }
@@ -4355,10 +4369,15 @@ public abstract partial class WidgetWindowBase
         bool isAnimationFrame = false,
         Action<double>? committed = null,
         Action? commitFailed = null,
-        bool deferUntilPrepared = false)
+        bool deferUntilPrepared = false,
+        bool positionOnly = false)
     {
         uint flags = Win32Helper.SWP_NOZORDER | Win32Helper.SWP_NOACTIVATE;
-        if (isAnimationFrame)
+        if (positionOnly)
+        {
+            flags |= Win32Helper.SWP_NOSIZE;
+        }
+        else if (isAnimationFrame)
         {
             // Newly exposed pixels need a paint even with frozen content
             // layout. Discard stale copied pixels and defer synchronous erase,
@@ -4383,7 +4402,7 @@ public abstract partial class WidgetWindowBase
                     commitFailed?.Invoke();
                 }
             },
-            fallback: () => AppWindow.MoveAndResize(bounds),
+            fallback: ApplyFallback,
             deferUntilPrepared: deferUntilPrepared))
         {
             return;
@@ -4403,7 +4422,7 @@ public abstract partial class WidgetWindowBase
                 flags);
             if (!moved)
             {
-                AppWindow.MoveAndResize(bounds);
+                ApplyFallback();
             }
         }
         catch
@@ -4417,13 +4436,23 @@ public abstract partial class WidgetWindowBase
             IsApplyingBounds = false;
         }
         committed?.Invoke(Stopwatch.GetElapsedTime(submissionStarted).TotalMilliseconds);
+
+        void ApplyFallback()
+        {
+            if (positionOnly) AppWindow.Move(new PointInt32(bounds.X, bounds.Y));
+            else AppWindow.MoveAndResize(bounds);
+        }
     }
 
     private void StopCollapseAnimation(bool cancelShellTransition = true, bool completeMetrics = true)
     {
-        _compositionBoundsStartRegistration?.Dispose();
-        _compositionBoundsStartRegistration = null;
-        if (cancelShellTransition) EndCompositionBounds();
+        _compositionBoundsFrameRegistration?.Dispose();
+        _compositionBoundsFrameRegistration = null;
+        if (cancelShellTransition)
+        {
+            EndCompositionBounds();
+            SetBoundsTransitionContentPaused(false);
+        }
         _compositionBoundsPending = false;
         CancelTimer(ref _collapseAnimationWatchdogTimer);
         if (completeMetrics)
@@ -4436,17 +4465,12 @@ public abstract partial class WidgetWindowBase
             return;
         }
 
-        OnCompactBoundsTransitionActiveChanged(false);
         _isCollapseAnimationRendering = false;
         _collapseAnimationFrameRegistration?.Dispose();
         _collapseAnimationFrameRegistration = null;
-        if (_isShellTransitionActive)
+        if (_isShellTransitionActive && cancelShellTransition)
         {
-            if (cancelShellTransition)
-            {
-                WidgetShellControl.CancelCompactTransition();
-            }
-
+            WidgetShellControl.CancelCompactTransition();
             _isShellTransitionActive = false;
         }
         _collapseAnimationAnchor = null;

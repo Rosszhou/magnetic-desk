@@ -9,7 +9,7 @@ public sealed partial class WidgetManager
     private sealed record MagneticResizeSession(WidgetWindowBase Source, WidgetWindowBase[] Windows,
         Dictionary<string, RectInt32> VisibleBounds, Dictionary<string, RectInt32> ExpandedBounds,
         Dictionary<string, RectInt32> AttachmentBounds, string? Anchor, int Spacing, int Tolerance,
-        bool AllExpanded)
+        bool AllExpanded, WidgetWindowBase[] OtherWindows)
     {
         internal bool RejectionFeedbackShown { get; set; }
     }
@@ -18,10 +18,15 @@ public sealed partial class WidgetManager
 
     internal void BeginMagneticResize(WidgetWindowBase source)
     {
-        if (_magneticResizeSession is not null || GetMagneticGroupId(source.Config) is not { } id) return;
-        var windows = GetLoadedDesktopWindows().OfType<WidgetWindowBase>()
-            .Where(w => w.Visible && w.MagneticCollapseInitialized && GetMagneticGroupId(w.Config) == id).ToArray();
-        if (windows.Length < 2) return;
+        if (_magneticResizeSession is not null) return;
+        var visibleWindows = GetLoadedDesktopWindows().OfType<WidgetWindowBase>()
+            .Where(w => w.Visible && w.MagneticCollapseInitialized).ToArray();
+        string? id = GetMagneticGroupId(source.Config);
+        WidgetWindowBase[] windows = id is null ? [source] : visibleWindows
+            .Where(w => GetMagneticGroupId(w.Config) == id)
+            .Append(source).Distinct().ToArray();
+        var otherWindows = visibleWindows.Except(windows).ToArray();
+        if (windows.Length == 1 && otherWindows.Length == 0) return;
         var visible = windows.ToDictionary(w => w.Config.Id, w => w.CoordinatedMoveBounds);
         bool allExpanded = windows.All(w => !w.IsCompactArrangementActive);
         var expanded = allExpanded ? visible : windows.ToDictionary(w => w.Config.Id,
@@ -30,43 +35,50 @@ public sealed partial class WidgetManager
             ?? source.Config.PositionAnchor;
         double scale = MagneticDesk.Platform.Win32Helper.GetDpiScaleForWindow(
             WinRT.Interop.WindowNative.GetWindowHandle(source), source.WindowContentRoot?.XamlRoot);
-        _magneticResizeSession = new(source, windows, visible, expanded, MagneticAttachmentBounds(windows), anchor,
+        _magneticResizeSession = new(source, windows, visible, expanded,
+            windows.Length > 1 ? MagneticAttachmentBounds(windows) : visible, anchor,
             Math.Max(0, (int)Math.Round(_settingsService.Settings.WidgetShell.WidgetSnapSpacing * scale)),
-            Math.Max(1, (int)Math.Round(12 * scale)), allExpanded);
+            Math.Max(1, (int)Math.Round(12 * scale)), allExpanded, otherWindows);
         foreach (var window in windows.Where(w => w != source)) window.BeginCoordinatedMoveParticipation(false);
     }
 
     private static IReadOnlyDictionary<string, RectInt32> ArrangeMagneticResize(MagneticResizeSession session,
-        Dictionary<string, RectInt32> original, RectInt32 sourceBounds, out bool reattached)
-    {
-        if (session.AllExpanded)
-            return WidgetMagneticResizeLayout.ArrangeInteractive(original, session.Source.Config.Id, sourceBounds,
-                session.AttachmentBounds, session.Anchor, session.Spacing, session.Tolerance, out reattached);
-        reattached = false;
-        return WidgetMagneticResizeLayout.Arrange(original, session.Source.Config.Id, sourceBounds,
-            session.AttachmentBounds, session.Anchor, session.Spacing, session.Tolerance);
-    }
+        Dictionary<string, RectInt32> original, RectInt32 sourceBounds, IReadOnlyList<RectInt32> otherBounds, out bool reattached) =>
+        WidgetMagneticResizeLayout.ArrangeInteractive(original, session.Source.Config.Id, sourceBounds,
+            session.AttachmentBounds, session.Anchor, session.Spacing, session.Tolerance, out reattached,
+            otherBounds, reconnect: session.AllExpanded);
+
+    private static RectInt32[] ReadOtherResizeBounds(MagneticResizeSession session) => session.OtherWindows
+        .Where(w => w.Visible && w.MagneticCollapseInitialized).Select(w => w.CoordinatedMoveBounds).ToArray();
+
+    private static RectInt32 ConstrainResizeGrowth(MagneticResizeSession session,
+        IReadOnlyDictionary<string, RectInt32> original, RectInt32 bounds, IReadOnlyList<RectInt32> otherBounds) =>
+        WidgetMagneticResizePolicy.ConstrainGrowth(original[session.Source.Config.Id], bounds,
+            original.Where(pair => pair.Key != session.Source.Config.Id).Select(pair => pair.Value)
+                .Concat(otherBounds).ToArray(), session.Spacing);
 
     internal RectInt32 ConstrainMagneticResize(WidgetWindowBase source, RectInt32 bounds)
     {
-        if (_magneticResizeSession is not { } session || session.Source != source ||
-            !WidgetMagneticResizePolicy.RejectHeightGrowth(source.Config.Id, bounds, session.VisibleBounds)) return bounds;
-        if (!session.RejectionFeedbackShown)
+        if (_magneticResizeSession is not { } session || session.Source != source) return bounds;
+        RectInt32 accepted = ConstrainResizeGrowth(session, session.VisibleBounds, bounds, ReadOtherResizeBounds(session));
+        if (!accepted.Equals(bounds) && !session.RejectionFeedbackShown)
         {
             session.RejectionFeedbackShown = true;
             source.ShowResizeRejectedFeedback();
         }
-        RectInt32 original = session.VisibleBounds[source.Config.Id];
-        return new RectInt32(bounds.X, original.Y, bounds.Width, original.Height);
+        return accepted;
     }
 
     internal void UpdateMagneticResize(WidgetWindowBase source, RectInt32 bounds)
     {
-        if (_magneticResizeSession is not { } session || session.Source != source) return;
+        if (_magneticResizeSession is not { } session || session.Source != source || session.Windows.Length == 1) return;
         bounds = ConstrainMagneticResize(source, bounds);
-        var targets = ArrangeMagneticResize(session, session.VisibleBounds, bounds, out _);
+        var targets = ArrangeMagneticResize(session, session.VisibleBounds, bounds, ReadOtherResizeBounds(session), out _);
         foreach (var window in session.Windows.Where(w => w.MagneticCollapseInitialized))
-            window.ApplyMagneticResizeBounds(targets[window.Config.Id]);
+        {
+            RectInt32 target = targets[window.Config.Id];
+            if (!window.CoordinatedMoveBounds.Equals(target)) window.ApplyMagneticResizeBounds(target);
+        }
     }
 
     internal void CompleteMagneticResize(WidgetWindowBase source)
@@ -74,11 +86,14 @@ public sealed partial class WidgetManager
         if (_magneticResizeSession is not { } session || session.Source != source) return;
         try
         {
+            if (session.Windows.Length == 1) return;
             RectInt32 bounds = source.CoordinatedMoveBounds;
             UpdateMagneticResize(source, bounds);
             bounds = source.CoordinatedMoveBounds;
             RectInt32 expandedSource = source.ResolveMagneticExpandedResizeBounds(session.ExpandedBounds[source.Config.Id], bounds);
-            var expanded = ArrangeMagneticResize(session, session.ExpandedBounds, expandedSource, out bool reattached);
+            var otherBounds = ReadOtherResizeBounds(session);
+            expandedSource = ConstrainResizeGrowth(session, session.ExpandedBounds, expandedSource, otherBounds);
+            var expanded = ArrangeMagneticResize(session, session.ExpandedBounds, expandedSource, otherBounds, out bool reattached);
             foreach (var window in session.Windows.Where(w => w.MagneticCollapseInitialized))
             {
                 window.CommitMagneticResizeLayout(expanded[window.Config.Id]);

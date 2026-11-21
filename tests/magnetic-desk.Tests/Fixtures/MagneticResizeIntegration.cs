@@ -47,11 +47,27 @@ public sealed partial class WidgetManager
             lower.ApplyMagneticResizeBounds(new(100, 810, 500, 700));
             lower.CommitMagneticResizeLayout(lower.CoordinatedMoveBounds);
             BeginMagneticResize(upper);
-            Check(ConstrainMagneticResize(upper, proposed).Height == 900, "Narrower lower widget still blocked growth");
+            Check(ConstrainMagneticResize(upper, proposed).Height == accepted.Height,
+                "A narrower obstruction changed the resize limit");
             CompleteMagneticResize(upper);
+            lower.ApplyMagneticResizeBounds(new(720, 810, 500, 700));
+            lower.CommitMagneticResizeLayout(lower.CoordinatedMoveBounds);
+            BeginMagneticResize(upper);
+            Check(ConstrainMagneticResize(upper, proposed).Height == 900, "A separate column blocked growth");
+            CompleteMagneticResize(upper);
+            SetMagneticGroupId(upper.Config, null);
+            SetMagneticGroupId(lower.Config, null);
+            lower.ApplyMagneticResizeBounds(new(100, 810, 500, 700));
+            var fixedLower = lower.CoordinatedMoveBounds;
+            BeginMagneticResize(upper);
+            Check(ConstrainMagneticResize(upper, proposed).Height == accepted.Height,
+                "An obstruction outside the magnetic group did not block the source");
+            CompleteMagneticResize(upper);
+            Check(Same(lower.CoordinatedMoveBounds, fixedLower), "Resize moved an unrelated widget");
             await _settingsService.FlushPendingSaveAsync(false);
             await File.WriteAllTextAsync(path, JsonSerializer.Serialize(new { passed = true,
-                rejectedGrowth = true, singleShakeAnimation = true, savedHeightUnchanged = true, narrowerLowerAllowed = true }));
+                rejectedGrowth = true, singleShakeAnimation = true, savedHeightUnchanged = true,
+                separateColumnAllowed = true, outsideGroupObstructionsStayFixed = true }));
         }
         catch (Exception ex)
         {
@@ -291,9 +307,13 @@ public sealed partial class WidgetManager
                 window.CommitMagneticResizeLayout(window.CoordinatedMoveBounds);
             }
             BeginMagneticResize(source);
-            source.ApplyMagneticResizeBounds(new(100, 100, 430, 550));
+            var corner = ConstrainMagneticResize(source, new(100, 100, 430, 550));
+            source.ApplyMagneticResizeBounds(corner);
             UpdateMagneticResize(source, source.CoordinatedMoveBounds);
-            Check(files.CoordinatedMoveBounds.X == 540 && todo.CoordinatedMoveBounds.X == 540, "Live resize did not push the adjoining column");
+            Check(source.CoordinatedMoveBounds.Width <= 360 && source.CoordinatedMoveBounds.Height == 550,
+                "Corner resize did not stop the obstructed edge while keeping the free edge");
+            Check(files.CoordinatedMoveBounds.X == 460 && todo.CoordinatedMoveBounds.X == 460,
+                "Live resize moved the obstructing column");
             resizing.SetValue(source, true);
             commitResize.Invoke(source, null);
             var expanded = windows.ToDictionary(w => w.Config.Id, w => w.CoordinatedMoveBounds);
@@ -321,7 +341,7 @@ public sealed partial class WidgetManager
             UpdateMagneticResize(source, source.CoordinatedMoveBounds);
             resizing.SetValue(source, true);
             commitResize.Invoke(source, null);
-            Check(files.CoordinatedMoveBounds.X == fileCapsuleBefore.X + 40, "Resizing a capsule did not push its companion");
+            Check(files.CoordinatedMoveBounds.X == fileCapsuleBefore.X, "Resizing a capsule moved its companion");
             var compactResizeExpanded = windows.ToDictionary(w => w.Config.Id, w => w.Config.MagneticExpandedPlacement!.ToBounds());
             ApplyMagneticCollapse(windows, false, true, false);
             await Task.Delay(200);

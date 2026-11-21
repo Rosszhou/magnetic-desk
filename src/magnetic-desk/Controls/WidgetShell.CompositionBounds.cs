@@ -18,6 +18,7 @@ public sealed partial class WidgetShell
     private CompositionRoundedRectangleGeometry? _compositionBoundsClipGeometry;
     private CompositionGeometricClip? _compositionBoundsClip;
     private (double Width, double Height, HorizontalAlignment Horizontal, VerticalAlignment Vertical) _compositionBoundsLayout;
+    private Vector2 _compositionBoundsTargetSize;
     private bool _compositionBoundsCollapsing;
     private bool _compositionBoundsAnchorsRight;
     private bool _compositionBoundsAnchorsBottom;
@@ -30,6 +31,7 @@ public sealed partial class WidgetShell
         UpdateCapsuleClip();
         StopCompactCompositionTransitionAnimations(force: true);
         _compositionBoundsLayout = (Width, Height, HorizontalAlignment, VerticalAlignment);
+        _compositionBoundsTargetSize = toSize;
         _compositionBoundsCollapsing = collapsed;
         _compositionBoundsAnchorsRight = anchor is WidgetCompactExpansionAnchor.RightTop or WidgetCompactExpansionAnchor.RightBottom;
         _compositionBoundsAnchorsBottom = anchor is WidgetCompactExpansionAnchor.LeftBottom or WidgetCompactExpansionAnchor.RightBottom;
@@ -159,11 +161,24 @@ public sealed partial class WidgetShell
         state.StartAnimation("Progress", _compositionBoundsAnimation!);
     }
 
-    internal void EndCompositionBounds()
+    internal void SetFinalCompositionBoundsFrame()
     {
-        if (_compositionBoundsProgress is null) return;
-        _compositionBoundsProgress.StopAnimation("Progress");
+        if (_compositionBoundsProgress is not { } state) return;
+        state.StopAnimation("Progress");
+        state.InsertScalar("Progress", 1);
+    }
+
+    internal void EndCompositionBounds(bool useDestinationSize)
+    {
+        if (_compositionBoundsProgress is not { } state) return;
+        _compositionBoundsProgress = null;
+        _lastCapsuleClip = null;
+        UpdateCapsuleClip(useDestinationSize ? _compositionBoundsTargetSize : null);
+        // The former compact clip may still have the capsule's height. Bring
+        // the normal clip and background up to date before exposing either.
         ElementCompositionPreview.GetElementVisual(ShellRoot).Clip = _capsuleClipGeometry;
+        BackgroundPlate.Opacity = 1;
+        state.StopAnimation("Progress");
         _compositionBoundsClip?.Dispose();
         _compositionBoundsClip = null;
         _compositionBoundsClipGeometry?.Dispose();
@@ -194,16 +209,12 @@ public sealed partial class WidgetShell
         _compositionBoundsBackground = null;
         _compositionBoundsAnimation?.Dispose();
         _compositionBoundsAnimation = null;
-        StopCompactCompositionTransitionAnimations(force: true);
-        _compositionBoundsProgress.Dispose();
-        _compositionBoundsProgress = null;
-        BackgroundPlate.Opacity = 1;
+        StopCompactCompositionTransitionAnimations();
+        state.Dispose();
         CompositionBackgroundHost.Visibility = Visibility.Collapsed;
         (Width, Height, HorizontalAlignment, VerticalAlignment) = _compositionBoundsLayout;
         CollapsedChromeLayer.Width = CollapsedChromeLayer.Height = double.NaN;
         CollapsedChromeLayer.HorizontalAlignment = HorizontalAlignment.Stretch;
         CollapsedChromeLayer.VerticalAlignment = VerticalAlignment.Stretch;
-        _lastCapsuleClip = null;
-        UpdateCapsuleClip();
     }
 }

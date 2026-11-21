@@ -6,7 +6,7 @@ English | [简体中文](README.zh-CN.md)
 
 ## Download and install
 
-Download `magnetic-desk_Setup_1.4.0_x64.exe` from [GitHub Releases](https://github.com/Rosszhou/magnetic-desk/releases/latest) and run the installer.
+Download `magnetic-desk_Setup_1.5.0_x64.exe` from [GitHub Releases](https://github.com/Rosszhou/magnetic-desk/releases/latest) and run the installer.
 
 - Supports x64 Windows 10 version 2004 (build 19041) or later and Windows 11.
 - Includes its runtime components for offline installation.
@@ -24,7 +24,7 @@ Download `magnetic-desk_Setup_1.4.0_x64.exe` from [GitHub Releases](https://gith
 - Add notes, clipboard, todo, and search widgets through the title-bar plus menu.
 - Use local backup and recovery. The interface supports English and Simplified Chinese. System language selects Chinese for Chinese systems and English otherwise.
 
-This edition is version 1.4.0. Weather, music, Glance, WebDAV backup, and application update entry points have been removed from this edition. Legacy configuration models remain for compatibility.
+This edition is version 1.5.0. Weather, music, Glance, WebDAV backup, and application update entry points have been removed from this edition. Legacy configuration models remain for compatibility.
 
 ## Build and verification
 

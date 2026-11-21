@@ -7,37 +7,48 @@ internal static class WidgetMagneticResizeLayout
 {
     internal static Dictionary<string, RectInt32> Arrange(
         IReadOnlyDictionary<string, RectInt32> original, string sourceId, RectInt32 proposed,
-        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance)
+        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance) =>
+        ArrangeCore(original, sourceId, proposed, proposed, attachment, anchor, spacing, tolerance, fixedObstacles: null);
+
+    private static Dictionary<string, RectInt32> ArrangeCore(
+        IReadOnlyDictionary<string, RectInt32> original, string sourceId, RectInt32 proposed, RectInt32 movingEdges,
+        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance,
+        IReadOnlyList<RectInt32>? fixedObstacles)
     {
         var targets = original.ToDictionary();
         targets[sourceId] = proposed;
-        AlignStackedWidths(original, targets, sourceId, attachment, anchor, spacing, tolerance);
         RectInt32 source = original[sourceId];
-        ReflowAxis(original, targets, sourceId, spacing, tolerance, horizontal: true,
-            forward: true, changed: proposed.X + proposed.Width != source.X + source.Width);
-        ReflowAxis(original, targets, sourceId, spacing, tolerance, horizontal: true,
-            forward: false, changed: proposed.X != source.X);
-        ReflowAxis(original, targets, sourceId, spacing, tolerance, horizontal: false,
-            forward: true, changed: proposed.Y + proposed.Height != source.Y + source.Height);
-        ReflowAxis(original, targets, sourceId, spacing, tolerance, horizontal: false,
-            forward: false, changed: proposed.Y != source.Y);
+        if (fixedObstacles is null || movingEdges.Width < source.Width)
+            AlignStackedWidths(original, targets, sourceId, attachment, anchor, spacing, tolerance, fixedObstacles);
+        ReflowAxis(original, targets, sourceId, spacing, tolerance, fixedObstacles, horizontal: true,
+            forward: true, changed: movingEdges.X + movingEdges.Width != source.X + source.Width);
+        ReflowAxis(original, targets, sourceId, spacing, tolerance, fixedObstacles, horizontal: true,
+            forward: false, changed: movingEdges.X != source.X);
+        ReflowAxis(original, targets, sourceId, spacing, tolerance, fixedObstacles, horizontal: false,
+            forward: true, changed: movingEdges.Y + movingEdges.Height != source.Y + source.Height);
+        ReflowAxis(original, targets, sourceId, spacing, tolerance, fixedObstacles, horizontal: false,
+            forward: false, changed: movingEdges.Y != source.Y);
         return targets;
     }
 
     internal static IReadOnlyDictionary<string, RectInt32> ArrangeInteractive(
         IReadOnlyDictionary<string, RectInt32> original, string sourceId, RectInt32 proposed,
         IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance,
-        out bool reattached)
+        out bool reattached, IReadOnlyList<RectInt32>? fixedObstacles = null, bool reconnect = true)
     {
-        var targets = Arrange(original, sourceId, proposed, attachment, anchor, spacing, tolerance);
-        reattached = !proposed.Equals(original[sourceId]) &&
-            ReconnectDetachedMembers(original, targets, sourceId, attachment, spacing, tolerance);
+        fixedObstacles ??= [];
+        RectInt32 source = original[sourceId];
+        RectInt32 movingEdges = WidgetMagneticResizePolicy.RemoveGrowth(source, proposed);
+        var targets = ArrangeCore(original, sourceId, proposed, movingEdges, attachment, anchor, spacing, tolerance, fixedObstacles);
+        reattached = reconnect && !movingEdges.Equals(source) &&
+            ReconnectDetachedMembers(original, targets, sourceId, attachment, spacing, tolerance, fixedObstacles);
         return targets;
     }
 
     private static bool ReconnectDetachedMembers(IReadOnlyDictionary<string, RectInt32> original,
         Dictionary<string, RectInt32> targets, string sourceId,
-        IReadOnlyDictionary<string, RectInt32> attachment, int spacing, int tolerance)
+        IReadOnlyDictionary<string, RectInt32> attachment, int spacing, int tolerance,
+        IReadOnlyList<RectInt32> fixedObstacles)
     {
         bool reattached = false;
         var ids = targets.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
@@ -57,7 +68,7 @@ internal static class WidgetMagneticResizeLayout
                 var branch = FindConnectedMembers(seed);
                 examined.UnionWith(branch);
                 var moving = ids.Where(branch.Contains).Select(id => targets[id]).ToArray();
-                var obstacles = ids.Where(id => !branch.Contains(id)).Select(id => targets[id]).ToArray();
+                var obstacles = ids.Where(id => !branch.Contains(id)).Select(id => targets[id]).Concat(fixedObstacles).ToArray();
                 foreach (string nearId in ids.Where(connected.Contains))
                 foreach (string farId in ids.Where(branch.Contains))
                 foreach (bool horizontal in new[] { true, false })
@@ -119,7 +130,7 @@ internal static class WidgetMagneticResizeLayout
         }
     }
 
-    private static bool CanSlide(RectInt32[] moving, RectInt32[] obstacles, PointInt32 delta)
+    private static bool CanSlide(IEnumerable<RectInt32> moving, IReadOnlyList<RectInt32> obstacles, PointInt32 delta)
     {
         bool HasClearPath(bool horizontalFirst)
         {
@@ -142,12 +153,24 @@ internal static class WidgetMagneticResizeLayout
         return HasClearPath(horizontalFirst: true) || HasClearPath(horizontalFirst: false);
     }
 
+    private static void TryPlace(Dictionary<string, RectInt32> targets, string id, RectInt32 destination,
+        IReadOnlyList<RectInt32>? fixedObstacles)
+    {
+        RectInt32 current = targets[id];
+        if (current.Equals(destination)) return;
+        if (fixedObstacles is null || CanSlide([current],
+            targets.Where(pair => pair.Key != id).Select(pair => pair.Value).Concat(fixedObstacles).ToArray(),
+            new PointInt32(destination.X - current.X, destination.Y - current.Y)))
+            targets[id] = destination;
+    }
+
     private static RectInt32 Offset(RectInt32 bounds, int dx, int dy) =>
         new(bounds.X + dx, bounds.Y + dy, bounds.Width, bounds.Height);
 
     private static void AlignStackedWidths(IReadOnlyDictionary<string, RectInt32> original,
         Dictionary<string, RectInt32> targets, string sourceId,
-        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance)
+        IReadOnlyDictionary<string, RectInt32> attachment, string? anchor, int spacing, int tolerance,
+        IReadOnlyList<RectInt32>? fixedObstacles)
     {
         bool trailing = anchor?.Contains("Right", StringComparison.Ordinal) == true;
         var visited = new HashSet<string>(StringComparer.Ordinal) { sourceId };
@@ -164,7 +187,7 @@ internal static class WidgetMagneticResizeLayout
                 if (alignment is not { } ratio) continue;
                 int delta = moved.X - parent.X + (int)Math.Round((moved.Width - parent.Width) * ratio);
                 RectInt32 child = targets[pair.Key];
-                targets[pair.Key] = new RectInt32(pair.Value.X + delta, child.Y, child.Width, child.Height);
+                TryPlace(targets, pair.Key, new RectInt32(pair.Value.X + delta, child.Y, child.Width, child.Height), fixedObstacles);
                 visited.Add(pair.Key);
                 pending.Enqueue(pair.Key);
             }
@@ -185,7 +208,7 @@ internal static class WidgetMagneticResizeLayout
 
     private static void ReflowAxis(IReadOnlyDictionary<string, RectInt32> original,
         Dictionary<string, RectInt32> targets, string sourceId, int spacing, int tolerance,
-        bool horizontal, bool forward, bool changed)
+        IReadOnlyList<RectInt32>? fixedObstacles, bool horizontal, bool forward, bool changed)
     {
         if (!changed) return;
         var ordered = original.OrderBy(p => forward ? Start(p.Value, horizontal) : -End(p.Value, horizontal))
@@ -214,13 +237,21 @@ internal static class WidgetMagneticResizeLayout
                 if (Position(target) == Position(pair.Value)) position = supported;
                 else position = forward ? Math.Max(position, supported) : Math.Min(position, supported);
             }
-            foreach (var predecessor in predecessors)
+            if (fixedObstacles is null)
             {
-                int clearance = Math.Clamp(Gap(predecessor.Value), 0, spacing);
-                int limit = Boundary(targets[predecessor.Key]) + (forward ? clearance : -clearance);
-                position = forward ? Math.Max(position, limit) : Math.Min(position, limit);
+                foreach (var predecessor in predecessors)
+                {
+                    int clearance = Math.Clamp(Gap(predecessor.Value), 0, spacing);
+                    int limit = Boundary(targets[predecessor.Key]) + (forward ? clearance : -clearance);
+                    position = forward ? Math.Max(position, limit) : Math.Min(position, limit);
+                }
             }
-            targets[pair.Key] = WithStart(target, forward ? position : position - Length(target, horizontal), horizontal);
+            else
+            {
+                position = forward ? Math.Min(position, Position(target)) : Math.Max(position, Position(target));
+            }
+            TryPlace(targets, pair.Key, WithStart(target, forward ? position : position - Length(target, horizontal), horizontal),
+                fixedObstacles);
         }
     }
 

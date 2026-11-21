@@ -118,8 +118,12 @@ public sealed partial class WidgetManager
                         var independent = animated.Select(window => !WidgetBackgroundCustomization.HasCustomBackground(window.Config)).ToArray();
                         Check(animated.Select((window, index) => (hostField.GetValue(window) is RectInt32) == independent[index]).All(value => value),
                             "members select the expected animation pipeline " + step);
-                        Check(animated.Select((window, index) => !independent[index] || ReadPhysicalBounds(window).Equals(physical[index])).All(value => value),
-                            "composition host size stays fixed mid-transition " + step);
+                        Check(animated.Select((window, index) =>
+                        {
+                            var current = ReadPhysicalBounds(window);
+                            return !independent[index] ||
+                                (current.Width == physical[index].Width && current.Height == physical[index].Height);
+                        }).All(value => value), "composition client size stays fixed mid-transition " + step);
                         Check(independent.Select((enabled, index) => !enabled || middleSizeChanges[index] == 0).All(value => value),
                             "composition shell layout size stays fixed mid-transition " + step);
                         var startField = typeof(WidgetWindowBase).GetField("_collapseAnimationStarted", BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -209,6 +213,16 @@ public sealed partial class WidgetManager
             foreach (var window in windows)
             {
                 var windowShell = (WidgetShell)shellProperty.GetValue(window)!;
+                IntPtr region = CreateRectRgn(0, 0, 0, 0);
+                try
+                {
+                    Check(GetWindowRgn(WinRT.Interop.WindowNative.GetWindowHandle(window), region) == 0,
+                        "settled window releases temporary native clip " + window.Config.Id);
+                }
+                finally { DeleteObject(region); }
+                Check(((FrameworkElement)windowShell.FindName("BackgroundPlate")).Opacity == 1 &&
+                    ((FrameworkElement)windowShell.FindName("CompositionBackgroundHost")).Visibility == Visibility.Collapsed,
+                    "settled window restores its live background " + window.Config.Id);
                 var clip = (Microsoft.UI.Composition.RectangleClip)typeof(WidgetShell)
                     .GetField("_capsuleClipGeometry", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(windowShell)!;
                 Check(Math.Abs(clip.Right - windowShell.ActualWidth) < 0.01 && Math.Abs(clip.Bottom - windowShell.ActualHeight) < 0.01,
@@ -223,6 +237,21 @@ public sealed partial class WidgetManager
                     "style rebuild preserves hidden countdown padding " + window.Config.Id);
             }
             var source = windows[0];
+            if (!nativeBounds && !WidgetBackgroundCustomization.HasCustomBackground(source.Config))
+            {
+                RectInt32 expanded = ReadPhysicalBounds(source);
+                var displaced = new RectInt32(expanded.X - 12, expanded.Y - 58, expanded.Width, source.MagneticCompactSize.Height);
+                source.ApplyMagneticCollapsedState(true, displaced, false, false);
+                source.ApplyMagneticCollapsedState(false, expanded, false, true);
+                await Task.Delay(145);
+                var intermediate = ReadPhysicalBounds(source);
+                Check(source.MagneticBoundsTransitionActive && intermediate.Width == expanded.Width &&
+                    intermediate.Height == expanded.Height && intermediate.Y > displaced.Y && intermediate.Y < expanded.Y,
+                    "offset expansion moves a constant-size client toward its final position");
+                await Task.Delay(600);
+                Check(ReadPhysicalBounds(source).Equals(expanded) && !source.MagneticBoundsTransitionActive,
+                    "offset expansion settles without leaving a larger native host");
+            }
             source.RequestCompactState(true, true);
             await Task.Delay(90);
             var targetField = typeof(WidgetWindowBase).GetField("_collapseAnimationTo", BindingFlags.Instance | BindingFlags.NonPublic)!;

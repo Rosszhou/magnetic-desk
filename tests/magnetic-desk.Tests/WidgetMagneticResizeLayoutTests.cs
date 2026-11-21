@@ -6,9 +6,9 @@ namespace MagneticDesk.Tests;
 public sealed class WidgetMagneticResizeLayoutTests
 {
     [Theory]
-    [InlineData(783, 793)]
+    [InlineData(783, 535)]
     [InlineData(400, 535)]
-    public void ResizingUpperLeftMovesOnlyItsLowerSupport(int height, int lowerY)
+    public void UpperLeftCanShortenWithoutMovingTheOtherColumn(int height, int lowerY)
     {
         var original = new Dictionary<string, RectInt32>
         {
@@ -35,7 +35,23 @@ public sealed class WidgetMagneticResizeLayoutTests
     }
 
     [Fact]
-    public void HeightGrowthPropagatesThroughTheContactingColumn()
+    public void ShorteningFillsAnUnblockedColumnWithoutPushingAnotherWindow()
+    {
+        var original = new Dictionary<string, RectInt32>
+        { ["a"] = new(0, 0, 300, 400), ["b"] = new(0, 410, 300, 400), ["c"] = new(0, 820, 300, 400) };
+        RectInt32 proposed = new(0, 0, 300, 200);
+        var clear = Arrange(original, "a", proposed);
+        Assert.Equal(210, clear["b"].Y);
+        Assert.Equal(620, clear["c"].Y);
+
+        var blocked = WidgetMagneticResizeLayout.ArrangeInteractive(original, "a", proposed, original,
+            "LeftTop", 10, 18, out _, [new(-400, 401, 1100, 8)]);
+        Assert.Equal(original["b"], blocked["b"]);
+        Assert.Equal(original["c"], blocked["c"]);
+    }
+
+    [Fact]
+    public void BlockedGrowthLeavesTheWholeContactingColumnInPlace()
     {
         var original = new Dictionary<string, RectInt32>
         {
@@ -44,24 +60,25 @@ public sealed class WidgetMagneticResizeLayoutTests
             ["e"] = new(0, 720, 300, 300)
         };
         var result = Arrange(original, "a", new(0, 0, 300, 650));
-        Assert.Equal(660, result["c"].Y);
-        Assert.Equal(970, result["e"].Y);
-        Assert.Equal(original["b"], result["b"]);
-        Assert.Equal(original["d"], result["d"]);
+        Assert.Equal(original, result);
     }
 
     [Fact]
-    public void DistantMembersMoveOnlyWhenTheGrowingEdgeReachesThem()
+    public void GrowthUsesTheEmptySpaceUpToTheDistantMember()
     {
         var original = new Dictionary<string, RectInt32>
         { ["a"] = new(0, 0, 300, 200), ["b"] = new(0, 700, 300, 200) };
-        Assert.Equal(700, Arrange(original, "a", new(0, 0, 300, 500))["b"].Y);
-        Assert.Equal(810, Arrange(original, "a", new(0, 0, 300, 800))["b"].Y);
+        var initial = Arrange(original, "a", new(0, 0, 300, 500));
+        Assert.Equal(500, initial["a"].Height);
+        Assert.Equal(original["b"], initial["b"]);
+        var blocked = Arrange(original, "a", new(0, 0, 300, 1200));
+        Assert.Equal(690, blocked["a"].Height);
+        Assert.Equal(original["b"], blocked["b"]);
     }
 
     [Theory]
     [InlineData(300, 799)]
-    [InlineData(337, 860)]
+    [InlineData(300, 860)]
     public void ResizeFillsTheGapInTheSavedFiveWidgetLayout(int width, int height)
     {
         var attachment = new Dictionary<string, RectInt32>
@@ -132,7 +149,7 @@ public sealed class WidgetMagneticResizeLayoutTests
     }
 
     [Fact]
-    public void GrowingTheTopEdgePushesOnlyTheOverlappingUpperColumn()
+    public void GrowingTheTopEdgeStopsAtTheOverlappingUpperColumn()
     {
         var original = new Dictionary<string, RectInt32>
         {
@@ -140,9 +157,7 @@ public sealed class WidgetMagneticResizeLayoutTests
             ["c"] = new(0, 410, 300, 300), ["d"] = new(310, 410, 300, 300)
         };
         var result = Arrange(original, "c", new(0, 200, 300, 510));
-        Assert.Equal(-210, result["a"].Y);
-        Assert.Equal(original["b"], result["b"]);
-        Assert.Equal(original["d"], result["d"]);
+        Assert.Equal(original, result);
     }
 
     [Theory]
@@ -158,7 +173,7 @@ public sealed class WidgetMagneticResizeLayoutTests
     }
 
     [Fact]
-    public void WidthGrowthDoesNotMoveTheOtherRow()
+    public void BlockedWidthGrowthKeepsBothRowsInPlace()
     {
         var original = new Dictionary<string, RectInt32>
         {
@@ -166,19 +181,18 @@ public sealed class WidgetMagneticResizeLayoutTests
             ["c"] = new(0, 410, 300, 300), ["d"] = new(310, 410, 300, 300)
         };
         var result = Arrange(original, "a", new(0, 0, 500, 400));
-        Assert.Equal(510, result["b"].X);
-        Assert.Equal(original["d"], result["d"]);
-        Assert.Equal(original["c"], result["c"]);
+        Assert.Equal(original, result);
     }
 
     [Theory]
     [InlineData("a")]
     [InlineData("z")]
-    public void ResizingRepairsLegacyCoincidentBounds(string sourceId)
+    public void LegacyTransitionReflowStillRepairsCoincidentBounds(string sourceId)
     {
         var original = new Dictionary<string, RectInt32>
         { [sourceId] = new(0, 0, 300, 400), ["other"] = new(0, 0, 300, 400) };
-        var result = Arrange(original, sourceId, new(0, 0, 300, 500));
+        var result = WidgetMagneticResizeLayout.Arrange(original, sourceId, new(0, 0, 300, 500),
+            original, "LeftTop", 10, 18);
         Assert.Equal(500, result["other"].Y);
     }
 
@@ -202,7 +216,8 @@ public sealed class WidgetMagneticResizeLayoutTests
             int y = sourceId is "c" or "d" ? source.Y + source.Height - height : source.Y;
             var proposed = new RectInt32(x, y, width, height);
             var result = Arrange(original, sourceId, proposed);
-            Assert.Equal(proposed, result[sourceId]);
+            Assert.InRange(result[sourceId].Width, Math.Min(proposed.Width, source.Width), proposed.Width);
+            Assert.InRange(result[sourceId].Height, Math.Min(proposed.Height, source.Height), proposed.Height);
             foreach (var first in result)
             foreach (var second in result.Where(p => string.CompareOrdinal(p.Key, first.Key) > 0))
             {
@@ -215,6 +230,10 @@ public sealed class WidgetMagneticResizeLayoutTests
     }
 
     private static IReadOnlyDictionary<string, RectInt32> Arrange(
-        Dictionary<string, RectInt32> original, string sourceId, RectInt32 proposed) =>
-        WidgetMagneticResizeLayout.ArrangeInteractive(original, sourceId, proposed, original, "LeftTop", 10, 18, out _);
+        Dictionary<string, RectInt32> original, string sourceId, RectInt32 proposed)
+    {
+        RectInt32 accepted = WidgetMagneticResizePolicy.ConstrainGrowth(original[sourceId], proposed,
+            original.Where(pair => pair.Key != sourceId).Select(pair => pair.Value).ToArray(), 10);
+        return WidgetMagneticResizeLayout.ArrangeInteractive(original, sourceId, accepted, original, "LeftTop", 10, 18, out _);
+    }
 }

@@ -13,7 +13,8 @@ namespace MagneticDesk.Views;
 public abstract partial class WidgetWindowBase
 {
     private RectInt32? _compositionHostBounds;
-    private IDisposable? _compositionBoundsStartRegistration;
+    private bool _compositionHostFollowsExpansion;
+    private IDisposable? _compositionBoundsFrameRegistration;
     private bool _compositionBoundsPending;
     private (double Width, double Height, HorizontalAlignment Horizontal, VerticalAlignment Vertical) _compositionRootLayout;
     internal RectInt32 RestingBoundsForLayout => IsCompactTransitionActive ? _collapseAnimationTo : GetActualWindowBounds();
@@ -29,7 +30,17 @@ public abstract partial class WidgetWindowBase
         if (!WidgetShellControl.SupportsCompositionBounds || WidgetBackgroundCustomization.HasCustomBackground(Config) ||
             WidgetBackgroundCustomization.IsGlobalImageBackgroundActive(SettingsService.Settings)) return false;
         RectInt32 host = WidgetCoordinatedMoveCalculator.GetUnion([from, to]);
+        bool followsExpansion = !collapsed && !BoundsEqual(host, to);
+        if (followsExpansion)
+        {
+            // Keep the expanded client size from the first frame. Moving this
+            // host during expansion avoids rebasing its region and visual
+            // coordinates on different DWM frames at the end.
+            if (from.Width > to.Width || from.Height > to.Height) return false;
+            host = new RectInt32(from.X, from.Y, to.Width, to.Height);
+        }
         _compositionHostBounds = host;
+        _compositionHostFollowsExpansion = followsExpansion;
         _compositionBoundsPending = true;
         _compositionRootLayout = (RootElement.Width, RootElement.Height, RootElement.HorizontalAlignment, RootElement.VerticalAlignment);
         try
@@ -50,18 +61,25 @@ public abstract partial class WidgetWindowBase
                 fromRadius, toRadius,
                 _collapseAnimationAnchor ?? WidgetCompactExpansionAnchor.LeftTop, collapsed,
                 _collapseAnimationVisualProfile with { DurationMilliseconds = _collapseAnimationDurationMs });
-            state.InsertVector2("FromOffset", new Vector2((float)((from.X - host.X) / dpiScale), (float)((from.Y - host.Y) / dpiScale)));
-            state.InsertVector2("ToOffset", new Vector2((float)((to.X - host.X) / dpiScale), (float)((to.Y - host.Y) / dpiScale)));
-            var visual = ElementCompositionPreview.GetElementVisual(RootElement);
-            var translation = state.Compositor.CreateExpressionAnimation(
-                "Vector3(state.FromOffset.X + (state.ToOffset.X - state.FromOffset.X) * state.Progress, state.FromOffset.Y + (state.ToOffset.Y - state.FromOffset.Y) * state.Progress, 0)");
-            translation.SetReferenceParameter("state", state);
-            visual.Properties.StartAnimation("Translation", translation);
-            translation.Dispose();
+            if (!followsExpansion)
+            {
+                state.InsertVector2("FromOffset", new Vector2((float)((from.X - host.X) / dpiScale), (float)((from.Y - host.Y) / dpiScale)));
+                state.InsertVector2("ToOffset", new Vector2((float)((to.X - host.X) / dpiScale), (float)((to.Y - host.Y) / dpiScale)));
+                var visual = ElementCompositionPreview.GetElementVisual(RootElement);
+                using var translation = state.Compositor.CreateExpressionAnimation(
+                    "Vector3(state.FromOffset.X + (state.ToOffset.X - state.FromOffset.X) * state.Progress, state.FromOffset.Y + (state.ToOffset.Y - state.FromOffset.Y) * state.Progress, 0)");
+                translation.SetReferenceParameter("state", state);
+                visual.Properties.StartAnimation("Translation", translation);
+            }
+            else if (!ApplyCompositionWindowClip(from))
+            {
+                EndCompositionBounds(settle: from);
+                return false;
+            }
             MoveWindowWithoutPersisting(host, committed: _ =>
             {
                 if (generation != _collapseAnimationGeneration || _compositionHostBounds is null) return;
-                if (!ApplyCompositionWindowClip(from)) CompleteBoundsTransitionImmediately("region-failed");
+                if (!followsExpansion && !ApplyCompositionWindowClip(from)) CompleteBoundsTransitionImmediately("region-failed");
             }, deferUntilPrepared: true);
             RootElement.UpdateLayout();
             return true;
@@ -77,11 +95,11 @@ public abstract partial class WidgetWindowBase
     private void QueueBoundsTransitionStart(long generation, bool compositionBounds)
     {
         _compositionBoundsPending = true;
-        _compositionBoundsStartRegistration = WidgetCompactAnimationCoordinator.StartOnPreparedFrame(timestamp =>
+        _compositionBoundsFrameRegistration = WidgetCompactAnimationCoordinator.StartOnPreparedFrame(timestamp =>
         {
             if (generation != _collapseAnimationGeneration || IsClosing) return;
-            _compositionBoundsStartRegistration?.Dispose();
-            _compositionBoundsStartRegistration = null;
+            _compositionBoundsFrameRegistration?.Dispose();
+            _compositionBoundsFrameRegistration = null;
             _collapseAnimationStarted = timestamp;
             _compositionBoundsPending = false;
             _collapseAnimationPacing.Reset(0, WidgetCompactAnimationCoordinator.GetFrameBudgetMilliseconds(HWnd));
@@ -113,23 +131,64 @@ public abstract partial class WidgetWindowBase
     {
         RectInt32 host = _compositionHostBounds!.Value;
         return Win32Helper.SetAnimationWindowClip(HWnd,
-            new RectInt32(bounds.X - host.X, bounds.Y - host.Y, bounds.Width, bounds.Height));
+            _compositionHostFollowsExpansion ? new RectInt32(0, 0, bounds.Width, bounds.Height)
+                : new RectInt32(bounds.X - host.X, bounds.Y - host.Y, bounds.Width, bounds.Height));
+    }
+
+    private bool ApplyCompositionWindowFrame(RectInt32 bounds, long generation)
+    {
+        if (!ApplyCompositionWindowClip(bounds)) return false;
+        if (!_compositionHostFollowsExpansion || _compositionHostBounds is not { } host ||
+            (host.X == bounds.X && host.Y == bounds.Y)) return true;
+
+        var destination = new RectInt32(bounds.X, bounds.Y, host.Width, host.Height);
+        MoveWindowWithoutPersisting(destination, committed: _ =>
+        {
+            if (generation == _collapseAnimationGeneration && _compositionHostBounds is not null)
+                _compositionHostBounds = destination;
+        }, commitFailed: () =>
+        {
+            if (generation == _collapseAnimationGeneration)
+                CompleteBoundsTransitionImmediately("host-move-failed");
+        }, positionOnly: true);
+        return true;
+    }
+
+    private bool QueueCompositionExpansionFinish(RectInt32 bounds, long generation, Action finish)
+    {
+        if (_compositionHostBounds is null) return false;
+        if (!BoundsEqual(_collapseAnimationLastCommittedBounds, bounds) && !ApplyCompositionWindowFrame(bounds, generation)) return false;
+        WidgetShellControl.SetFinalCompositionBoundsFrame();
+        _compositionBoundsFrameRegistration = WidgetCompactAnimationCoordinator.StartOnPreparedFrame(_ => Complete());
+        int fallback = Math.Max(16, (int)Math.Ceiling(2 * WidgetCompactAnimationCoordinator.GetFrameBudgetMilliseconds(HWnd)));
+        ScheduleTimer(ref _collapseAnimationWatchdogTimer, fallback, Complete);
+        return true;
+
+        void Complete()
+        {
+            if (generation != _collapseAnimationGeneration || IsClosing || _compositionBoundsFrameRegistration is null) return;
+            _compositionBoundsFrameRegistration.Dispose();
+            _compositionBoundsFrameRegistration = null;
+            CancelTimer(ref _collapseAnimationWatchdogTimer);
+            finish();
+        }
     }
 
     private void EndCompositionBounds(RectInt32? settle = null)
     {
         if (_compositionHostBounds is null) return;
-        _compositionBoundsStartRegistration?.Dispose();
-        _compositionBoundsStartRegistration = null;
+        _compositionBoundsFrameRegistration?.Dispose();
+        _compositionBoundsFrameRegistration = null;
         RectInt32 visible = settle ?? CompositionVisibleBounds();
         _compositionHostBounds = null;
+        _compositionHostFollowsExpansion = false;
         _compositionBoundsPending = false;
         if (!IsClosing && !BoundsEqual(GetActualWindowBounds(), visible)) MoveWindowWithoutPersisting(visible);
-        Win32Helper.ClearAnimationWindowClip(HWnd);
         var visual = ElementCompositionPreview.GetElementVisual(RootElement);
         visual.Properties.StopAnimation("Translation");
         visual.Properties.InsertVector3("Translation", Vector3.Zero);
-        WidgetShellControl.EndCompositionBounds();
+        WidgetShellControl.EndCompositionBounds(useDestinationSize: settle.HasValue && BoundsEqual(visible, _collapseAnimationTo));
         (RootElement.Width, RootElement.Height, RootElement.HorizontalAlignment, RootElement.VerticalAlignment) = _compositionRootLayout;
+        Win32Helper.ClearAnimationWindowClip(HWnd);
     }
 }

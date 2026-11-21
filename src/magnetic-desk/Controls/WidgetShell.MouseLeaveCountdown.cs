@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
+using System.Numerics;
 
 namespace MagneticDesk.Controls;
 
@@ -83,7 +84,7 @@ public sealed partial class WidgetShell
 
     internal void RefreshCapsuleClip() => UpdateCapsuleClip();
 
-    private void UpdateCapsuleClip()
+    private void UpdateCapsuleClip(Vector2? finalSize = null)
     {
         if (_compositionBoundsProgress is not null) return;
         if (_capsuleClipGeometry is null)
@@ -94,8 +95,8 @@ public sealed partial class WidgetShell
             visual.Clip = _capsuleClipGeometry;
             BackgroundPlate.RegisterPropertyChangedCallback(Border.CornerRadiusProperty, (_, _) => UpdateCapsuleClip());
         }
-        float width = (float)Math.Max(0, ActualWidth);
-        float height = (float)Math.Max(0, ActualHeight);
+        float width = Math.Max(0, finalSize?.X ?? (float)ActualWidth);
+        float height = Math.Max(0, finalSize?.Y ?? (float)ActualHeight);
         float radius = (float)Math.Min(BackgroundPlate.CornerRadius.TopLeft, Math.Min(width, height) / 2);
         if (_lastCapsuleClip?.Width != width) _capsuleClipGeometry.Right = width;
         if (_lastCapsuleClip?.Height != height) _capsuleClipGeometry.Bottom = height;
