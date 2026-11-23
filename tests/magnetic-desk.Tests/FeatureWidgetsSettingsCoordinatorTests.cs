@@ -50,14 +50,14 @@ public sealed class FeatureWidgetsSettingsCoordinatorTests : IDisposable
         int notified = 0;
         settings.SettingsChanged += () => notified++;
         coordinator.SetFeatureWidgetEnabled(WidgetKind.Todo, false);
-        coordinator.SetFeatureWidgetEnabled(WidgetKind.Search, true);
+        coordinator.SetFeatureWidgetEnabled(WidgetKind.QuickCapture, false);
         Assert.Equal(0, notified);
         await settings.SaveAsync();
 
         var reloaded = new SettingsService(_root);
         await reloaded.LoadAsync();
         Assert.False(FeatureWidgetSettings.IsEnabled(reloaded.Settings, WidgetKind.Todo));
-        Assert.True(FeatureWidgetSettings.IsEnabled(reloaded.Settings, WidgetKind.Search));
+        Assert.False(FeatureWidgetSettings.IsEnabled(reloaded.Settings, WidgetKind.QuickCapture));
     }
 
     [Fact]

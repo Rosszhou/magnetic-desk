@@ -595,6 +595,7 @@ public abstract partial class WidgetWindowBase
         double previous = _observedRasterizationScale;
         _observedRasterizationScale = scale;
         if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("dpi-changed");
+        FlushDeferredCollapseHostSettle();
         RefreshSurfaceClip();
         App.LogVerbose(
             $"[DisplayTopology] {LogPrefix} XamlRoot scale {previous:F3}->{scale:F3}");
@@ -604,6 +605,7 @@ public abstract partial class WidgetWindowBase
     protected void ApplyWindowBounds(int x, int y, int width, int height, bool persist, bool updateConfig = true)
     {
         if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("external-bounds-settled");
+        FlushDeferredCollapseHostSettle(moveWindow: false);
         if (_isDisplayTopologyTransitionActive)
         {
             persist = false;
@@ -774,7 +776,7 @@ public abstract partial class WidgetWindowBase
         }
 
         var bounds = ResolveWidgetBoundsForCurrentState(out bool placementFellBack);
-        RectInt32 actual = GetActualWindowBounds();
+        RectInt32 actual = GetCurrentWindowBounds();
         if (actual.X == bounds.X &&
             actual.Y == bounds.Y &&
             actual.Width == bounds.Width &&
@@ -875,12 +877,17 @@ public abstract partial class WidgetWindowBase
 
     // ── Window corner & DWM border ─────────────────────────────
 
+    private bool _windowCornerPreferenceApplied;
+
     protected void ApplyWindowCornerPreference()
     {
-        // The XAML surface supplies the live capsule/expanded radius.
-        int cornerPreference = Win32Helper.DWMWCP_DONOTROUND;
-
-        Win32Helper.TrySetDwmWindowAttribute(HWnd, Win32Helper.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference);
+        if (!_windowCornerPreferenceApplied)
+        {
+            // The XAML surface supplies the live capsule/expanded radius.
+            int cornerPreference = Win32Helper.DWMWCP_DONOTROUND;
+            _windowCornerPreferenceApplied = Win32Helper.TrySetDwmWindowAttribute(
+                HWnd, Win32Helper.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference) == 0;
+        }
         RefreshSurfaceClip();
     }
 

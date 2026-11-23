@@ -26,6 +26,7 @@ namespace MagneticDesk.Features.Capsule;
     nameof(BarPlacement),
     nameof(BarSpacing),
     nameof(BarSpacingText),
+    nameof(CanConfigureHideSensitiveContent),
     nameof(CanOpenAnimationDetails),
     nameof(CanOpenHoverResponseDetails),
     nameof(CollapseBehavior),

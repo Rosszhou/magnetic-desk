@@ -117,15 +117,6 @@ public sealed partial class ContentWidgetWindow
         };
         flyout.Items.Add(createWidgetItem);
 
-        var mapFolderItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.NewFolderMapping"),
-            Icon = new SymbolIcon(Symbol.OpenFile)
-        };
-        mapFolderItem.Click += async (_, _) =>
-            await App.Current.CreateFolderWidgetFromPickerAsync();
-        flyout.Items.Add(mapFolderItem);
-
         var addFeatureWidgetItem = new MenuFlyoutSubItem
         {
             Text = localization.T("Common.AddFeatureWidget"),
@@ -135,8 +126,7 @@ public sealed partial class ContentWidgetWindow
         {
             (Kind: WidgetKind.QuickCapture, Key: "QuickCapture.Name", Glyph: "\uE70F"),
             (Kind: WidgetKind.Clipboard, Key: "Clipboard.Title", Glyph: "\uE77F"),
-            (Kind: WidgetKind.Todo, Key: "Todo.Title", Glyph: "\uE73A"),
-            (Kind: WidgetKind.Search, Key: "Search.Title", Glyph: "\uE721")
+            (Kind: WidgetKind.Todo, Key: "Todo.Title", Glyph: "\uE73A")
         })
         {
             if (!WidgetRegistry.Default.CanCreateWindow(entry.Kind)) continue;

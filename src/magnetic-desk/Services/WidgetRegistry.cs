@@ -65,7 +65,7 @@ public sealed class WidgetRegistry
             new(WidgetKind.Todo, CanCreateWindow: true, IsImplemented: true),
             new(WidgetKind.Tags, CanCreateWindow: false, IsImplemented: false),
             new(WidgetKind.Music, CanCreateWindow: false, IsImplemented: false),
-            new(WidgetKind.Search, CanCreateWindow: true, IsImplemented: true),
+            new(WidgetKind.Search, CanCreateWindow: false, IsImplemented: false),
             new(WidgetKind.Glance, CanCreateWindow: false, IsImplemented: false),
             new(WidgetKind.SystemMonitor, CanCreateWindow: false, IsImplemented: false)
         ]);

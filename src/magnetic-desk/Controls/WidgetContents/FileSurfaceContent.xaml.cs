@@ -1933,8 +1933,8 @@ public sealed partial class FileSurfaceContent :
     }
 
     // Explorer names conflict arrivals "name (2).ext" for drag keep-both and
-    // "name - Copy.ext" for paste-style copies. A bounded sibling set keeps
-    // the claim tight while covering the names a real arrival can take.
+    // "name - Copy.ext" / "name - 副本.ext" for paste-style copies. A bounded
+    // sibling set keeps the claim tight while covering real arrivals across locales.
     internal static IEnumerable<string> GetArrivalNameCandidates(string name)
     {
         yield return name;
@@ -1943,6 +1943,9 @@ public sealed partial class FileSurfaceContent :
         yield return $"{stem} (2){extension}";
         yield return $"{stem} (3){extension}";
         yield return $"{stem} - Copy{extension}";
+        yield return $"{stem} - 副本{extension}";
+        yield return $"{stem} - 副本 (2){extension}";
+        yield return $"{stem} - 複本{extension}";
     }
 
     private async Task RenameItemAsync(WidgetItem item)

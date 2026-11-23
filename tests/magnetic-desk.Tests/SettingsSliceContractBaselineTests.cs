@@ -118,7 +118,7 @@ public sealed class SettingsSliceContractBaselineTests
         Assert.True(s.KeepWidgetsVisibleOnShowDesktop);
         Assert.Equal("Overlay", s.DisplayWidgetChromeMode);
         Assert.Equal("Standard", s.InteractiveWidgetChromeMode);
-        Assert.Equal("Expanded", s.WidgetCollapseBehavior);
+        Assert.Equal("Smart", s.WidgetCollapseBehavior);
         Assert.Null(s.LegacyWidgetCapsuleModeEnabled);
         Assert.Equal("Aligned", s.WidgetCompactWidthMode);
         Assert.Equal("Down", s.WidgetCompactExpansionDirection);

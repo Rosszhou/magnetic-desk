@@ -16,8 +16,8 @@
             <!-- Slider metric styles copied from SettingsWindow.xaml so the
                  in-expander slider cards resolve the same page-level look. -->
             <Style x:Key="InlineMetricSliderStyle" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
-                <Setter Property="Width" Value="300" />
-                <Setter Property="MinWidth" Value="220" />
+                <Setter Property="Width" Value="220" />
+                <Setter Property="MinWidth" Value="160" />
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="IsThumbToolTipEnabled" Value="False" />
             </Style>
@@ -50,10 +50,6 @@
                         controls:SettingsComboBox.Value="{Binding CollapseBehavior, Mode=TwoWay}" />
                 </toolkit:SettingsCard>
 
-            <TextBlock Style="{StaticResource CapsuleGroupTitleStyle}" svc:Localized.Key="Settings.Capsule.Group.Common" />
-
-            
-
             <toolkit:SettingsCard
                 HorizontalContentAlignment="Right"
                 svc:Localized.DescriptionKey="Settings.Capsule.ExpansionDirection.Description"
@@ -80,8 +76,6 @@
                     controls:SettingsComboBox.Value="{Binding ContentMode, Mode=TwoWay}" />
             </toolkit:SettingsCard>
 
-            
-
             <toolkit:SettingsExpander
                 IsExpanded="False"
                 Visibility="{Binding ShowHoverResponseEntry, Converter={StaticResource SettingsBoolToVisibilityConverter}}"
@@ -96,7 +90,6 @@
                     controls:SettingsComboBox.Value="{Binding HoverResponse, Mode=TwoWay}" />
                 <toolkit:SettingsExpander.Items>
                     <toolkit:SettingsCard
-                        IsEnabled="{Binding ShowHoverResponseCustom}"
                         HorizontalContentAlignment="Right"
                         svc:Localized.DescriptionKey="Settings.Capsule.ExpandDelay.Description"
                         svc:Localized.HeaderKey="Settings.Capsule.ExpandDelay.Title">
@@ -106,7 +99,6 @@
                         </StackPanel>
                     </toolkit:SettingsCard>
                     <toolkit:SettingsCard
-                        IsEnabled="{Binding ShowHoverResponseCustom}"
                         HorizontalContentAlignment="Right"
                         svc:Localized.DescriptionKey="Settings.Capsule.CollapseDelay.Description"
                         svc:Localized.HeaderKey="Settings.Capsule.CollapseDelay.Title">
@@ -118,9 +110,8 @@
                 </toolkit:SettingsExpander.Items>
             </toolkit:SettingsExpander>
 
-            
-
             <toolkit:SettingsCard
+                IsEnabled="{Binding CanConfigureHideSensitiveContent}"
                 HorizontalContentAlignment="Right"
                 svc:Localized.DescriptionKey="Settings.CompactPrivacy.Description"
                 svc:Localized.HeaderKey="Settings.CompactPrivacy.Title"

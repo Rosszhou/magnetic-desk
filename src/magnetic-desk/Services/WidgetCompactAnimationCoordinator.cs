@@ -34,6 +34,8 @@ internal static class WidgetCompactAnimationCoordinator
 
     private static readonly Dictionary<long, Action> FrameCallbacks = [];
     private static readonly Dictionary<long, Action<long>> PreparedTransitions = [];
+    private static readonly Queue<DeferredSettleEntry> DeferredBoundsSettles = new();
+    private static bool s_isDeferredSettleSubscribed;
     private static readonly Dictionary<long, FrameTarget> FrameTargets = [];
     private static KeyValuePair<long, Action>[] s_frameCallbackSnapshot = [];
     private static bool s_frameCallbackSnapshotDirty;
@@ -136,7 +138,7 @@ internal static class WidgetCompactAnimationCoordinator
             BoundsTransitionRegistrations.Count,
             MaximumConcurrentBoundsTransitions);
 
-    internal static bool HasActiveAnimations => FrameCallbacks.Count > 0;
+    internal static bool HasActiveAnimations => FrameCallbacks.Count > 0 || DeferredBoundsSettles.Count > 0;
 
     internal static long RecentFrameOverrunMask => s_recentOverrunMask;
 
@@ -181,6 +183,7 @@ internal static class WidgetCompactAnimationCoordinator
         var pending = PreparedTransitions.ToArray();
         PreparedTransitions.Clear();
         long timestamp = Stopwatch.GetTimestamp();
+        using var boundsBatch = PrepareBoundsBatch();
         foreach (var entry in pending)
         {
             try { entry.Value(timestamp); }
@@ -194,6 +197,52 @@ internal static class WidgetCompactAnimationCoordinator
         {
             PreparedTransitions.Remove(id);
             if (PreparedTransitions.Count == 0) CompositionTarget.Rendering -= OnPreparedFrame;
+        }
+    }
+
+    private sealed class DeferredSettleEntry(Action action) : IDisposable
+    {
+        internal Action? Action = action;
+
+        public void Dispose() => Action = null;
+    }
+
+    /// <summary>
+    /// Runs settled post-collapse HWND shrinks at most one window per display
+    /// VSync frame (CompositionTarget.Rendering), automatically pacing to any
+    /// monitor refresh rate (60Hz / 120Hz / 144Hz / 240Hz / 360Hz) without
+    /// stacking multiple WinUI surface reallocations onto one frame.
+    /// </summary>
+    internal static IDisposable EnqueueDeferredBoundsSettle(Action settle)
+    {
+        ArgumentNullException.ThrowIfNull(settle);
+        var entry = new DeferredSettleEntry(settle);
+        DeferredBoundsSettles.Enqueue(entry);
+        if (!s_isDeferredSettleSubscribed)
+        {
+            s_isDeferredSettleSubscribed = true;
+            CompositionTarget.Rendering += OnDeferredBoundsSettleFrame;
+        }
+        return entry;
+    }
+
+    private static void OnDeferredBoundsSettleFrame(object? sender, object args)
+    {
+        while (DeferredBoundsSettles.Count > 0)
+        {
+            DeferredSettleEntry entry = DeferredBoundsSettles.Dequeue();
+            Action? action = entry.Action;
+            entry.Action = null;
+            if (action is null) continue;
+            try { action(); }
+            catch (Exception ex) { App.Log($"[CompactComposition] Deferred settle failed: {ex}"); }
+            break;
+        }
+
+        if (DeferredBoundsSettles.Count == 0 && s_isDeferredSettleSubscribed)
+        {
+            s_isDeferredSettleSubscribed = false;
+            CompositionTarget.Rendering -= OnDeferredBoundsSettleFrame;
         }
     }
 

@@ -26,7 +26,6 @@ internal static class WidgetSettingsMenuHelper
         WidgetKind.Music => "MusicSettings",
         WidgetKind.Weather => "WeatherSettings",
         WidgetKind.Glance => "GlanceSettings",
-        WidgetKind.Search => "SearchSettings",
         _ => null
     };
 

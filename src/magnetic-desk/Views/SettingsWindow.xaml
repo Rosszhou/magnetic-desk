@@ -91,8 +91,8 @@
             </Style>
 
             <Style x:Key="InlineMetricSliderStyle" TargetType="Slider" BasedOn="{StaticResource DefaultSliderStyle}">
-                <Setter Property="Width" Value="300" />
-                <Setter Property="MinWidth" Value="220" />
+                <Setter Property="Width" Value="220" />
+                <Setter Property="MinWidth" Value="160" />
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="IsThumbToolTipEnabled" Value="False" />
             </Style>
@@ -690,15 +690,19 @@ Text="magnetic-desk" />
                             svc:Localized.HeaderKey="Settings.ShowImageFilesAsIcons.Title"
                             svc:InfoTip.TitleKey="Settings.ShowImageFilesAsIcons.InfoTip.Title"
                             svc:InfoTip.BodyKey="Settings.ShowImageFilesAsIcons.InfoTip.Description">
+                            <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE91B;" /></toolkit:SettingsCard.HeaderIcon>
                             <ToggleSwitch svc:Localized.AutomationNameKey="Settings.ShowImageFilesAsIcons.Title"  OnContent="" OffContent="" MinWidth="0" IsOn="{Binding ShowImageFilesAsIcons, Mode=TwoWay}" />
                         </toolkit:SettingsCard>
                         <toolkit:SettingsCard HorizontalContentAlignment="Right" svc:Localized.DescriptionKey="Settings.HideShortcutArrow.Description" svc:Localized.HeaderKey="Settings.HideShortcutArrow.Title">
+                            <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE71B;" /></toolkit:SettingsCard.HeaderIcon>
                             <ToggleSwitch svc:Localized.AutomationNameKey="Settings.HideShortcutArrow.Title"  OnContent="" OffContent="" MinWidth="0" IsOn="{Binding HideShortcutArrowOverlay, Mode=TwoWay}" />
                         </toolkit:SettingsCard>
                         <toolkit:SettingsCard HorizontalContentAlignment="Right" svc:Localized.DescriptionKey="Settings.ListDetails.Description" svc:Localized.HeaderKey="Settings.ListDetails.Title">
+                            <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8FD;" /></toolkit:SettingsCard.HeaderIcon>
                             <ToggleSwitch svc:Localized.AutomationNameKey="Settings.ListDetails.Title"  OnContent="" OffContent="" MinWidth="0" IsOn="{Binding ShowListItemDetails, Mode=TwoWay}" />
                         </toolkit:SettingsCard>
                         <toolkit:SettingsCard HorizontalContentAlignment="Right" svc:Localized.DescriptionKey="Settings.FilePathTooltips.Description" svc:Localized.HeaderKey="Settings.FilePathTooltips.Title">
+                            <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE946;" /></toolkit:SettingsCard.HeaderIcon>
                             <ToggleSwitch svc:Localized.AutomationNameKey="Settings.FilePathTooltips.Title"  OnContent="" OffContent="" MinWidth="0" IsOn="{Binding ShowFileItemPathTooltips, Mode=TwoWay}" />
                         </toolkit:SettingsCard>
                         <!-- Migrated from the density section: the two cards bind
@@ -707,6 +711,7 @@ Text="magnetic-desk" />
                              FileNameLayoutPanel_Loaded in SettingsWindow.xaml.cs). -->
                         <StackPanel x:Name="FileNameLayoutPanel" Spacing="4" Loaded="FileNameLayoutPanel_Loaded">
                             <toolkit:SettingsCard HorizontalContentAlignment="Right" svc:Localized.DescriptionKey="Settings.FileNameWidth.Description" svc:Localized.HeaderKey="Settings.FileNameWidth.Title">
+                                <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8C8;" /></toolkit:SettingsCard.HeaderIcon>
                                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
                                     <TextBlock Style="{StaticResource SliderSettingValueTextStyle}" Text="{Binding FileNameWidthValueText}" />
                                     <Slider svc:Localized.AutomationNameKey="Settings.FileNameWidth.Title" Maximum="1" Minimum="0" StepFrequency="0.02" Style="{StaticResource InlineMetricSliderStyle}" Value="{Binding FileNameWidthScale, Mode=TwoWay}" ManipulationMode="TranslateX" ManipulationStarted="AppearanceSlider_ManipulationStarted" ManipulationCompleted="AppearanceSlider_ManipulationCompleted" ValueChanged="AppearanceSlider_ValueChanged" PointerPressed="AppearanceSlider_PointerPressed" PointerReleased="AppearanceSlider_PointerReleased" LostFocus="AppearanceSlider_LostFocus" />
@@ -714,6 +719,7 @@ Text="magnetic-desk" />
                             </toolkit:SettingsCard>
 
                             <toolkit:SettingsCard HorizontalContentAlignment="Right" svc:Localized.DescriptionKey="Settings.FileNameLines.Description" svc:Localized.HeaderKey="Settings.FileNameLines.Title">
+                                <toolkit:SettingsCard.HeaderIcon><FontIcon Glyph="&#xE8A4;" /></toolkit:SettingsCard.HeaderIcon>
                                 <ComboBox svc:Localized.AutomationNameKey="Settings.FileNameLines.Title"
                                     MinWidth="{StaticResource SettingsControlMinWidth}"
                                     ItemsSource="{Binding AvailableFileNameLineCountOptions}"
@@ -1171,22 +1177,9 @@ Text="magnetic-desk" />
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
 
-                        <!-- Native InfoBar driven through the native Title/Message
-                             properties. A sibling below the hotkey expander (matching
-                             the search section's placement): the long wrapped message
-                             lays out at page width. The severity wash is pinned from
-                             code-behind (PinInformationalSeverityBrushes) because
-                             ThemeResource severity lookups fail inside late-created
-                             section templates; the pin resolves per ActualTheme so a
-                             live theme switch stays correct on Windows 10 too. The
-                             message typography is also pinned from code-behind
-                             (SettingsWindow.ApplyNoticeMessageTypography): the
-                             template's Title/Message font sizes resolve through
-                             StaticResource lookups inside the control library's
-                             generic.xaml, so element-local resource overrides
-                             cannot reach them. -->
                         <InfoBar
                             x:Name="GlobalHotkeyElevatedNoticeInfoBar"
+                            Visibility="{Binding HotkeyEnabled, Converter={StaticResource SettingsBoolToVisibilityConverter}}"
                             IsClosable="False"
                             IsIconVisible="True"
                             IsOpen="True"
@@ -1663,69 +1656,94 @@ Text="magnetic-desk" />
 
                         <toolkit:SettingsCard
                             HorizontalContentAlignment="Right"
-                            svc:Localized.DescriptionKey="Settings.Performance.VisibleIdleCleanup.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.VisibleIdleCleanup.Title">
+                            svc:Localized.DescriptionKey="Settings.Performance.DecorativeAnimations.Description"
+                            svc:Localized.HeaderKey="Settings.Performance.DecorativeAnimations.Title">
                             <toolkit:SettingsCard.HeaderIcon>
-                                <FontIcon Glyph="&#xE823;" />
+                                <FontIcon Glyph="&#xE7B5;" />
                             </toolkit:SettingsCard.HeaderIcon>
-                            <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.VisibleIdleCleanup.Title"
+                            <DropDownButton
                                 MinWidth="176"
-                                ItemsSource="{Binding AvailableVisibleIdleCacheCleanupDelayOptions}"
-                                controls:SettingsComboBox.Value="{Binding SelectedVisibleIdleCacheCleanupDelaySeconds, Mode=TwoWay}" />
-                        </toolkit:SettingsCard>
-
-                        <toolkit:SettingsCard
-                            HorizontalContentAlignment="Right"
-                            svc:Localized.DescriptionKey="Settings.Performance.HiddenCleanup.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.HiddenCleanup.Title">
-                            <toolkit:SettingsCard.HeaderIcon>
-                                <FontIcon Glyph="&#xE823;" />
-                            </toolkit:SettingsCard.HeaderIcon>
-                            <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.HiddenCleanup.Title"
-                                MinWidth="176"
-                                ItemsSource="{Binding AvailableHiddenCacheCleanupDelayOptions}"
-                                controls:SettingsComboBox.Value="{Binding SelectedHiddenCacheCleanupDelaySeconds, Mode=TwoWay}" />
-                        </toolkit:SettingsCard>
-
-                        <toolkit:SettingsCard
-                            HorizontalContentAlignment="Right"
-                            svc:Localized.DescriptionKey="Settings.Performance.HiddenScope.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.HiddenScope.Title"
-                            svc:InfoTip.TitleKey="Settings.Performance.HiddenScope.InfoTip.Title"
-                            svc:InfoTip.BodyKey="Settings.Performance.HiddenScope.InfoTip.Description">
-                            <toolkit:SettingsCard.HeaderIcon>
-                                <FontIcon Glyph="&#xE950;" />
-                            </toolkit:SettingsCard.HeaderIcon>
-                            <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.HiddenScope.Title"
-                                MinWidth="176"
-                                ItemsSource="{Binding AvailableHiddenCacheCleanupScopeOptions}"
-                                controls:SettingsComboBox.Value="{Binding SelectedHiddenCacheCleanupScope, Mode=TwoWay}" />
-                        </toolkit:SettingsCard>
-
-                        <toolkit:SettingsCard
-                            HorizontalContentAlignment="Right"
-                            svc:Localized.DescriptionKey="Settings.Performance.CacheBudget.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.CacheBudget.Title">
-                            <toolkit:SettingsCard.HeaderIcon>
-                                <FontIcon Glyph="&#xE950;" />
-                            </toolkit:SettingsCard.HeaderIcon>
-                            <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.CacheBudget.Title"
-                                MinWidth="176"
-                                ItemsSource="{Binding AvailablePerformanceCacheBudgetOptions}"
-                                controls:SettingsComboBox.Value="{Binding SelectedPerformanceCacheBudget, Mode=TwoWay}" />
+                                MaxWidth="260"
+                                HorizontalAlignment="Right"
+                                Click="ContinuousDecorativeAnimationsDropDown_Click"
+                                Content="{Binding ContinuousDecorativeAnimationsSummaryText}" />
                         </toolkit:SettingsCard>
 
                         <toolkit:SettingsExpander
-                            AutomationProperties.AutomationId="IdleWorkingSetTrimExpander"
+                            x:Name="PerformanceAdvancedExpander"
                             HorizontalContentAlignment="Stretch"
                             IsExpanded="False"
-                            svc:Localized.DescriptionKey="Settings.Performance.IdleWorkingSetTrim.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.IdleWorkingSetTrim.Title">
+                            svc:Localized.DescriptionKey="Settings.Performance.Advanced.Description"
+                            svc:Localized.HeaderKey="Settings.Performance.Advanced.Title">
                             <toolkit:SettingsExpander.HeaderIcon>
-                                <FontIcon Glyph="&#xE950;" />
+                                <FontIcon Glyph="&#xE713;" />
                             </toolkit:SettingsExpander.HeaderIcon>
-                            <ToggleSwitch svc:Localized.AutomationNameKey="Settings.Performance.IdleWorkingSetTrim.Title"  OnContent="" OffContent="" MinWidth="0" IsOn="{Binding IdleWorkingSetTrimEnabled, Mode=TwoWay}" />
                             <toolkit:SettingsExpander.Items>
+                                <toolkit:SettingsCard
+                                    HorizontalContentAlignment="Right"
+                                    svc:Localized.DescriptionKey="Settings.Performance.VisibleIdleCleanup.Description"
+                                    svc:Localized.HeaderKey="Settings.Performance.VisibleIdleCleanup.Title">
+                                    <toolkit:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE823;" />
+                                    </toolkit:SettingsCard.HeaderIcon>
+                                    <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.VisibleIdleCleanup.Title"
+                                        MinWidth="176"
+                                        ItemsSource="{Binding AvailableVisibleIdleCacheCleanupDelayOptions}"
+                                        controls:SettingsComboBox.Value="{Binding SelectedVisibleIdleCacheCleanupDelaySeconds, Mode=TwoWay}" />
+                                </toolkit:SettingsCard>
+
+                                <toolkit:SettingsCard
+                                    HorizontalContentAlignment="Right"
+                                    svc:Localized.DescriptionKey="Settings.Performance.HiddenCleanup.Description"
+                                    svc:Localized.HeaderKey="Settings.Performance.HiddenCleanup.Title">
+                                    <toolkit:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE823;" />
+                                    </toolkit:SettingsCard.HeaderIcon>
+                                    <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.HiddenCleanup.Title"
+                                        MinWidth="176"
+                                        ItemsSource="{Binding AvailableHiddenCacheCleanupDelayOptions}"
+                                        controls:SettingsComboBox.Value="{Binding SelectedHiddenCacheCleanupDelaySeconds, Mode=TwoWay}" />
+                                </toolkit:SettingsCard>
+
+                                <toolkit:SettingsCard
+                                    HorizontalContentAlignment="Right"
+                                    svc:Localized.DescriptionKey="Settings.Performance.HiddenScope.Description"
+                                    svc:Localized.HeaderKey="Settings.Performance.HiddenScope.Title"
+                                    svc:InfoTip.TitleKey="Settings.Performance.HiddenScope.InfoTip.Title"
+                                    svc:InfoTip.BodyKey="Settings.Performance.HiddenScope.InfoTip.Description">
+                                    <toolkit:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE950;" />
+                                    </toolkit:SettingsCard.HeaderIcon>
+                                    <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.HiddenScope.Title"
+                                        MinWidth="176"
+                                        ItemsSource="{Binding AvailableHiddenCacheCleanupScopeOptions}"
+                                        controls:SettingsComboBox.Value="{Binding SelectedHiddenCacheCleanupScope, Mode=TwoWay}" />
+                                </toolkit:SettingsCard>
+
+                                <toolkit:SettingsCard
+                                    HorizontalContentAlignment="Right"
+                                    svc:Localized.DescriptionKey="Settings.Performance.CacheBudget.Description"
+                                    svc:Localized.HeaderKey="Settings.Performance.CacheBudget.Title">
+                                    <toolkit:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE950;" />
+                                    </toolkit:SettingsCard.HeaderIcon>
+                                    <ComboBox svc:Localized.AutomationNameKey="Settings.Performance.CacheBudget.Title"
+                                        MinWidth="176"
+                                        ItemsSource="{Binding AvailablePerformanceCacheBudgetOptions}"
+                                        controls:SettingsComboBox.Value="{Binding SelectedPerformanceCacheBudget, Mode=TwoWay}" />
+                                </toolkit:SettingsCard>
+
+                                <toolkit:SettingsCard
+                                    AutomationProperties.AutomationId="IdleWorkingSetTrimExpander"
+                                    HorizontalContentAlignment="Right"
+                                    svc:Localized.DescriptionKey="Settings.Performance.IdleWorkingSetTrim.Description"
+                                    svc:Localized.HeaderKey="Settings.Performance.IdleWorkingSetTrim.Title">
+                                    <toolkit:SettingsCard.HeaderIcon>
+                                        <FontIcon Glyph="&#xE950;" />
+                                    </toolkit:SettingsCard.HeaderIcon>
+                                    <ToggleSwitch svc:Localized.AutomationNameKey="Settings.Performance.IdleWorkingSetTrim.Title" OnContent="" OffContent="" MinWidth="0" IsOn="{Binding IdleWorkingSetTrimEnabled, Mode=TwoWay}" />
+                                </toolkit:SettingsCard>
+
                                 <toolkit:SettingsCard
                                     HorizontalContentAlignment="Right"
                                     IsEnabled="{Binding IdleWorkingSetTrimEnabled}"
@@ -1739,6 +1757,7 @@ Text="magnetic-desk" />
                                         OnContent="" OffContent="" MinWidth="0"
                                         IsOn="{Binding ImmediateHiddenWorkingSetTrimEnabled, Mode=TwoWay}" />
                                 </toolkit:SettingsCard>
+
                                 <toolkit:SettingsCard
                                     HorizontalContentAlignment="Right"
                                     IsEnabled="{Binding IdleWorkingSetTrimEnabled}"
@@ -1756,21 +1775,6 @@ Text="magnetic-desk" />
                                 </toolkit:SettingsCard>
                             </toolkit:SettingsExpander.Items>
                         </toolkit:SettingsExpander>
-
-                        <toolkit:SettingsCard
-                            HorizontalContentAlignment="Right"
-                            svc:Localized.DescriptionKey="Settings.Performance.DecorativeAnimations.Description"
-                            svc:Localized.HeaderKey="Settings.Performance.DecorativeAnimations.Title">
-                            <toolkit:SettingsCard.HeaderIcon>
-                                <FontIcon Glyph="&#xE7B5;" />
-                            </toolkit:SettingsCard.HeaderIcon>
-                            <DropDownButton
-                                MinWidth="176"
-                                MaxWidth="260"
-                                HorizontalAlignment="Right"
-                                Click="ContinuousDecorativeAnimationsDropDown_Click"
-                                Content="{Binding ContinuousDecorativeAnimationsSummaryText}" />
-                        </toolkit:SettingsCard>
                     </StackPanel>
                 </StackPanel>
                     </DataTemplate>
@@ -1918,7 +1922,7 @@ Text="magnetic-desk" />
                                 <FontIcon Glyph="&#xE74E;" />
                             </toolkit:SettingsCard.HeaderIcon>
                             <StackPanel Spacing="12">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                <toolkit:WrapPanel HorizontalSpacing="8" VerticalSpacing="8">
                                     <Button x:Name="RestoreDataBackupButton" Click="RestoreDataBackupButton_Click" Style="{StaticResource ActionButtonStyle}" svc:Localized.ToolTipKey="Settings.DataBackup.RestoreTooltip">
                                         <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon FontSize="16" Glyph="&#xE777;" /><TextBlock svc:Localized.Key="Settings.DataBackup.Restore" /></StackPanel>
                                     </Button>
@@ -1934,11 +1938,8 @@ Text="magnetic-desk" />
                                     <Button x:Name="RefreshBackupSnapshotsButton" Click="RefreshBackupSnapshotsButton_Click" Style="{StaticResource ActionButtonStyle}">
                                         <StackPanel Orientation="Horizontal" Spacing="8"><FontIcon Glyph="&#xE72C;" FontSize="16" /><TextBlock svc:Localized.Key="Settings.DataBackup.Snapshots.Refresh" /></StackPanel>
                                     </Button>
-                                </StackPanel>
-                                <StackPanel Spacing="3">
-                                    <TextBlock Style="{StaticResource SettingDescriptionTextStyle}" TextWrapping="Wrap" MaxWidth="420" svc:Localized.Key="Settings.DataBackup.Snapshots.Description" />
-                                </StackPanel>
-                                <TextBlock x:Name="BackupSnapshotSummaryText" Style="{StaticResource SettingDescriptionTextStyle}" TextWrapping="Wrap" MaxWidth="420" />
+                                </toolkit:WrapPanel>
+                                <TextBlock x:Name="BackupSnapshotSummaryText" HorizontalAlignment="Left" Style="{StaticResource SettingDescriptionTextStyle}" TextWrapping="Wrap" />
                                 <ListView x:Name="BackupSnapshotsList" SelectionMode="None" IsItemClickEnabled="False">
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
@@ -2086,10 +2087,10 @@ Text="magnetic-desk" />
                                     Style="{StaticResource SettingDescriptionTextStyle}"
                                     Text="{Binding DragDropRepairStatusText}" />
 
-                                <StackPanel
-                                    HorizontalAlignment="Right"
-                                    Orientation="Horizontal"
-                                    Spacing="8">
+                                <toolkit:WrapPanel
+                                    HorizontalAlignment="Left"
+                                    HorizontalSpacing="8"
+                                    VerticalSpacing="8">
                                     <Button
                                         Click="RefreshDragDropPermissionButton_Click"
                                         Style="{StaticResource ActionButtonStyle}"
@@ -2118,7 +2119,7 @@ Text="magnetic-desk" />
                                             <TextBlock svc:Localized.Key="Settings.DragDropPermission.OpenUacButton" />
                                         </StackPanel>
                                     </Button>
-                                </StackPanel>
+                                </toolkit:WrapPanel>
                             </StackPanel>
                         </toolkit:SettingsCard>
                         <toolkit:SettingsCard
@@ -2137,10 +2138,10 @@ Text="magnetic-desk" />
                                     Style="{StaticResource SettingDescriptionTextStyle}"
                                     Text="{Binding RuntimeSummaryText}" />
                                 <TextBlock
+                                    HorizontalAlignment="Left"
                                     Style="{StaticResource SettingDescriptionTextStyle}"
                                     Text="{Binding RuntimeDetailText}"
-                                    TextWrapping="Wrap"
-                                    MaxWidth="420" />
+                                    TextWrapping="Wrap" />
                                 <StackPanel
                                     HorizontalAlignment="Right"
                                     Orientation="Horizontal"
@@ -2241,15 +2242,19 @@ Text="magnetic-desk" />
                             HorizontalContentAlignment="Right"
                             svc:Localized.HeaderKey="Settings.Uninstall.Title"
                             svc:Localized.DescriptionKey="Settings.Uninstall.Description">
-                            <Button Click="UninstallButton_Click" svc:Localized.Key="Settings.Uninstall.Action" />
+                            <toolkit:SettingsCard.HeaderIcon>
+                                <FontIcon Glyph="&#xE74D;" />
+                            </toolkit:SettingsCard.HeaderIcon>
+                            <Button
+                                Click="UninstallButton_Click"
+                                Style="{StaticResource DangerActionButtonStyle}"
+                                svc:Localized.Key="Settings.Uninstall.Action" />
                         </toolkit:SettingsCard>
 
                         <toolkit:SettingsCard
                             HorizontalContentAlignment="Right"
                             svc:Localized.DescriptionKey="Settings.About.FeedbackDescription"
-                            svc:Localized.HeaderKey="Settings.About.FeedbackTitle"
-                            svc:InfoTip.TitleKey="Settings.About.FeedbackDescription.InfoTip.Title"
-                            svc:InfoTip.BodyKey="Settings.About.FeedbackDescription.InfoTip.Description">
+                            svc:Localized.HeaderKey="Settings.About.FeedbackTitle">
                             <toolkit:SettingsCard.HeaderIcon>
                                 <FontIcon Glyph="&#xE715;" />
                             </toolkit:SettingsCard.HeaderIcon>

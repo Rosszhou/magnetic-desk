@@ -14,7 +14,6 @@ public sealed class WidgetSettingsMenuHelperTests
     [InlineData(WidgetKind.Music, "MusicSettings")]
     [InlineData(WidgetKind.Weather, "WeatherSettings")]
     [InlineData(WidgetKind.Glance, "GlanceSettings")]
-    [InlineData(WidgetKind.Search, "SearchSettings")]
     public void GetSettingsSectionTag_Returns_Expected_Tag(WidgetKind kind, string expectedTag)
     {
         Assert.Equal(expectedTag, WidgetSettingsMenuHelper.GetSettingsSectionTag(kind));
@@ -24,6 +23,7 @@ public sealed class WidgetSettingsMenuHelperTests
     [InlineData(WidgetKind.Tags)]
     [InlineData(WidgetKind.SystemMonitor)]
     [InlineData(WidgetKind.Productivity)]
+    [InlineData(WidgetKind.Search)]
     public void GetSettingsSectionTag_Returns_Null_For_Unmapped_Kinds(WidgetKind kind)
     {
         Assert.Null(WidgetSettingsMenuHelper.GetSettingsSectionTag(kind));

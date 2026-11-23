@@ -9,6 +9,9 @@ public static partial class Win32Helper
     private static extern IntPtr CreateRectRgn(int left, int top, int right, int bottom);
 
     [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateRoundRectRgn(int left, int top, int right, int bottom, int widthEllipse, int heightEllipse);
+
+    [DllImport("gdi32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool DeleteObject(IntPtr handle);
 
@@ -23,6 +26,23 @@ public static partial class Win32Helper
         if (region == IntPtr.Zero) return false;
         if (SetWindowRgn(window, region, false) != 0) return true;
         // Ownership transfers to Windows only after a successful assignment.
+        DeleteObject(region);
+        return false;
+    }
+
+    internal static bool SetRoundedAnimationWindowClip(IntPtr window, RectInt32 bounds, int cornerRadiusPx)
+    {
+        int diameter = Math.Clamp(cornerRadiusPx * 2, 0, Math.Min(bounds.Width, bounds.Height));
+        if (diameter <= 0) return SetAnimationWindowClip(window, bounds);
+        IntPtr region = CreateRoundRectRgn(
+            bounds.X,
+            bounds.Y,
+            bounds.X + bounds.Width + 1,
+            bounds.Y + bounds.Height + 1,
+            diameter,
+            diameter);
+        if (region == IntPtr.Zero) return false;
+        if (SetWindowRgn(window, region, false) != 0) return true;
         DeleteObject(region);
         return false;
     }

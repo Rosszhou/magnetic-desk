@@ -112,7 +112,7 @@ public sealed class WidgetShellSettingsSlice
     /// How widgets enter and leave their compact state.
     /// Valid values: <c>"Expanded"</c>, <c>"Click"</c>, <c>"Smart"</c>.
     /// </summary>
-    public string WidgetCollapseBehavior { get; set; } = "Expanded";
+    public string WidgetCollapseBehavior { get; set; } = "Smart";
 
     /// <summary>
     /// Legacy compact-mode gate retained only while reading pre-version-2

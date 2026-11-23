@@ -56,18 +56,19 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
             : Visibility.Visible;
         UndoOrganizationButton.IsEnabled = latest is not null;
         UndoOrganizationButton.Tag = latest?.Id;
-        int effectiveRuleCount = settingsService.Settings.DesktopOrganizationRules.Count(
+        int effectiveRuleCount = settingsService.Settings.DesktopOrganization.DesktopOrganizationRules.Count(
             rule => IsEffectiveRule(rule, settingsService.Settings));
-        int effectiveWidgetCount = settingsService.Settings.DesktopOrganizationRules
+        int effectiveWidgetCount = settingsService.Settings.DesktopOrganization.DesktopOrganizationRules
             .Where(rule => IsEffectiveRule(rule, settingsService.Settings))
             .Select(rule => rule.TargetWidgetId)
             .Distinct(StringComparer.Ordinal)
             .Count();
         bool hasEffectiveRules = effectiveRuleCount > 0;
-        AutoSetupCard.Visibility = hasEffectiveRules
+        bool autoEnabled = settingsService.Settings.DesktopOrganization.DesktopAutoOrganizationEnabled;
+        AutoSetupCard.Visibility = hasEffectiveRules || autoEnabled
             ? Visibility.Collapsed
             : Visibility.Visible;
-        AutoToggleCard.Visibility = hasEffectiveRules
+        AutoToggleCard.Visibility = hasEffectiveRules || autoEnabled
             ? Visibility.Visible
             : Visibility.Collapsed;
         AutoIntervalCard.Visibility = AutoToggleCard.Visibility;
@@ -437,16 +438,7 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
             return;
         }
 
-        foreach (string subtypeId in new[]
-                 {
-                     DesktopOrganizationSubtypeIds.Pdf,
-                     DesktopOrganizationSubtypeIds.Word,
-                     DesktopOrganizationSubtypeIds.Excel,
-                     DesktopOrganizationSubtypeIds.PowerPoint,
-                     DesktopOrganizationSubtypeIds.Text,
-                     DesktopOrganizationSubtypeIds.Audio,
-                     DesktopOrganizationSubtypeIds.Video
-                 })
+        foreach (string subtypeId in DesktopOrganizationSubtypeIds.DefaultOrder)
         {
             var checkBox = new CheckBox
             {
@@ -487,6 +479,10 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
                     {
                         owner.SubtypeIds.RemoveAll(value =>
                             string.Equals(value, subtypeId, StringComparison.Ordinal));
+                        if (!HasAssignments(owner))
+                        {
+                            owner.IsEnabled = false;
+                        }
                         EnsureSelectedRuleRegistered();
                         if (!_selectedRule.SubtypeIds.Contains(subtypeId, StringComparer.Ordinal))
                         {
@@ -532,14 +528,18 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
 
         foreach (string categoryId in DesktopOrganizationCategoryIds.DefaultOrder)
         {
+            string? emptyDescription = categoryId switch
+            {
+                DesktopOrganizationCategoryIds.Other => T("DesktopOrganization.Rule.OtherExtensions"),
+                DesktopOrganizationCategoryIds.Folders => T("DesktopOrganization.Rule.FoldersDescription"),
+                _ => null
+            };
             var checkBox = new CheckBox
             {
                 Content = CreateFileTypeOptionContent(
                     T($"DesktopOrganization.Category.{categoryId}"),
                     DesktopOrganizationClassifier.GetCategoryExtensions(categoryId),
-                    categoryId == DesktopOrganizationCategoryIds.Other
-                        ? T("DesktopOrganization.Rule.OtherExtensions")
-                        : null),
+                    emptyDescription),
                 Tag = categoryId,
                 IsChecked = _selectedRule.CategoryIds.Contains(categoryId, StringComparer.Ordinal)
             };
@@ -574,6 +574,10 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
                     {
                         owner.CategoryIds.RemoveAll(value =>
                             string.Equals(value, categoryId, StringComparison.Ordinal));
+                        if (!HasAssignments(owner))
+                        {
+                            owner.IsEnabled = false;
+                        }
                         EnsureSelectedRuleRegistered();
                         if (!_selectedRule.CategoryIds.Contains(categoryId, StringComparer.Ordinal))
                         {
@@ -653,9 +657,61 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
             return;
         }
 
+        var settingsService = global::MagneticDesk.App.Current.SettingsService;
+        if (RuleEnabledToggle.IsOn)
+        {
+            DesktopOrganizationRule? conflictingOwner = null;
+            string? conflictingLabel = null;
+            foreach (DesktopOrganizationRule other in settingsService.Settings.DesktopOrganization.DesktopOrganizationRules
+                         .Where(rule => !ReferenceEquals(rule, _selectedRule) && rule.IsEnabled))
+            {
+                if (_selectedRule.CategoryIds.FirstOrDefault(cat =>
+                        other.CategoryIds.Contains(cat, StringComparer.Ordinal)) is { } cat)
+                {
+                    conflictingOwner = other;
+                    conflictingLabel = T($"DesktopOrganization.Category.{cat}");
+                    break;
+                }
+
+                if (_selectedRule.SubtypeIds.FirstOrDefault(sub =>
+                        other.SubtypeIds.Contains(sub, StringComparer.Ordinal)) is { } sub)
+                {
+                    conflictingOwner = other;
+                    conflictingLabel = T($"DesktopOrganization.Subtype.{sub}");
+                    break;
+                }
+
+                if (_selectedRule.Extensions.FirstOrDefault(ext =>
+                        other.Extensions.Contains(ext, StringComparer.OrdinalIgnoreCase)) is { } ext)
+                {
+                    conflictingOwner = other;
+                    conflictingLabel = ext;
+                    break;
+                }
+            }
+
+            if (conflictingOwner is not null && conflictingLabel is not null)
+            {
+                _isRefreshing = true;
+                RuleEnabledToggle.IsOn = false;
+                _isRefreshing = false;
+                WidgetConfig? ownerWidget = settingsService.Settings.Widgets.FirstOrDefault(widget =>
+                    string.Equals(widget.Id, conflictingOwner.TargetWidgetId, StringComparison.Ordinal));
+                RuleStatusInfo.ActionButton = null;
+                RuleStatusInfo.Severity = InfoBarSeverity.Warning;
+                RuleStatusInfo.Title = T("DesktopOrganization.Rule.EnableConflictTitle");
+                RuleStatusInfo.Message = Format(
+                    "DesktopOrganization.Rule.EnableConflictBody",
+                    conflictingLabel,
+                    ownerWidget?.Name ?? conflictingOwner.TargetWidgetId);
+                RuleStatusInfo.IsOpen = true;
+                return;
+            }
+        }
+
         EnsureSelectedRuleRegistered();
         _selectedRule.IsEnabled = RuleEnabledToggle.IsOn;
-        await global::MagneticDesk.App.Current.SettingsService.SaveAsync();
+        await settingsService.SaveAsync();
         RefreshStatusOnly();
     }
 
@@ -680,44 +736,64 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
             return;
         }
 
-        string extension = DesktopOrganizationClassifier.NormalizeExtension(ExtensionInput.Text);
-        if (string.IsNullOrEmpty(extension))
+        IReadOnlyList<string> extensions = DesktopOrganizationClassifier.ParseExtensions(ExtensionInput.Text);
+        if (extensions.Count == 0)
         {
             return;
         }
 
         var settingsService = global::MagneticDesk.App.Current.SettingsService;
-        DesktopOrganizationRule? currentOwner = settingsService.Settings.DesktopOrganizationRules
-            .FirstOrDefault(rule =>
-                !ReferenceEquals(rule, _selectedRule) &&
-                rule.IsEnabled &&
-                rule.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
-        if (currentOwner is not null)
+        if (extensions.Count == 1)
         {
-            OfferRuleTransfer(
-                extension,
-                currentOwner,
-                async () =>
-                {
-                    EnsureSelectedRuleRegistered();
-                    _ruleResolver.AssignExtensionExclusively(
-                        settingsService.Settings.DesktopOrganizationRules,
-                        _selectedWidget.Id,
-                        extension);
-                    _selectedRule.IsEnabled = true;
-                    ExtensionInput.Text = string.Empty;
-                    await settingsService.SaveAsync();
-                    ShowRuleDetail();
-                    RefreshStatusOnly();
-                });
-            return;
+            string singleExtension = extensions[0];
+            DesktopOrganizationRule? currentOwner = settingsService.Settings.DesktopOrganizationRules
+                .FirstOrDefault(rule =>
+                    !ReferenceEquals(rule, _selectedRule) &&
+                    rule.IsEnabled &&
+                    rule.Extensions.Contains(singleExtension, StringComparer.OrdinalIgnoreCase));
+            if (currentOwner is not null)
+            {
+                OfferRuleTransfer(
+                    singleExtension,
+                    currentOwner,
+                    async () =>
+                    {
+                        EnsureSelectedRuleRegistered();
+                        _ruleResolver.AssignExtensionExclusively(
+                            settingsService.Settings.DesktopOrganizationRules,
+                            _selectedWidget.Id,
+                            singleExtension);
+                        if (!HasAssignments(currentOwner))
+                        {
+                            currentOwner.IsEnabled = false;
+                        }
+                        _selectedRule.IsEnabled = true;
+                        ExtensionInput.Text = string.Empty;
+                        await settingsService.SaveAsync();
+                        ShowRuleDetail();
+                        RefreshStatusOnly();
+                    });
+                return;
+            }
         }
 
         EnsureSelectedRuleRegistered();
-        _ruleResolver.AssignExtensionExclusively(
-            settingsService.Settings.DesktopOrganizationRules,
-            _selectedWidget.Id,
-            extension);
+        var orgRules = settingsService.Settings.DesktopOrganization.DesktopOrganizationRules;
+        foreach (string extension in extensions)
+        {
+            DesktopOrganizationRule? previousOwner = orgRules
+                .FirstOrDefault(rule =>
+                    !ReferenceEquals(rule, _selectedRule) &&
+                    rule.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase));
+            _ruleResolver.AssignExtensionExclusively(
+                orgRules,
+                _selectedWidget.Id,
+                extension);
+            if (previousOwner is not null && !HasAssignments(previousOwner))
+            {
+                previousOwner.IsEnabled = false;
+            }
+        }
         _selectedRule.IsEnabled = true;
         ExtensionInput.Text = string.Empty;
         await settingsService.SaveAsync();
@@ -767,18 +843,21 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
             return;
         }
 
-        string extension = DesktopOrganizationClassifier.NormalizeExtension(
+        IReadOnlyList<string> extensions = DesktopOrganizationClassifier.ParseExtensions(
             ExcludedExtensionInput.Text);
-        if (string.IsNullOrEmpty(extension))
+        if (extensions.Count == 0)
         {
             return;
         }
 
-        if (!_selectedRule.ExcludedExtensions.Contains(
-                extension,
-                StringComparer.OrdinalIgnoreCase))
+        foreach (string extension in extensions)
         {
-            _selectedRule.ExcludedExtensions.Add(extension);
+            if (!_selectedRule.ExcludedExtensions.Contains(
+                    extension,
+                    StringComparer.OrdinalIgnoreCase))
+            {
+                _selectedRule.ExcludedExtensions.Add(extension);
+            }
         }
 
         EnsureSelectedRuleRegistered();
@@ -855,42 +934,120 @@ public sealed partial class DesktopOrganizationSettingsSection : UserControl
     {
         TypeOverviewRows.Children.Clear();
         var settings = global::MagneticDesk.App.Current.SettingsService.Settings;
+        var activeWidgetsById = settings.Widgets
+            .Where(widget =>
+                widget.WidgetKind == WidgetKind.File &&
+                !widget.IsDisabled &&
+                !settings.DeletedWidgetIds.Contains(widget.Id) &&
+                !string.IsNullOrWhiteSpace(widget.MappedFolderPath))
+            .ToDictionary(widget => widget.Id, StringComparer.Ordinal);
+        var enabledRules = settings.DesktopOrganization.DesktopOrganizationRules
+            .Where(rule => rule.IsEnabled && activeWidgetsById.ContainsKey(rule.TargetWidgetId))
+            .ToList();
+
         foreach (string categoryId in DesktopOrganizationCategoryIds.DefaultOrder)
         {
-            DesktopOrganizationRule? rule = settings.DesktopOrganizationRules
-                .FirstOrDefault(candidate =>
-                    candidate.IsEnabled &&
-                    candidate.CategoryIds.Contains(categoryId, StringComparer.Ordinal));
-            WidgetConfig? widget = rule is null
-                ? null
-                : settings.Widgets.FirstOrDefault(candidate => candidate.Id == rule.TargetWidgetId);
-
-            var border = new Border
-            {
-                Style = (Style)Resources["SettingsGroupStyle"]
-            };
-            var grid = new Grid
-            {
-                Padding = new Thickness(16, 11, 16, 11),
-                ColumnSpacing = 12
-            };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.Children.Add(new TextBlock
-            {
-                Text = T($"DesktopOrganization.Category.{categoryId}"),
-                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
-            });
-            var target = new TextBlock
-            {
-                Text = widget?.Name ?? T("DesktopOrganization.Rules.KeepOnDesktop"),
-                Foreground = SecondaryTextBrush()
-            };
-            Grid.SetColumn(target, 1);
-            grid.Children.Add(target);
-            border.Child = grid;
-            TypeOverviewRows.Children.Add(border);
+            DesktopOrganizationRule? rule = enabledRules.FirstOrDefault(candidate =>
+                candidate.CategoryIds.Contains(categoryId, StringComparer.Ordinal));
+            string targetName = rule is not null && activeWidgetsById.TryGetValue(rule.TargetWidgetId, out var widget)
+                ? widget.Name
+                : T("DesktopOrganization.Rules.KeepOnDesktop");
+            AddTypeOverviewRow(T($"DesktopOrganization.Category.{categoryId}"), targetName);
         }
+
+        var subtypeOverrides = DesktopOrganizationSubtypeIds.DefaultOrder
+            .Select(subtypeId => new
+            {
+                SubtypeId = subtypeId,
+                Rule = enabledRules.FirstOrDefault(candidate =>
+                    candidate.SubtypeIds.Contains(subtypeId, StringComparer.Ordinal))
+            })
+            .Where(entry => entry.Rule is not null)
+            .ToList();
+        if (subtypeOverrides.Count > 0)
+        {
+            AddTypeOverviewGroupLabel(T("DesktopOrganization.Rules.ByTypeSubtypes"));
+            foreach (var entry in subtypeOverrides)
+            {
+                string targetName = activeWidgetsById[entry.Rule!.TargetWidgetId].Name;
+                AddTypeOverviewRow(T($"DesktopOrganization.Subtype.{entry.SubtypeId}"), targetName);
+            }
+        }
+
+        var customExtensions = enabledRules
+            .SelectMany(rule => rule.Extensions
+                .Select(DesktopOrganizationClassifier.NormalizeExtension)
+                .Where(ext => !string.IsNullOrEmpty(ext))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(ext => new { Extension = ext, WidgetName = activeWidgetsById[rule.TargetWidgetId].Name }))
+            .OrderBy(entry => entry.Extension, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (customExtensions.Count > 0)
+        {
+            AddTypeOverviewGroupLabel(T("DesktopOrganization.Rules.ByTypeExtensions"));
+            foreach (var entry in customExtensions)
+            {
+                AddTypeOverviewRow(entry.Extension, entry.WidgetName);
+            }
+        }
+
+        var exclusions = enabledRules
+            .SelectMany(rule => rule.ExcludedExtensions
+                .Select(DesktopOrganizationClassifier.NormalizeExtension)
+                .Where(ext => !string.IsNullOrEmpty(ext))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(ext => new { Extension = ext, WidgetName = activeWidgetsById[rule.TargetWidgetId].Name }))
+            .OrderBy(entry => entry.Extension, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (exclusions.Count > 0)
+        {
+            AddTypeOverviewGroupLabel(T("DesktopOrganization.Rules.ByTypeExclusions"));
+            foreach (var entry in exclusions)
+            {
+                AddTypeOverviewRow(entry.Extension, $"{entry.WidgetName} · {T("DesktopOrganization.Rules.KeepOnDesktop")}");
+            }
+        }
+    }
+
+    private void AddTypeOverviewGroupLabel(string title)
+    {
+        TypeOverviewRows.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = SecondaryTextBrush(),
+            Margin = new Thickness(4, 10, 4, 2)
+        });
+    }
+
+    private void AddTypeOverviewRow(string label, string targetName)
+    {
+        var border = new Border
+        {
+            Style = (Style)Resources["SettingsGroupStyle"]
+        };
+        var grid = new Grid
+        {
+            Padding = new Thickness(16, 11, 16, 11),
+            ColumnSpacing = 12
+        };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        });
+        var target = new TextBlock
+        {
+            Text = targetName,
+            Foreground = SecondaryTextBrush()
+        };
+        Grid.SetColumn(target, 1);
+        grid.Children.Add(target);
+        border.Child = grid;
+        TypeOverviewRows.Children.Add(border);
     }
 
     private string BuildRuleSummary(DesktopOrganizationRule? rule)

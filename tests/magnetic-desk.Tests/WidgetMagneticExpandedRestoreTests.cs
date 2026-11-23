@@ -128,6 +128,64 @@ public sealed class WidgetMagneticExpandedRestoreTests
         Assert.Equal(410, restored["lower"].Y);
     }
 
+    [Fact]
+    public void ClosingAVerticalGapInFiveWidgetGroupKeepsTopRowFlushAcrossCollapseCycles()
+    {
+        var attachment = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2168, 159, 420, 955),
+            ["mid-top"] = new(2596, 159, 420, 627),
+            ["mid-bottom"] = new(2596, 794, 420, 568),
+            ["right-top"] = new(3024, 159, 664, 781),
+            ["right-bottom"] = new(3024, 966, 664, 562)
+        };
+        var expanded = attachment.ToDictionary();
+        // Grow right-bottom upward to close the 26px gap down to the 8px snap spacing.
+        expanded["right-bottom"] = new(3024, 948, 664, 580);
+
+        var sizes = expanded.ToDictionary(pair => pair.Key, pair => new SizeInt32(pair.Value.Width, 78));
+        IReadOnlyDictionary<string, RectInt32> homes = new Dictionary<string, RectInt32>();
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            homes = WidgetMagneticCollapseLayout.RestoreCompact(expanded, homes, sizes, "RightTop", 8, 18);
+            var origin = WidgetCoordinatedMoveCalculator.GetUnion(homes.Values);
+            var restored = WidgetMagneticCollapseLayout.RestoreExpanded(
+                expanded, new(origin.X, origin.Y), attachment, "RightTop", 8, 18);
+            Assert.Equal(expanded, restored);
+            Assert.Equal(159, restored["left"].Y);
+            Assert.Equal(159, restored["mid-top"].Y);
+            Assert.Equal(159, restored["right-top"].Y);
+            Assert.Equal(948, restored["right-bottom"].Y);
+        }
+    }
+
+    [Fact]
+    public void RealigningHigherTopWidgetDownFlushPreservesBothTopRowAndLowerNeighbor()
+    {
+        var attachment = new Dictionary<string, RectInt32>
+        {
+            ["left"] = new(2168, 159, 420, 955),
+            ["mid-top"] = new(2596, 159, 420, 627),
+            ["mid-bottom"] = new(2596, 794, 420, 568),
+            ["right-top"] = new(3024, 141, 664, 781),
+            ["right-bottom"] = new(3024, 948, 664, 580)
+        };
+        var expanded = attachment.ToDictionary();
+        // User aligns right-top down to y=159 and closes the 26px gap to 8px.
+        expanded["right-top"] = new(3024, 159, 664, 781);
+
+        var sizes = expanded.ToDictionary(pair => pair.Key, pair => new SizeInt32(pair.Value.Width, 78));
+        var homes = WidgetMagneticCollapseLayout.RestoreCompact(
+            expanded, new Dictionary<string, RectInt32>(), sizes, "RightTop", 8, 18);
+        var origin = WidgetCoordinatedMoveCalculator.GetUnion(homes.Values);
+        var restored = WidgetMagneticCollapseLayout.RestoreExpanded(
+            expanded, new(origin.X, origin.Y), attachment, "RightTop", 8, 18);
+
+        Assert.Equal(expanded, restored);
+        Assert.Equal(159, restored["right-top"].Y);
+        Assert.Equal(948, restored["right-bottom"].Y);
+    }
+
     private static Dictionary<string, RectInt32> FourWidgets() => new()
     {
         ["upper-left"] = new(100, 100, 549, 799), ["upper-right"] = new(657, 100, 604, 576),

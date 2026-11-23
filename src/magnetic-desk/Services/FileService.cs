@@ -2174,7 +2174,10 @@ public sealed partial class FileService
             : name + extension;
     }
 
-    public static string GetAvailablePath(string desiredPath, ISet<string>? reservedPaths = null)
+    public static string GetAvailablePath(
+        string desiredPath,
+        ISet<string>? reservedPaths = null,
+        bool? isDirectory = null)
     {
         string normalizedPath = Path.GetFullPath(desiredPath);
         if (!PathExists(normalizedPath) && ReservePath(normalizedPath, reservedPaths))
@@ -2182,9 +2185,10 @@ public sealed partial class FileService
             return normalizedPath;
         }
 
+        bool treatAsDirectory = isDirectory ?? Directory.Exists(normalizedPath);
         string? directoryPath = Path.GetDirectoryName(normalizedPath);
         string name = Path.GetFileName(normalizedPath);
-        string extension = Path.GetExtension(name);
+        string extension = treatAsDirectory ? string.Empty : Path.GetExtension(name);
         string baseName = string.IsNullOrEmpty(extension)
             ? name
             : Path.GetFileNameWithoutExtension(name);

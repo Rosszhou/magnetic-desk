@@ -553,7 +553,7 @@ public const int DefaultSearchMaxResults = 100;
         settings.KeepWidgetsVisibleOnShowDesktop = true;
         settings.DisplayWidgetChromeMode = WidgetChromeModeOverlay;
         settings.InteractiveWidgetChromeMode = WidgetChromeModeStandard;
-        settings.WidgetCollapseBehavior = WidgetCollapseBehaviorExpanded;
+        settings.WidgetCollapseBehavior = WidgetCollapseBehaviorSmart;
         settings.WidgetGroupDefaultNavigationStyle =
             WidgetGroupNavigationStyles.Tabs;
         settings.WidgetGroupDefaultTitleDisplayMode =
@@ -1847,12 +1847,13 @@ settings.FocusClickedWidgetOnRaise = false;
         }
 
         string normalizedCollapseBehavior = NormalizeWidgetCollapseBehavior(settings.WidgetCollapseBehavior);
-        if (settings.WidgetCompactSettingsVersion < 2)
+        if (settings.WidgetCompactSettingsVersion < 2 &&
+            settings.LegacyWidgetCapsuleModeEnabled is bool legacyCapsuleEnabled)
         {
             // Before version 2, the enable switch was the real gate and the
             // stored behavior was ignored while it was off. Fold that legacy
             // combination into the new single three-state default.
-            normalizedCollapseBehavior = settings.LegacyWidgetCapsuleModeEnabled.GetValueOrDefault()
+            normalizedCollapseBehavior = legacyCapsuleEnabled
                 ? normalizedCollapseBehavior == WidgetCollapseBehaviorExpanded
                     ? WidgetCollapseBehaviorClick
                     : normalizedCollapseBehavior

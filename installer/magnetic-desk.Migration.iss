@@ -27,12 +27,12 @@ begin
   end;
 
   ExtractTemporaryFile('cleanup-magnetic-desk-install.ps1');
-  ExtractTemporaryFile('MagneticDesk.LegacyBundledRuntimeFiles.txt');
+  ExtractTemporaryFile('magnetic-desk.LegacyBundledRuntimeFiles.txt');
 
   PowerShellPath := ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe');
   CleanupScriptPath := ExpandConstant('{tmp}\cleanup-magnetic-desk-install.ps1');
   CurrentManifestPath := ExpandConstant('{tmp}\MagneticDesk.InstallManifest.current.txt');
-  LegacyManifestPath := ExpandConstant('{tmp}\MagneticDesk.LegacyBundledRuntimeFiles.txt');
+  LegacyManifestPath := ExpandConstant('{tmp}\magnetic-desk.LegacyBundledRuntimeFiles.txt');
   PreviousManifestPath := AddBackslash(WizardDirValue) + 'magnetic-desk.InstallManifest.txt';
   Parameters :=
     '-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ' +

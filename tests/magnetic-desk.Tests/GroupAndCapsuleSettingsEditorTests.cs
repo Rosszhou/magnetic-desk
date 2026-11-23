@@ -267,7 +267,9 @@ public sealed class GroupAndCapsuleSettingsEditorTests : IDisposable
     [Fact]
     public void Capsule_UserOptionWrites_PersistThroughTheCoordinator()
     {
-        (SettingsService settings, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(_root);
+        (SettingsService settings, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(
+            _root,
+            s => s.Settings.WidgetShell.WidgetCollapseBehavior = CapsuleOptionKinds.CollapseExpanded);
         int notified = 0;
         settings.SettingsChanged += () => notified++;
 
@@ -345,7 +347,9 @@ public sealed class GroupAndCapsuleSettingsEditorTests : IDisposable
     [Fact]
     public void Capsule_SmartCollapseOverridePush_KeepsTheHoverEntryVisible()
     {
-        (_, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(_root);
+        (_, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(
+            _root,
+            s => s.Settings.WidgetShell.WidgetCollapseBehavior = CapsuleOptionKinds.CollapseExpanded);
         Assert.False(editor.ShowHoverResponseEntry);
 
         editor.UpdateOverridePresentation(
@@ -363,7 +367,9 @@ public sealed class GroupAndCapsuleSettingsEditorTests : IDisposable
     [Fact]
     public void Capsule_ExternalSync_ReprojectsWithoutWritingBack()
     {
-        (SettingsService settings, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(_root);
+        (SettingsService settings, CapsuleSettingsViewModel editor) = CreateCapsuleEditor(
+            _root,
+            s => s.Settings.WidgetShell.WidgetCollapseBehavior = CapsuleOptionKinds.CollapseExpanded);
         int notified = 0;
         settings.SettingsChanged += () => notified++;
 

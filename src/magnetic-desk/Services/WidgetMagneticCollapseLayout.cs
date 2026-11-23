@@ -30,7 +30,7 @@ internal static class WidgetMagneticCollapseLayout
     {
         if (expanded.Count == 0) return new Dictionary<string, RectInt32>();
         IReadOnlyDictionary<string, RectInt32> restored = expanded;
-        if (attachment is not null)
+        if (attachment is not null && RequiresAttachmentReconciliation(expanded, attachment, spacing))
         {
             restored = attachment.ToDictionary();
             foreach (var pair in expanded.OrderBy(p => attachment[p.Key].Y)
@@ -45,6 +45,49 @@ internal static class WidgetMagneticCollapseLayout
         return restored.ToDictionary(p => p.Key, p => new RectInt32(
             p.Value.X + origin.X - savedOrigin.X, p.Value.Y + origin.Y - savedOrigin.Y,
             p.Value.Width, p.Value.Height));
+    }
+
+    private static bool RequiresAttachmentReconciliation(
+        IReadOnlyDictionary<string, RectInt32> expanded,
+        IReadOnlyDictionary<string, RectInt32> attachment,
+        int spacing)
+    {
+        if (expanded.Count < 2) return false;
+        var ids = expanded.Keys.ToArray();
+        for (int i = 0; i < ids.Length; i++)
+        {
+            if (!attachment.TryGetValue(ids[i], out RectInt32 attachA)) return false;
+            RectInt32 a = expanded[ids[i]];
+            for (int j = i + 1; j < ids.Length; j++)
+            {
+                if (!attachment.TryGetValue(ids[j], out RectInt32 attachB)) return false;
+                RectInt32 b = expanded[ids[j]];
+                bool overlapsX = a.X < b.X + b.Width && b.X < a.X + a.Width;
+                bool overlapsY = a.Y < b.Y + b.Height && b.Y < a.Y + a.Height;
+                if (overlapsX && overlapsY) return true;
+                if (overlapsY)
+                {
+                    int currentGap = Math.Max(a.X, b.X) - Math.Min(a.X + a.Width, b.X + b.Width);
+                    if (currentGap < spacing &&
+                        attachA.Y < attachB.Y + attachB.Height && attachB.Y < attachA.Y + attachA.Height)
+                    {
+                        int attachmentGap = Math.Max(attachA.X, attachB.X) - Math.Min(attachA.X + attachA.Width, attachB.X + attachB.Width);
+                        if (currentGap < Math.Clamp(attachmentGap, 0, spacing)) return true;
+                    }
+                }
+                if (overlapsX)
+                {
+                    int currentGap = Math.Max(a.Y, b.Y) - Math.Min(a.Y + a.Height, b.Y + b.Height);
+                    if (currentGap < spacing &&
+                        attachA.X < attachB.X + attachB.Width && attachB.X < attachA.X + attachA.Width)
+                    {
+                        int attachmentGap = Math.Max(attachA.Y, attachB.Y) - Math.Min(attachA.Y + attachA.Height, attachB.Y + attachB.Height);
+                        if (currentGap < Math.Clamp(attachmentGap, 0, spacing)) return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     internal static IReadOnlyDictionary<string, RectInt32> KeepVisible(

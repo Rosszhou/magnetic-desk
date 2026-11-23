@@ -20,7 +20,6 @@ public sealed class FeatureWidgetKindContractTests
             {
                 WidgetKind.QuickCapture,
                 WidgetKind.Todo,
-                WidgetKind.Search,
             },
             FeatureWidgetSettings.FeatureKinds);
     }
@@ -52,7 +51,7 @@ public sealed class FeatureWidgetKindContractTests
         // it and nothing enumerates the enum to notice. It stays listed here as
         // a known gap: either give it a descriptor (Placeholder/Planned, like
         // Tags) or drop the enum member, then remove it from this list.
-        WidgetKind[] knownGap = [WidgetKind.Productivity, WidgetKind.Music, WidgetKind.Weather, WidgetKind.Glance];
+        WidgetKind[] knownGap = [WidgetKind.Productivity, WidgetKind.Music, WidgetKind.Weather, WidgetKind.Glance, WidgetKind.Search];
 
         WidgetKind[] described = WidgetContentFactory.DescriptorList
             .Select(descriptor => descriptor.WidgetKind)

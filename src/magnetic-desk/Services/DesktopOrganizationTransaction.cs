@@ -422,7 +422,7 @@ public sealed partial class DesktopOrganizationTransaction
     private static void RevalidateSource(DesktopOrganizationFileSnapshot item)
     {
         var attributes = File.GetAttributes(item.SourcePath);
-        if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System | FileAttributes.Offline | FileAttributes.Temporary)) != 0)
+        if (DesktopOrganizationScanner.HasUnsafeSourceAttributes(item.SourcePath, attributes))
             throw new DesktopOrganizationSourceChangedException(item.Name);
         if (item.IsDirectory)
         {
@@ -525,7 +525,11 @@ public sealed partial class DesktopOrganizationTransaction
         var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (DesktopOrganizationRecoveryItem item in journal.Items)
         {
-            item.DestinationPath = FileService.GetAvailablePath(item.DestinationPath, reserved);
+            bool isDirectory = item.Size is null;
+            item.DestinationPath = FileService.GetAvailablePath(
+                item.DestinationPath,
+                reserved,
+                isDirectory);
         }
     }
 
@@ -535,17 +539,26 @@ public sealed partial class DesktopOrganizationTransaction
     {
         foreach (DesktopOrganizationTargetPlan target in plan.Targets.Where(target => target.CreatesWidget))
         {
-            string[] sourceCategories = target.Items
-                .Select(item => item.CategoryId)
-                .Where(categoryId => !string.IsNullOrWhiteSpace(categoryId))
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+            if (string.IsNullOrWhiteSpace(target.CategoryId))
+            {
+                continue;
+            }
+
+            // Never assign all merged item categories onto "Other" (or any
+            // other newly created widget): doing so hijacks future files of
+            // temporarily merged categories and can create duplicate conflicts.
+            bool alreadyClaimed = rules.Any(rule =>
+                rule.IsEnabled &&
+                rule.CategoryIds.Contains(target.CategoryId, StringComparer.Ordinal));
+            if (alreadyClaimed)
+            {
+                continue;
+            }
+
             rules.Add(new DesktopOrganizationRule
             {
                 TargetWidgetId = target.TargetWidgetId,
-                CategoryIds = sourceCategories.Length > 0
-                    ? sourceCategories.ToList()
-                    : [target.CategoryId]
+                CategoryIds = [target.CategoryId]
             });
         }
     }

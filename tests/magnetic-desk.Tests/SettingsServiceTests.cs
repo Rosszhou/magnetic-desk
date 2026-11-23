@@ -1396,7 +1396,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(
             newUserDefaults.WidgetCompactAnimationDurationMs,
             restoredDefaults.WidgetCompactAnimationDurationMs);
-        Assert.Equal(SettingsService.WidgetCollapseBehaviorExpanded, newUserDefaults.WidgetCollapseBehavior);
+        Assert.Equal(SettingsService.WidgetCollapseBehaviorSmart, newUserDefaults.WidgetCollapseBehavior);
         Assert.Equal(newUserDefaults.WidgetCollapseBehavior, restoredDefaults.WidgetCollapseBehavior);
         Assert.Equal(SettingsService.SensitiveWidgetCompactExpandDelayMs, newUserDefaults.WidgetCompactExpandDelayMs);
         Assert.Equal(newUserDefaults.WidgetCompactExpandDelayMs, restoredDefaults.WidgetCompactExpandDelayMs);

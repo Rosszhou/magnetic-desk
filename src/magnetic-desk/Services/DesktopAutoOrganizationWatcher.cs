@@ -37,6 +37,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
     private CancellationTokenSource _featureCts = new();
     private Task? _retryPump;
     private bool _lastEnabled;
+    private int _lastDelaySeconds;
     private bool _started;
     private bool _disposed;
     private int _watcherRecoveryScheduled;
@@ -104,6 +105,8 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
         ThrowIfDisposed();
         _retryPump ??= RetryPumpAsync(_lifetimeCts.Token);
         _lastEnabled = _settingsService.Settings.DesktopAutoOrganizationEnabled;
+        _lastDelaySeconds = DesktopAutoOrganizationPolicy.NormalizeDelaySeconds(
+            _settingsService.Settings.DesktopOrganization.DesktopAutoOrganizationDelaySeconds);
         // Both exits below are "started": the disabled branch must also adopt
         // later settings toggles, so the flag is set before either return.
         _started = true;
@@ -143,16 +146,20 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
         }
 
         bool enabled = _settingsService.Settings.DesktopAutoOrganizationEnabled;
+        int currentDelaySeconds = DesktopAutoOrganizationPolicy.NormalizeDelaySeconds(
+            _settingsService.Settings.DesktopOrganization.DesktopAutoOrganizationDelaySeconds);
         if (!enabled && _lastEnabled)
         {
             DisableFeature();
             _lastEnabled = false;
+            _lastDelaySeconds = currentDelaySeconds;
             return;
         }
 
         if (enabled && !_lastEnabled)
         {
             _lastEnabled = true;
+            _lastDelaySeconds = currentDelaySeconds;
             BeginEnabledCycle();
             DateTimeOffset cutoff =
                 _settingsService.Settings.DesktopAutoOrganizationBaselineUtc ?? _utcNow();
@@ -166,6 +173,18 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
             }
             _states.ResumeDeferred(_utcNow());
             SignalRetryPump();
+            return;
+        }
+
+        if (enabled && currentDelaySeconds != _lastDelaySeconds)
+        {
+            _lastDelaySeconds = currentDelaySeconds;
+            if (_states.RescheduleInitialWait(
+                    _utcNow(),
+                    DesktopAutoOrganizationPolicy.GetDelay(_settingsService.Settings)))
+            {
+                SignalRetryPump();
+            }
         }
     }
 
@@ -228,6 +247,11 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                 {
                     if (File.Exists(path) &&
                         File.GetCreationTimeUtc(path) > cutoff.Value.UtcDateTime)
+                    {
+                        candidates.Add(path);
+                    }
+                    else if (Directory.Exists(path) &&
+                             Directory.GetCreationTimeUtc(path) > cutoff.Value.UtcDateTime)
                     {
                         candidates.Add(path);
                     }
@@ -552,12 +576,18 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
 
             DesktopOrganizationFileSnapshot item =
                 _scanner.CreateAutoOrganizationSnapshot(workItem.Path);
-            if (!item.IsEligible)
+            bool folderOptedInByRule =
+                item.ExclusionReason == DesktopOrganizationExclusionReason.Folder &&
+                _ruleResolver.Resolve(
+                    item,
+                    _settingsService.Settings.DesktopOrganization.DesktopOrganizationRules,
+                    _settingsService.Settings.Widgets) is not null;
+            if (!item.IsEligible && !folderOptedInByRule)
             {
                 DesktopAutoOrganizationItemState excludedState =
                     DesktopAutoOrganizationStatePolicy.ForSnapshotExclusion(
                         item.ExclusionReason,
-                        File.Exists(workItem.Path));
+                        EntryExists(workItem.Path));
                 if (excludedState == DesktopAutoOrganizationItemState.Deferred)
                 {
                     Defer(workItem, DesktopAutoOrganizationRetryKind.Finite);
@@ -574,36 +604,82 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                 return;
             }
 
-            StableFileProbeResult stable = await WaitForStableFileAsync(
-                workItem.Path,
-                cancellationToken);
-            if (stable.Status == StableFileStatus.Missing)
+            if (item.IsDirectory)
             {
-                MarkMissing(workItem);
-                return;
+                if (ShouldDeferFreshDefaultNamedEntry(workItem, item.Name, Directory.GetCreationTimeUtc(workItem.Path)))
+                {
+                    return;
+                }
+
+                StableFileProbeResult stableDirectory = await WaitForStableDirectoryAsync(
+                    workItem.Path,
+                    cancellationToken);
+                if (stableDirectory.Status == StableFileStatus.Missing)
+                {
+                    MarkMissing(workItem);
+                    return;
+                }
+
+                if (stableDirectory.Status == StableFileStatus.Deferred)
+                {
+                    Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
+                    return;
+                }
+
+                item = item with { LastWriteTimeUtc = stableDirectory.LastWriteTimeUtc };
+            }
+            else
+            {
+                StableFileProbeResult stable = await WaitForStableFileAsync(
+                    workItem.Path,
+                    cancellationToken);
+                if (stable.Status == StableFileStatus.Missing)
+                {
+                    MarkMissing(workItem);
+                    return;
+                }
+
+                if (stable.Status == StableFileStatus.Deferred)
+                {
+                    Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
+                    return;
+                }
+
+                // The first snapshot may have been captured while a file was
+                // still growing. Re-check the per-file safety limit after the
+                // stability probe so a file that crossed 100 MB during settling
+                // cannot slip through the quick-organization path.
+                if (stable.Size > DesktopOrganizationScanner.SlowItemThresholdBytes)
+                {
+                    MarkIgnored(workItem);
+                    return;
+                }
+
+                if (stable.Size == 0 &&
+                    ShouldDeferFreshDefaultNamedEntry(
+                        workItem,
+                        item.Name,
+                        stable.Fingerprint.CreationTimeUtc,
+                        requireDefaultName: false))
+                {
+                    return;
+                }
+
+                if (ShouldDeferFreshDefaultNamedEntry(
+                        workItem,
+                        item.Name,
+                        stable.Fingerprint.CreationTimeUtc))
+                {
+                    return;
+                }
+
+                item = item with
+                {
+                    Size = stable.Size,
+                    LastWriteTimeUtc = stable.LastWriteTimeUtc
+                };
             }
 
-            if (stable.Status == StableFileStatus.Deferred)
-            {
-                Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
-                return;
-            }
-
-            // The first snapshot may have been captured while a file was
-            // still growing. Re-check the per-file safety limit after the
-            // stability probe so a file that crossed 100 MB during settling
-            // cannot slip through the quick-organization path.
-            if (stable.Size > DesktopOrganizationScanner.SlowItemThresholdBytes)
-            {
-                MarkIgnored(workItem);
-                return;
-            }
-
-            item = item with
-            {
-                Size = stable.Size,
-                LastWriteTimeUtc = stable.LastWriteTimeUtc
-            };
             if (_organizerService.AutoOrganizationSuppressions.TryConsume(
                     workItem.Path))
             {
@@ -616,7 +692,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
 
             DesktopOrganizationRule? rule = _ruleResolver.Resolve(
                 item,
-                _settingsService.Settings.DesktopOrganizationRules,
+                _settingsService.Settings.DesktopOrganization.DesktopOrganizationRules,
                 _settingsService.Settings.Widgets);
             if (rule is null)
             {
@@ -642,32 +718,44 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                     return;
                 }
 
-                if (!File.Exists(workItem.Path))
+                if (item.IsDirectory)
                 {
-                    MarkMissing(workItem);
-                    return;
-                }
-
-                if (!TryCaptureFileFingerprint(
-                        workItem.Path,
-                        out StableFileFingerprint currentFingerprint))
-                {
-                    if (File.Exists(workItem.Path))
-                    {
-                        Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
-                    }
-                    else
+                    if (!Directory.Exists(workItem.Path))
                     {
                         MarkMissing(workItem);
+                        return;
+                    }
+                }
+                else
+                {
+                    if (!File.Exists(workItem.Path))
+                    {
+                        MarkMissing(workItem);
+                        return;
                     }
 
-                    return;
-                }
+                    if (!TryCaptureFileFingerprint(
+                            workItem.Path,
+                            out StableFileFingerprint currentFingerprint))
+                    {
+                        if (File.Exists(workItem.Path))
+                        {
+                            Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
+                        }
+                        else
+                        {
+                            MarkMissing(workItem);
+                        }
 
-                if (stable.Fingerprint != currentFingerprint)
-                {
-                    Queue(workItem.Path, bypassBaseline: true);
-                    return;
+                        return;
+                    }
+
+                    if (currentFingerprint.Size != item.Size ||
+                        currentFingerprint.LastWriteTimeUtc != item.LastWriteTimeUtc)
+                    {
+                        Queue(workItem.Path, bypassBaseline: true);
+                        return;
+                    }
                 }
 
                 // Recheck after filesystem IO and immediately before starting
@@ -727,7 +815,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
             // Settle-phase work was already preserved by DisableFeature. A
             // cancellation after entering Processing but before the actual move
             // must also become recoverable instead of sticking in Processing.
-            if (!moveSucceeded && File.Exists(workItem.Path))
+            if (!moveSucceeded && EntryExists(workItem.Path))
             {
                 Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
             }
@@ -743,7 +831,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
             // desktop item recoverable instead of consuming the finite
             // metadata retry budget and silently turning it into Ignored.
             App.Log($"[DesktopAutoOrganization] Storage unavailable for '{workItem.Path}': {ex}");
-            if (File.Exists(workItem.Path))
+            if (EntryExists(workItem.Path))
             {
                 Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
             }
@@ -768,7 +856,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
             // Permission changes on the source or mapped target are also
             // recoverable and should be retried after access is restored.
             App.Log($"[DesktopAutoOrganization] Access unavailable for '{workItem.Path}': {ex}");
-            if (File.Exists(workItem.Path))
+            if (EntryExists(workItem.Path))
             {
                 Defer(workItem, DesktopAutoOrganizationRetryKind.Persistent);
             }
@@ -787,7 +875,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                     DesktopAutoOrganizationItemState.Completed);
                 RemoveFromBaseline(workItem.Path);
             }
-            else if (!File.Exists(workItem.Path))
+            else if (!EntryExists(workItem.Path))
             {
                 MarkMissing(workItem);
             }
@@ -870,6 +958,96 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
             ? StableFileProbeResult.Deferred
             : StableFileProbeResult.Missing;
     }
+
+    private async Task<StableFileProbeResult> WaitForStableDirectoryAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        DateTime? previousWriteUtc = null;
+        int stableMatches = 0;
+        for (int probe = 0; probe < StableProbeCount; probe++)
+        {
+            if (!Directory.Exists(path))
+            {
+                return StableFileProbeResult.Missing;
+            }
+
+            try
+            {
+                DateTime currentWriteUtc = Directory.GetLastWriteTimeUtc(path);
+                if (previousWriteUtc == currentWriteUtc)
+                {
+                    stableMatches++;
+                    if (stableMatches >= RequiredStableMatches)
+                    {
+                        return new StableFileProbeResult(
+                            StableFileStatus.Stable,
+                            new StableFileFingerprint(0, currentWriteUtc, Directory.GetCreationTimeUtc(path), null));
+                    }
+                }
+                else
+                {
+                    stableMatches = 0;
+                }
+
+                previousWriteUtc = currentWriteUtc;
+            }
+            catch (IOException)
+            {
+                previousWriteUtc = null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                previousWriteUtc = null;
+            }
+
+            await _delayAsync(StabilityProbeDelay, cancellationToken);
+        }
+
+        return Directory.Exists(path)
+            ? StableFileProbeResult.Deferred
+            : StableFileProbeResult.Missing;
+    }
+
+    private bool ShouldDeferFreshDefaultNamedEntry(
+        DesktopAutoOrganizationWorkItem workItem,
+        string name,
+        DateTime creationTimeUtc,
+        bool requireDefaultName = true)
+    {
+        if (requireDefaultName && !HasWindowsNewItemDefaultName(name))
+        {
+            return false;
+        }
+
+        DesktopAutoOrganizationStateSnapshot? snapshot = _states.GetSnapshot(workItem.Path);
+        if ((snapshot?.RetryAttempts ?? 0) > 0)
+        {
+            return false;
+        }
+
+        if (_utcNow().UtcDateTime - creationTimeUtc > TimeSpan.FromSeconds(15))
+        {
+            return false;
+        }
+
+        if (_states.MarkDeferred(workItem, _utcNow().AddSeconds(10), countAttempt: true))
+        {
+            SignalRetryPump();
+            return true;
+        }
+
+        return false;
+    }
+
+    internal static bool HasWindowsNewItemDefaultName(string name) =>
+        name.StartsWith("新建 ", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("新建文件夹", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("新增", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("New ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool EntryExists(string path) =>
+        File.Exists(path) || Directory.Exists(path);
 
     private async Task WaitForDirectoryQuietAsync(
         string path,

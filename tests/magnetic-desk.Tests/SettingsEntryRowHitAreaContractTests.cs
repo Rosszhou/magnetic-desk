@@ -36,13 +36,10 @@ public sealed class SettingsEntryRowHitAreaContractTests
         string xaml = ReadRepositoryFile(
             "src/magnetic-desk/Views/SettingsSections/CapsuleModeSettingsSection.xaml");
 
-        // The three detail entry cards became SettingsExpanders (toolkit
-        // expanders have no IsClickEnabled/IsActionIconVisible surface);
-        // gating now runs through the combos' own IsEnabled bindings so the
-        // inline controls stay operable, and the "custom only" child rows
-        // stay visible but disabled outside custom presets — hiding them
-        // left the expanders promising content they never showed.
-        Assert.Contains("IsEnabled=\"{Binding ShowHoverResponseCustom}\"", xaml, StringComparison.Ordinal);
+        // The hover-delay child rows stay visible and directly operable so
+        // dragging either slider automatically switches HoverResponse to Custom
+        // instead of forcing a pre-step in the dropdown.
+        Assert.DoesNotContain("IsEnabled=\"{Binding ShowHoverResponseCustom}\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Visibility=\"{Binding ShowHoverResponseCustom", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("Visibility=\"{Binding ShowAnimationCustom", xaml, StringComparison.Ordinal);
     }

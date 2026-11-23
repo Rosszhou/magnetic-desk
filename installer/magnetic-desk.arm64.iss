@@ -5,8 +5,8 @@
 ; ISCC /DMagneticDeskNativeAot=1 /DMagneticDeskBundledRuntime=1 /DMyAppReleaseDir=<publish 目录> magnetic-desk.arm64.iss
 
 #define MyAppName "magnetic-desk"
-#define MyAppVersion "1.5.0"
-#define MyAppVersionInfo "1.5.0.0"
+#define MyAppVersion "1.6.0"
+#define MyAppVersionInfo "1.6.0.0"
 #define MyAppPublisher "Rosszhou"
 #define MyAppExeName "magnetic-desk.exe"
 #define MyAppOutputBaseName "magnetic-desk_Setup"

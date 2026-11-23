@@ -50,27 +50,40 @@ public partial class App
                 contextMenu,
                 OpenDesktopOrganizationFromTray));
 
-        var mapFolderItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.NewFolderMapping"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.OpenFile)
-        };
-        AttachTrayMenuItemInteraction(
-            mapFolderItem,
-            () => RunTrayMenuActionAsync(contextMenu, CreateFolderWidgetFromPickerAsync));
-
-        var addFeatureWidgetItem = new MenuFlyoutItem
+        var addFeatureWidgetItem = new MenuFlyoutSubItem
         {
             Text = localization.T("Common.AddFeatureWidget"),
             Width = TrayMenuItemWidth,
             Icon = new FontIcon { Glyph = "\uE710" }
         };
-        AttachTrayMenuItemInteraction(
-            addFeatureWidgetItem,
-            () => RunTraySettingsActionAsync(
-                contextMenu,
-                OpenFeatureWidgetsFromTray));
+        foreach (var entry in new[]
+        {
+            (Kind: WidgetKind.QuickCapture, Key: "QuickCapture.Name", Glyph: "\uE70F"),
+            (Kind: WidgetKind.Todo, Key: "Todo.Title", Glyph: "\uE73A")
+        })
+        {
+            if (!WidgetRegistry.Default.CanCreateWindow(entry.Kind))
+            {
+                continue;
+            }
+
+            var subItem = new MenuFlyoutItem
+            {
+                Text = localization.T(entry.Key),
+                Tag = entry.Kind,
+                Icon = new FontIcon { Glyph = entry.Glyph }
+            };
+            AttachTrayMenuItemInteraction(
+                subItem,
+                () => RunTrayMenuActionAsync(contextMenu, async () =>
+                {
+                    if (WidgetManager is not null)
+                    {
+                        await WidgetManager.CreateWidgetOfKindAsync(entry.Kind);
+                    }
+                }));
+            addFeatureWidgetItem.Items.Add(subItem);
+        }
 
         var settingsItem = new MenuFlyoutItem
         {
@@ -123,7 +136,6 @@ public partial class App
             contextMenu.Items.Add(createItem);
         }
 
-        contextMenu.Items.Add(mapFolderItem);
         contextMenu.Items.Add(addFeatureWidgetItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
         contextMenu.Items.Add(openManagedStorageItem);
@@ -134,7 +146,6 @@ public partial class App
         contextMenu.Items.Add(exitItem);
 
         _trayOrganizeDesktopItem = organizeDesktopItem;
-        _trayMapFolderItem = mapFolderItem;
         _trayAddFeatureWidgetItem = addFeatureWidgetItem;
         _trayOpenManagedStorageItem = openManagedStorageItem;
         _trayUpdateItem = updateItem;
@@ -510,9 +521,9 @@ public partial class App
             item.IsEnabled = canCreateWidget;
         }
 
-        if (_trayMapFolderItem is not null)
+        if (_trayAddFeatureWidgetItem is not null)
         {
-            _trayMapFolderItem.IsEnabled = canCreateWidget;
+            _trayAddFeatureWidgetItem.IsEnabled = canCreateWidget;
         }
 
         contextMenu.MenuFlyoutPresenterStyle = CreateTrayMenuPresenterStyle();
@@ -1093,14 +1104,21 @@ public partial class App
                 "Tray.OrganizeDesktop");
         }
 
-        if (_trayMapFolderItem is not null)
-        {
-            _trayMapFolderItem.Text = LocalizationService.T("Common.NewFolderMapping");
-        }
-
         if (_trayAddFeatureWidgetItem is not null)
         {
             _trayAddFeatureWidgetItem.Text = LocalizationService.T("Common.AddFeatureWidget");
+            foreach (MenuFlyoutItemBase sub in _trayAddFeatureWidgetItem.Items)
+            {
+                if (sub is MenuFlyoutItem { Tag: WidgetKind kind } item)
+                {
+                    item.Text = kind switch
+                    {
+                        WidgetKind.QuickCapture => LocalizationService.T("QuickCapture.Name"),
+                        WidgetKind.Todo => LocalizationService.T("Todo.Title"),
+                        _ => item.Text
+                    };
+                }
+            }
         }
 
         foreach (var (widgetKind, item) in _trayCreateWidgetItems)

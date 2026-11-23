@@ -221,6 +221,7 @@ public sealed partial class WidgetManager
     internal bool HasActiveVisualWork =>
         _trayBatchAnimationDriver.IsRunning ||
         WidgetCompactAnimationCoordinator.HasActiveAnimations ||
+        HasActiveMouseLeaveCountdown ||
         GetLoadedDesktopWindows()
             .OfType<WidgetWindowBase>()
             .Any(window => window.HasActiveVisualWork);

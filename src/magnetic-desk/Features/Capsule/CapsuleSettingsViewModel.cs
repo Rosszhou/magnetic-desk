@@ -38,7 +38,7 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
     private string[]? _cachedCollapseBehaviorNames;
 
     // Behavior state.
-    private string _collapseBehavior = CapsuleOptionKinds.CollapseClick;
+    private string _collapseBehavior = CapsuleOptionKinds.CollapseSmart;
     private string _contentMode = CapsuleOptionKinds.ContentModeSmart;
     private bool _hideSensitiveContent;
 
@@ -93,6 +93,7 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
             }
 
             OnPropertyChanged(nameof(ShowHoverResponseEntry));
+            OnPropertyChanged(nameof(CanConfigureHideSensitiveContent));
             OnPropertyChanged(nameof(IsBarEnabled));
             OnPropertyChanged(nameof(IsBarSpacingEnabled));
             if (_isSyncingPresentation)
@@ -219,6 +220,7 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
                 return;
             }
 
+            OnPropertyChanged(nameof(CanConfigureHideSensitiveContent));
             if (_isSyncingPresentation)
             {
                 return;
@@ -227,6 +229,9 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
             _settings.SetWidgetCompactContentMode(normalized);
         }
     }
+
+    public bool CanConfigureHideSensitiveContent =>
+        !string.Equals(_contentMode, CapsuleOptionKinds.ContentModeMinimal, StringComparison.Ordinal);
 
     public IReadOnlyList<SettingsOption> AvailableContentModeOptions
     {
@@ -688,6 +693,7 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
             if (smartChanged)
             {
                 OnPropertyChanged(nameof(ShowHoverResponseEntry));
+            OnPropertyChanged(nameof(CanConfigureHideSensitiveContent));
             }
         }
         finally
@@ -737,6 +743,7 @@ public sealed partial class CapsuleSettingsViewModel : ObservableObject
                 timing.CollapseDelayMs);
 
             OnPropertyChanged(nameof(ShowHoverResponseEntry));
+            OnPropertyChanged(nameof(CanConfigureHideSensitiveContent));
             OnPropertyChanged(nameof(IsBarEnabled));
             OnPropertyChanged(nameof(IsBarSpacingEnabled));
             OnPropertyChanged(nameof(ShowArrangementEntry));

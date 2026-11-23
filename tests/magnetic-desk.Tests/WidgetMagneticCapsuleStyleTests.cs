@@ -32,8 +32,10 @@ public sealed class WidgetMagneticCapsuleStyleTests
         int end = source.IndexOf("return flyout;", start, StringComparison.Ordinal);
         string menu = source[start..end];
         Assert.Contains("new MenuFlyoutSubItem", menu);
-        foreach (string kind in new[] { "QuickCapture", "Clipboard", "Todo", "Search" })
+        foreach (string kind in new[] { "QuickCapture", "Clipboard", "Todo" })
             Assert.Contains("Kind: WidgetKind." + kind, menu);
+        Assert.DoesNotContain("Kind: WidgetKind.Search", menu);
+        Assert.DoesNotContain("NewFolderMapping", menu);
         Assert.Contains("CreateWidgetOfKindAsync(entry.Kind)", menu);
         Assert.DoesNotContain("ShowSettings", menu);
         Assert.DoesNotContain("Notes.NewWidget", menu);

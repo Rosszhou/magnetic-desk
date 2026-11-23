@@ -245,6 +245,27 @@ internal sealed class DesktopAutoOrganizationStateMachine
         }
     }
 
+    public bool RescheduleInitialWait(DateTimeOffset now, TimeSpan delay)
+    {
+        lock (_gate)
+        {
+            bool changed = false;
+            DateTimeOffset targetAt = now.Add(delay);
+            foreach (Entry entry in _entries.Values)
+            {
+                if (entry.State == DesktopAutoOrganizationItemState.Deferred &&
+                    entry.RetryAttempts == 0 &&
+                    entry.NextRetryAt is not null)
+                {
+                    entry.NextRetryAt = targetAt;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+    }
+
     public IReadOnlyList<DesktopAutoOrganizationWorkItem> TakeDueDeferred(
         DateTimeOffset now)
     {

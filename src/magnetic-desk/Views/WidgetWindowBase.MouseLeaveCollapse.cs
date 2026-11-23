@@ -14,6 +14,12 @@ public abstract partial class WidgetWindowBase
     internal void ShowMouseLeaveCountdown(bool visible, double remainingFraction) =>
         WidgetShellControl.SetMouseLeaveCountdown(visible, remainingFraction);
 
+    internal void HideMouseLeaveCountdownForCollapse() =>
+        WidgetShellControl.HideMouseLeaveCountdownForCollapse();
+
+    internal void PreArmCompactAnimationClock() =>
+        WidgetCompactAnimationCoordinator.PreArmFrameClock(HWnd);
+
     internal bool CanCollapseAfterMouseLeave => _collapseInitialized && !IsClosing &&
         EffectiveCollapseBehavior is WidgetCollapseBehavior.Click or WidgetCollapseBehavior.Smart;
 

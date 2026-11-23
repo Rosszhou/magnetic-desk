@@ -13,6 +13,9 @@ public sealed partial class WidgetManager
 
     internal bool HasMouseLeaveAutoCollapse(WidgetWindowBase window) => _mouseLeaveExpandedWindows.Contains(window);
 
+    internal bool HasActiveMouseLeaveCountdown =>
+        _mouseLeaveScopes.Values.Any(session => session.Policy.IsCounting);
+
     private string MouseLeaveScopeId(Models.WidgetConfig config) => config.MagneticCollapseLinked && GetMagneticGroupId(config) is { } id
         ? $"magnetic:{id}" : $"surface:{config.Id}";
 
@@ -91,6 +94,10 @@ public sealed partial class WidgetManager
                 window.ShowMouseLeaveCountdown(false, 1);
             }
         }
+        var visibleByScope = GetLoadedDesktopWindows().OfType<WidgetWindowBase>()
+            .Where(w => w.Visible)
+            .GroupBy(w => MouseLeaveScopeId(w.Config))
+            .ToDictionary(g => g.Key, g => g.ToArray(), StringComparer.Ordinal);
         var scopes = _mouseLeaveExpandedWindows.GroupBy(w => MouseLeaveScopeId(w.Config)).Select(g => (Id: g.Key, Windows: g.ToArray())).ToArray();
         foreach (string obsolete in _mouseLeaveScopes.Keys.Except(scopes.Select(s => s.Id)).ToArray())
             _mouseLeaveScopes.Remove(obsolete);
@@ -99,16 +106,24 @@ public sealed partial class WidgetManager
             string members = string.Join("|", scope.Windows.Select(w => w.Config.Id).Order(StringComparer.Ordinal));
             if (!_mouseLeaveScopes.TryGetValue(scope.Id, out var session) || session.Members != members)
                 _mouseLeaveScopes[scope.Id] = session = (members, new WidgetMouseLeaveCollapsePolicy());
+            var scopeMembers = visibleByScope.TryGetValue(scope.Id, out var loaded) ? loaded : scope.Windows;
             bool hasActivity = IsMagneticDockScopeActive(scope.Windows[0]) ||
-                GetMouseLeaveScope(scope.Windows[0]).Any(w => w.MouseLeaveScopeHasActivity);
+                scopeMembers.Any(w => w.MouseLeaveScopeHasActivity);
             bool expired = session.Policy.Update(now, hasActivity);
-            foreach (var member in scope.Windows)
-                member.ShowMouseLeaveCountdown(session.Policy.IsCounting, session.Policy.RemainingFraction(now));
-            if (!expired) continue;
+            if (!expired)
+            {
+                if (session.Policy.ShouldPreArmCollapse(now))
+                    scope.Windows[0].PreArmCompactAnimationClock();
+                bool counting = session.Policy.IsCounting;
+                double remaining = session.Policy.RemainingFraction(now);
+                foreach (var member in scope.Windows)
+                    member.ShowMouseLeaveCountdown(counting, remaining);
+                continue;
+            }
             foreach (var member in scope.Windows)
             {
                 _mouseLeaveExpandedWindows.Remove(member);
-                member.ShowMouseLeaveCountdown(false, 1);
+                member.HideMouseLeaveCountdownForCollapse();
             }
             _mouseLeaveScopes.Remove(scope.Id);
             foreach (var member in scope.Windows.Where(w => !w.IsCompactArrangementActive)) member.CollapseAfterMouseLeave();

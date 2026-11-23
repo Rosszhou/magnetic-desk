@@ -1,4 +1,6 @@
-﻿using MagneticDesk.Models;
+﻿using System.Runtime.InteropServices;
+using MagneticDesk.Helpers;
+using MagneticDesk.Models;
 
 namespace MagneticDesk.Services;
 
@@ -11,6 +13,11 @@ public sealed class DesktopOrganizationScanner
     public const long QuickBatchSizeLimitBytes = 100L * 1024 * 1024;
     public const int QuickBatchItemLimit = 200;
 
+    private const uint FileAttributeRecallOnOpen = 0x00040000;
+    private const uint FileAttributeRecallOnDataAccess = 0x00400000;
+    private const uint IoReparseTagCloudMask = 0xFFFF0FFF;
+    private const uint IoReparseTagCloudBase = 0x9000001A;
+
     private static readonly string[] TemporarySuffixes =
     [
         ".tmp",
@@ -22,7 +29,32 @@ public sealed class DesktopOrganizationScanner
         ".opdownload",
         ".aria2",
         ".!ut",
-        ".bc!"
+        ".bc!",
+        ".!qb",
+        ".td",
+        ".td.cfg",
+        ".xltd",
+        ".xltd.cfg",
+        ".fdmdownload",
+        ".downloading",
+        ".crswap",
+        ".filepart",
+        ".unconfirmed"
+    ];
+
+    private static readonly string[] ActiveDownloadSidecarSuffixes =
+    [
+        ".aria2",
+        ".td.cfg",
+        ".xltd.cfg",
+        ".fdmdownload"
+    ];
+
+    private static readonly string[] IgnoredSystemFileNames =
+    [
+        "desktop.ini",
+        "thumbs.db",
+        ".ds_store"
     ];
 
     private readonly DesktopOrganizationClassifier _classifier;
@@ -52,7 +84,8 @@ public sealed class DesktopOrganizationScanner
         CreateSnapshot(
             path,
             NormalizeOptionalPath(_publicDesktopPathProvider()),
-            includeSlowItems: false);
+            includeSlowItems: false,
+            excludeDirectoriesByDefault: true);
 
     private DesktopOrganizationScanResult Scan(bool includeSlowItems, CancellationToken cancellationToken)
     {
@@ -94,9 +127,15 @@ public sealed class DesktopOrganizationScanner
             foreach (string path in Directory.EnumerateFileSystemEntries(root, "*", SearchOption.TopDirectoryOnly))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                // Manual scanning can opt into public items. Auto organization
-                // continues to pass the public root to CreateSnapshot and excludes it.
-                sourceItems.Add(CreateSnapshot(path, string.Empty, includeSlowItems) with { SourceScope = scope });
+                // Manual scanning surfaces regular folders directly under the
+                // Folders category (users can uncheck the Folders card in one
+                // click). Auto organization still passes excludeDirectoriesByDefault: true
+                // so folders are only auto-moved when an enabled rule explicitly claims Folders.
+                sourceItems.Add(CreateSnapshot(
+                    path,
+                    string.Empty,
+                    includeSlowItems,
+                    excludeDirectoriesByDefault: false) with { SourceScope = scope });
             }
             if (!includeSlowItems) ApplyQuickBatchLimit(sourceItems);
             items.AddRange(sourceItems);
@@ -134,11 +173,12 @@ public sealed class DesktopOrganizationScanner
     private DesktopOrganizationFileSnapshot CreateSnapshot(
         string path,
         string publicDesktopPath,
-        bool includeSlowItems)
+        bool includeSlowItems,
+        bool excludeDirectoriesByDefault = false)
     {
         string fullPath = Path.GetFullPath(path);
         string name = Path.GetFileName(fullPath);
-        var classification = _classifier.Classify(fullPath);
+        DesktopOrganizationClassification classification = _classifier.Classify(fullPath, isDirectory: false);
         long size = 0;
         DateTime lastWriteTimeUtc = DateTime.MinValue;
         DesktopOrganizationExclusionReason reason;
@@ -148,26 +188,34 @@ public sealed class DesktopOrganizationScanner
         {
             FileAttributes attributes = File.GetAttributes(fullPath);
             isDirectory = (attributes & FileAttributes.Directory) != 0;
-            bool isHiddenOrSystem = (attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0 ||
-                                    name.Equals("desktop.ini", StringComparison.OrdinalIgnoreCase);
+            classification = _classifier.Classify(fullPath, isDirectory);
+
+            bool isHiddenOrSystem = IsHiddenOrSystemEntry(fullPath, name, attributes, isDirectory);
+            bool isOfflineOrCloudPlaceholder = IsOfflineOrCloudPlaceholder(attributes);
+            bool isUnsafeReparsePoint = !isOfflineOrCloudPlaceholder &&
+                                        IsUnsafeReparsePoint(fullPath, attributes);
             bool isTemporary = (attributes & FileAttributes.Temporary) != 0 ||
-                               HasTemporarySuffix(name);
+                               HasTemporaryOrLockName(name) ||
+                               (!isDirectory && HasActiveDownloadSidecar(fullPath));
 
             // Safety classifications take precedence over the optional folder
-            // classification. A junction, hidden system folder, placeholder,
-            // or temporary directory must never become selectable merely
-            // because it also carries the Directory attribute.
+            // classification. A junction, hidden system folder, cloud-only
+            // placeholder, or temporary directory must never become selectable
+            // merely because it also carries the Directory attribute.
+            // Offline/recall attributes are checked before reparse points so
+            // OneDrive Files On-Demand placeholders report OfflinePlaceholder,
+            // while locally hydrated OneDrive files remain eligible.
             reason = isHiddenOrSystem
                 ? DesktopOrganizationExclusionReason.HiddenOrSystem
-                : (attributes & FileAttributes.ReparsePoint) != 0
-                    ? DesktopOrganizationExclusionReason.ReparsePoint
-                    : (attributes & FileAttributes.Offline) != 0
-                        ? DesktopOrganizationExclusionReason.OfflinePlaceholder
+                : isOfflineOrCloudPlaceholder
+                    ? DesktopOrganizationExclusionReason.OfflinePlaceholder
+                    : isUnsafeReparsePoint
+                        ? DesktopOrganizationExclusionReason.ReparsePoint
                         : isTemporary
                             ? DesktopOrganizationExclusionReason.TemporaryOrDownloading
                             : IsUnderPath(fullPath, publicDesktopPath)
                                 ? DesktopOrganizationExclusionReason.PublicDesktopItem
-                                : isDirectory
+                                : isDirectory && excludeDirectoriesByDefault
                                     ? DesktopOrganizationExclusionReason.Folder
                                     : DesktopOrganizationExclusionReason.None;
 
@@ -205,8 +253,173 @@ public sealed class DesktopOrganizationScanner
             isDirectory);
     }
 
-    private static bool HasTemporarySuffix(string name) =>
-        TemporarySuffixes.Any(suffix => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+    internal static bool IsOfflineOrCloudPlaceholder(FileAttributes attributes)
+    {
+        uint raw = (uint)attributes;
+        return (attributes & FileAttributes.Offline) != 0 ||
+               (raw & FileAttributeRecallOnOpen) != 0 ||
+               (raw & FileAttributeRecallOnDataAccess) != 0;
+    }
+
+    internal static bool IsCloudReparseTag(uint reparseTag) =>
+        (reparseTag & IoReparseTagCloudMask) == IoReparseTagCloudBase;
+
+    internal static bool IsUnsafeReparsePoint(string fullPath, FileAttributes attributes)
+    {
+        if ((attributes & FileAttributes.ReparsePoint) == 0)
+        {
+            return false;
+        }
+
+        // Hydrated OneDrive / Windows Cloud Filter files carry a CLOUD* reparse
+        // tag even when their full bytes live on disk. Allow only hydrated cloud
+        // reparse points; symlinks, junctions, and unknown tags stay blocked.
+        return !TryGetReparseTag(fullPath, out uint reparseTag) ||
+               !IsCloudReparseTag(reparseTag);
+    }
+
+    internal static bool HasUnsafeSourceAttributes(string fullPath, FileAttributes attributes)
+    {
+        if ((attributes & (FileAttributes.Hidden | FileAttributes.System | FileAttributes.Temporary)) != 0)
+        {
+            return true;
+        }
+
+        if (IsOfflineOrCloudPlaceholder(attributes))
+        {
+            return true;
+        }
+
+        return IsUnsafeReparsePoint(fullPath, attributes);
+    }
+
+    private static bool IsHiddenOrSystemEntry(
+        string fullPath,
+        string name,
+        FileAttributes attributes,
+        bool isDirectory)
+    {
+        if ((attributes & (FileAttributes.Hidden | FileAttributes.System)) != 0)
+        {
+            return true;
+        }
+
+        if (IgnoredSystemFileNames.Any(ignored =>
+                name.Equals(ignored, StringComparison.OrdinalIgnoreCase)) ||
+            name.StartsWith("._", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return !isDirectory && IsOwnedManagedStorageShortcut(fullPath, name);
+    }
+
+    private static bool IsOwnedManagedStorageShortcut(string fullPath, string name)
+    {
+        if (!name.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string? configuredShortcutPath = global::MagneticDesk.App.Current?.SettingsService?.Settings
+            .ManagedStorageDesktopShortcutPath;
+        if (!string.IsNullOrWhiteSpace(configuredShortcutPath))
+        {
+            try
+            {
+                if (string.Equals(
+                        Path.GetFullPath(configuredShortcutPath),
+                        fullPath,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        string basePrefix = Path.GetFileNameWithoutExtension(
+            ManagedStorageDesktopShortcutService.ShortcutFileName);
+        if (!name.StartsWith(basePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        try
+        {
+            ShortcutInfo? metadata = ShortcutHelper.ReadStoredMetadata(fullPath);
+            return metadata is not null &&
+                   string.Equals(
+                       metadata.Description,
+                       ManagedStorageDesktopShortcutService.ShortcutDescription,
+                       StringComparison.Ordinal);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool HasTemporaryOrLockName(string name) =>
+        TemporarySuffixes.Any(suffix => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)) ||
+        name.StartsWith("~$", StringComparison.Ordinal) ||
+        name.StartsWith(".~lock.", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasActiveDownloadSidecar(string fullPath) =>
+        ActiveDownloadSidecarSuffixes.Any(suffix => File.Exists(fullPath + suffix));
+
+    private static bool TryGetReparseTag(string fullPath, out uint reparseTag)
+    {
+        reparseTag = 0;
+        IntPtr handle = FindFirstFileW(fullPath, out Win32FindData findData);
+        if (handle == InvalidHandleValue)
+        {
+            return false;
+        }
+
+        try
+        {
+            if ((findData.dwFileAttributes & (uint)FileAttributes.ReparsePoint) == 0)
+            {
+                return false;
+            }
+
+            reparseTag = findData.dwReserved0;
+            return true;
+        }
+        finally
+        {
+            FindClose(handle);
+        }
+    }
+
+    private static readonly IntPtr InvalidHandleValue = new(-1);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr FindFirstFileW(string lpFileName, out Win32FindData lpFindFileData);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool FindClose(IntPtr hFindFile);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct Win32FindData
+    {
+        public uint dwFileAttributes;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftCreationTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastAccessTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME ftLastWriteTime;
+        public uint nFileSizeHigh;
+        public uint nFileSizeLow;
+        public uint dwReserved0;
+        public uint dwReserved1;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+        public string cFileName;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 14)]
+        public string cAlternateFileName;
+    }
 
     private static string NormalizeOptionalPath(string path) =>
         string.IsNullOrWhiteSpace(path) ? string.Empty : Path.GetFullPath(path);

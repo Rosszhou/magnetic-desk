@@ -93,10 +93,32 @@ public sealed partial class SettingsWindow
         }
     }
 
+    // Feature widgets (便签 / 待办 / 搜索) are exposed from desktop widgets
+    // directly instead of Settings -> Content & files; WidgetGroups and the
+    // single-card Appearance hop are retired from settings navigation.
+    private static readonly HashSet<string> HiddenSettingsSearchSections = new(StringComparer.Ordinal)
+    {
+        "Advanced",
+        "Appearance",
+        "FeatureWidgets",
+        "QuickCaptureSettings",
+        "TodoSettings",
+        "SearchSettings",
+        "WidgetGroups"
+    };
+
+    private static readonly HashSet<string> HiddenSettingsSearchHeaderKeys = new(StringComparer.Ordinal)
+    {
+        "Settings.Capsule.Overrides.Empty.Title",
+        "Settings.FileStacks.Custom.EmptyTitle",
+        "Settings.ManagedStorage.Empty"
+    };
+
     private void RefreshSettingsSearchResults()
     {
         var results = new List<SettingsSearchResult>();
-        foreach (SettingsSectionRoute route in SectionRoutes.Values.Where(route => route.Tag != "Advanced"))
+        foreach (SettingsSectionRoute route in SectionRoutes.Values.Where(route =>
+                     !HiddenSettingsSearchSections.Contains(route.Tag)))
         {
             string title = _localizationService.T(route.TitleKey);
             results.Add(new SettingsSearchResult(
@@ -179,6 +201,13 @@ public sealed partial class SettingsWindow
             }
 
             string destinationTag = NormalizeSettingsSectionTag(entry.SectionTag);
+            if (HiddenSettingsSearchSections.Contains(destinationTag) ||
+                HiddenSettingsSearchSections.Contains(entry.SectionTag) ||
+                HiddenSettingsSearchHeaderKeys.Contains(entry.HeaderKey))
+            {
+                continue;
+            }
+
             if (!TryGetSectionRoute(
                     destinationTag,
                     out SettingsSectionRoute route) ||

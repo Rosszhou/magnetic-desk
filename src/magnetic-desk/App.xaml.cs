@@ -120,8 +120,7 @@ public partial class App : Application
     private MenuFlyout? _trayContextMenu;
     private bool _traySecondWindowSyncLogged;
     private MenuFlyoutItem? _trayOrganizeDesktopItem;
-    private MenuFlyoutItem? _trayMapFolderItem;
-    private MenuFlyoutItem? _trayAddFeatureWidgetItem;
+    private MenuFlyoutSubItem? _trayAddFeatureWidgetItem;
     private readonly Dictionary<WidgetKind, MenuFlyoutItem> _trayCreateWidgetItems = [];
     private MenuFlyoutItem? _trayOpenManagedStorageItem;
     private MenuFlyoutItem? _trayUpdateItem;
@@ -2751,8 +2750,19 @@ public partial class App : Application
                     })
             ],
             options: new NativeAppNotificationOptions(
-                Tag: "desktop-auto-organization",
+                Tag: BuildDesktopAutoOrgNotificationTag(completed.HistoryId),
                 Group: DesktopOrganizationNotificationGroup));
+    }
+
+    private static string BuildDesktopAutoOrgNotificationTag(string historyId)
+    {
+        const string prefix = "auto-org-";
+        string suffix = string.IsNullOrWhiteSpace(historyId)
+            ? Guid.NewGuid().ToString("N")[..12]
+            : historyId.Length > 48
+                ? historyId[..48]
+                : historyId;
+        return prefix + suffix;
     }
 
     /// <summary>
@@ -6449,7 +6459,8 @@ public partial class App : Application
 
     private void EnsureSearchFeatureShell()
     {
-        if (!FeatureWidgetSettings.IsEnabled(SettingsService.Settings, WidgetKind.Search))
+        if (!WidgetRegistry.Default.CanCreateWindow(WidgetKind.Search) ||
+            !FeatureWidgetSettings.IsEnabled(SettingsService.Settings, WidgetKind.Search))
         {
             return;
         }
@@ -6542,6 +6553,11 @@ public partial class App : Application
 
     internal void SetSearchFeatureEnabled(bool enabled)
     {
+        if (!WidgetRegistry.Default.CanCreateWindow(WidgetKind.Search))
+        {
+            return;
+        }
+
         if (!UiDispatcherQueue.HasThreadAccess)
         {
             UiDispatcherQueue.TryEnqueue(() => SetSearchFeatureEnabled(enabled));
@@ -6651,7 +6667,8 @@ public partial class App : Application
 
     private void OpenSearchPopupCore(string? initialQuery)
     {
-        if (!FeatureWidgetSettings.IsEnabled(SettingsService.Settings, WidgetKind.Search))
+        if (!WidgetRegistry.Default.CanCreateWindow(WidgetKind.Search) ||
+            !FeatureWidgetSettings.IsEnabled(SettingsService.Settings, WidgetKind.Search))
         {
             return;
         }

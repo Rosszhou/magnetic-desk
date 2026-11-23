@@ -22,7 +22,6 @@ public sealed class FeatureWidgetEntryFactoryTests
             WidgetKind.QuickCapture,
             WidgetKind.Clipboard,
             WidgetKind.Todo,
-            WidgetKind.Search,
         ], entries.Select(entry => entry.Kind));
         Assert.All(entries, entry =>
         {

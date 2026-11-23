@@ -240,7 +240,7 @@ public sealed class CapsuleSettingsCoordinatorTests : IDisposable
         coordinator.Stop();
 
         Assert.Throws<ObjectDisposedException>(
-            () => coordinator.SetWidgetCollapseBehavior(SettingsService.WidgetCollapseBehaviorSmart));
+            () => coordinator.SetWidgetCollapseBehavior(SettingsService.WidgetCollapseBehaviorClick));
         Assert.Throws<ObjectDisposedException>(
             () => coordinator.SetWidgetCompactAnimationEffect(SettingsService.WidgetCompactAnimationSnappy));
         Assert.Throws<ObjectDisposedException>(
@@ -249,7 +249,7 @@ public sealed class CapsuleSettingsCoordinatorTests : IDisposable
 
         await settings.SaveAsync();
         Assert.Equal(
-            SettingsService.WidgetCollapseBehaviorExpanded,
+            SettingsService.WidgetCollapseBehaviorSmart,
             settings.Settings.WidgetShell.WidgetCollapseBehavior);
         Assert.Equal(
             SettingsService.WidgetCompactAnimationSlow,

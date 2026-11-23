@@ -14,7 +14,7 @@ public abstract partial class WidgetWindowBase
         {
             if (!IsCompactBoundsStateActive) return GetActualWindowBounds();
             RectInt32 expanded = Config.MagneticExpandedPlacement?.ToBounds() ?? ResolvePersistedExpandedHostBounds();
-            RectInt32 compact = GetActualWindowBounds();
+            RectInt32 compact = GetCurrentWindowBounds();
             var layout = ResolveCompactExpansionLayout(compact, new SizeInt32(expanded.Width, expanded.Height), requireFullSize: true);
             return layout.CanExpand ? layout.ExpandedBounds : new(compact.X, compact.Y, expanded.Width, expanded.Height);
         }

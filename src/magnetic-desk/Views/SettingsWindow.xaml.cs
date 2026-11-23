@@ -108,7 +108,7 @@ public sealed partial class SettingsWindow : Window
             ["QuickCaptureSettings"] = new("QuickCaptureSettings", "Settings.QuickCapture.Title", "FeatureWidgets", "AppearanceDetail"),
             ["TodoSettings"] = new("TodoSettings", "Settings.Todo.Title", "FeatureWidgets", "AppearanceDetail"),
             ["SearchSettings"] = new("SearchSettings", "Settings.Search.Title", "FeatureWidgets", "AppearanceDetail"),
-            ["AppearanceDensitySettings"] = new("AppearanceDensitySettings", "Settings.Density.Title", "Appearance", "MagneticLayout"),
+            ["AppearanceDensitySettings"] = new("AppearanceDensitySettings", "Settings.Density.Title", "MagneticLayout", "MagneticLayout"),
             ["CapsuleOverridesSettings"] = new("CapsuleOverridesSettings", "Settings.Capsule.Overrides.Title", "CapsuleMode", "CapsuleMode"),
             ["BackupRestoreSettings"] = new("BackupRestoreSettings", "Settings.DataBackup.Title", "Maintenance", "General"),
             ["DataHealthSettings"] = new("DataHealthSettings", "Settings.AttachmentHealth.Title", "Maintenance", "General"),
@@ -620,7 +620,10 @@ public sealed partial class SettingsWindow : Window
                 : SettingsContentRoot.ActualWidth;
         }
 
-        double availableContentWidth = Math.Max(0, contentSurfaceWidth - PageSidePadding * 2);
+        double scrollerViewportWidth = preferMeasuredContentWidth && PageScroller.ActualWidth > 0
+            ? Math.Min(contentSurfaceWidth, PageScroller.ActualWidth)
+            : contentSurfaceWidth;
+        double availableContentWidth = Math.Max(0, scrollerViewportWidth - PageSidePadding * 2 - 12);
         bool isNarrow = availableContentWidth < RowStackContentThreshold;
 
         PageScroller.Padding = isNarrow

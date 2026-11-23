@@ -685,6 +685,7 @@ public abstract partial class WidgetWindowBase
     protected void BeginWidgetBoundsInteraction()
     {
         if (_compositionHostBounds is not null) CompleteBoundsTransitionImmediately("input-settled");
+        FlushDeferredCollapseHostSettle();
         CaptureExpandedPairInteraction();
         _isBoundsInteractionActive = true;
         BeginCompactInteraction();
@@ -1759,7 +1760,7 @@ public abstract partial class WidgetWindowBase
         Win32Helper.POINT cursor,
         IntPtr pointerRootWindow)
     {
-        RectInt32 windowBounds = GetActualWindowBounds();
+        RectInt32 windowBounds = GetCurrentWindowBounds();
         bool pointerInsideWindow =
             cursor.X >= windowBounds.X &&
             cursor.X < windowBounds.X + windowBounds.Width &&
@@ -3501,6 +3502,10 @@ public abstract partial class WidgetWindowBase
         PointInt32 expansionPivot = default)
     {
         CancelDeferredExpandedLayerRestore();
+        if (!collapsed && _deferredCollapseHostBounds is not null)
+        {
+            ReleaseDeferredCollapseHostForExpansion();
+        }
         StopCollapseAnimation();
         _collapseAnimationAnchor = expansionAnchor;
         _collapseAnimationPivot = expansionPivot;
@@ -3571,6 +3576,12 @@ public abstract partial class WidgetWindowBase
             refreshRateHz);
         bool compositionBounds = TryPrepareCompositionBounds(from, to, collapsed, Math.Max(0.01, dpiScale), generation);
         QueueBoundsTransitionStart(generation, compositionBounds);
+        double totalPrepMs = Stopwatch.GetElapsedTime(transitionPrepStarted).TotalMilliseconds;
+        double prepBudgetMs = WidgetCompactAnimationCoordinator.GetFrameBudgetMilliseconds(HWnd);
+        if (collapsed && totalPrepMs > prepBudgetMs)
+        {
+            App.Log($"[CompactCollapseSettle] Prep slow id={Config.Id} prepMs={totalPrepMs:F1} budgetMs={prepBudgetMs:F1} composition={compositionBounds}");
+        }
         App.LogVerbose($"[CompactComposition] mode={(compositionBounds ? "Composition" : "NativeBounds")} id={Config.Id}");
         _isCollapseAnimationRendering = true;
         _collapseAnimationFrameRegistration?.Dispose();
@@ -3653,7 +3664,9 @@ public abstract partial class WidgetWindowBase
         {
             long started = Stopwatch.GetTimestamp();
             bool changed = !BoundsEqual(bounds, _collapseAnimationLastCommittedBounds);
-            if (changed && !ApplyCompositionWindowFrame(bounds, _collapseAnimationGeneration))
+            bool submittedNative = false;
+            if (changed && !ApplyCompositionWindowFrame(bounds, _collapseAnimationGeneration,
+                out submittedNative, elapsedMs: elapsedMs, frameBudgetMs: frameBudgetMs))
             {
                 CompleteBoundsTransitionAfterTimeout();
                 return;
@@ -3661,7 +3674,7 @@ public abstract partial class WidgetWindowBase
             double work = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
             _collapseAnimationPacing.RecordSubmission(elapsedMs, work);
             _collapseAnimationLastCommittedBounds = bounds;
-            if (changed) _compactAnimationFrameTracker?.RecordBoundsUpdate(Stopwatch.GetTimestamp(), work);
+            if (submittedNative) _compactAnimationFrameTracker?.RecordBoundsUpdate(Stopwatch.GetTimestamp(), work);
             return;
         }
         if (_compositionHostBounds is null) WidgetShellControl.SetCompactTransitionProgress(_targetCollapsed, eased);
@@ -3675,12 +3688,21 @@ public abstract partial class WidgetWindowBase
         bool collapsed = _targetCollapsed;
         long generation = _collapseAnimationGeneration;
         StopCollapseAnimation(cancelShellTransition: false, completeMetrics: false);
-        if (!collapsed && QueueCompositionExpansionFinish(_collapseAnimationTo, generation, CommitFinalBounds)) return;
+        if (collapsed && _compositionHostBounds is not null)
+        {
+            CompleteCompactAnimationMetrics("completed");
+        }
+        if (QueueCompositionTransitionFinish(_collapseAnimationTo, generation, CommitFinalBounds)) return;
         CommitFinalBounds();
 
-        void CommitFinalBounds() => CommitCollapseAnimationBounds(
-            _collapseAnimationTo, Stopwatch.GetTimestamp(), generation,
-            () => FinishBoundsTransition(collapsed, generation));
+        void CommitFinalBounds()
+        {
+            if (collapsed && TryBeginTwoPhaseCollapseSettle(generation, () => FinishBoundsTransition(collapsed, generation)))
+                return;
+            CommitCollapseAnimationBounds(
+                _collapseAnimationTo, Stopwatch.GetTimestamp(), generation,
+                () => FinishBoundsTransition(collapsed, generation));
+        }
     }
 
     private void CommitCollapseAnimationBounds(
@@ -3734,7 +3756,8 @@ public abstract partial class WidgetWindowBase
             MoveWindowWithoutPersisting(bounds,
                 isAnimationFrame: completed is null,
                 committed: OnCommitted,
-                commitFailed: OnCommitFailed);
+                commitFailed: OnCommitFailed,
+                deferUntilPrepared: completed is not null);
         }
         else
         {
@@ -3755,6 +3778,7 @@ public abstract partial class WidgetWindowBase
             return;
         }
 
+        bool deferredCollapseSettle = _deferredCollapseHostBounds is not null;
         bool compositionBounds = _compositionHostBounds is not null;
         if (collapsed) EndCompositionBounds(settle: _collapseAnimationTo);
         WidgetShellControl.CompleteCompactTransition(
@@ -3762,7 +3786,8 @@ public abstract partial class WidgetWindowBase
             SettingsService.Settings.WidgetCompactContentMode);
         WidgetShellControl.CompleteResponsiveLayoutTransition();
         if (!collapsed) EndCompositionBounds(settle: _collapseAnimationTo);
-        else if (compositionBounds) RootElement.UpdateLayout();
+        else if (compositionBounds || deferredCollapseSettle) RootElement.UpdateLayout();
+        if (compositionBounds && !deferredCollapseSettle) WidgetShellControl.ClearPendingSettledCapsuleClip();
         RestoreBackdropAfterInteraction();
         _isShellTransitionActive = false;
         IsWidgetCollapsedBoundsActive = collapsed;
@@ -3783,7 +3808,7 @@ public abstract partial class WidgetWindowBase
         if (collapsed)
         {
             ApplyCompactSurfaceState();
-            ScheduleExpandedLayerRestoreAfterFrameCommit(generation);
+            if (!deferredCollapseSettle) ScheduleExpandedLayerRestoreAfterFrameCommit(generation);
             StartCompactHoverRecoveryProbe();
             SynchronizeCompactHoverFromCurrentCursor();
             QueueCompactExpansionWarmup();
@@ -3793,7 +3818,10 @@ public abstract partial class WidgetWindowBase
             StopCompactHoverRecoveryProbe();
             _isCompactExpansionWarmed = true;
             _compactExpansionWarmupEpoch = App.MemoryCleanupEpoch;
-            ApplyBackdropPreference();
+            if (!_surfaceBackdropInitialized || WidgetBackgroundCustomization.HasCustomBackground(Config))
+            {
+                ApplyBackdropPreference();
+            }
             if (UsesSmartCollapseBehavior() && !_isSmartPinnedOpen)
             {
                 ScheduleSmartCollapse(SmartCollapseProbeMs);
@@ -3806,8 +3834,11 @@ public abstract partial class WidgetWindowBase
 
     private void ApplyCompactSurfaceState()
     {
-        ApplyBackdropPreference();
-        ApplyCompactBorderVisuals();
+        if (!_surfaceBackdropInitialized || WidgetBackgroundCustomization.HasCustomBackground(Config))
+        {
+            ApplyBackdropPreference();
+            ApplyCompactBorderVisuals();
+        }
         string preference = WindowsCompatibilityService.ResolveEffectiveWidgetCornerPreference(
             SettingsService.Settings.WidgetCornerPreference);
         string mediaCornerMode = WindowsCompatibilityService.ResolveEffectiveWidgetCompactMediaCornerMode(
@@ -4361,7 +4392,9 @@ public abstract partial class WidgetWindowBase
 
     private RectInt32 GetCurrentWindowBounds()
     {
-        return _compositionHostBounds is null ? GetActualWindowBounds() : CompositionVisibleBounds();
+        if (_compositionHostBounds is not null) return CompositionVisibleBounds();
+        if (_deferredCollapseHostBounds is not null) return _deferredCollapseTargetBounds;
+        return GetActualWindowBounds();
     }
 
     private void MoveWindowWithoutPersisting(
@@ -4370,12 +4403,19 @@ public abstract partial class WidgetWindowBase
         Action<double>? committed = null,
         Action? commitFailed = null,
         bool deferUntilPrepared = false,
-        bool positionOnly = false)
+        bool positionOnly = false,
+        bool sizeOnly = false)
     {
         uint flags = Win32Helper.SWP_NOZORDER | Win32Helper.SWP_NOACTIVATE;
         if (positionOnly)
         {
             flags |= Win32Helper.SWP_NOSIZE;
+        }
+        else if (sizeOnly)
+        {
+            // Settled collapse margin trim: preserve existing rendered pill bits at
+            // (0, 0) instead of discarding client pixels with SWP_NOCOPYBITS.
+            flags |= Win32Helper.SWP_NOMOVE;
         }
         else if (isAnimationFrame)
         {
@@ -4450,6 +4490,7 @@ public abstract partial class WidgetWindowBase
         _compositionBoundsFrameRegistration = null;
         if (cancelShellTransition)
         {
+            FlushDeferredCollapseHostSettle(moveWindow: !IsClosing);
             EndCompositionBounds();
             SetBoundsTransitionContentPaused(false);
         }

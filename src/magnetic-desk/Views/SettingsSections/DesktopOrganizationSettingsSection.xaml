@@ -223,7 +223,7 @@
                                     Click="AddExtensionButton_Click"
                                     svc:Localized.Key="DesktopOrganization.Common.Add" />
                             </Grid>
-                            <StackPanel x:Name="ExtensionChips" Orientation="Horizontal" Spacing="6" />
+                            <toolkit:WrapPanel x:Name="ExtensionChips" HorizontalSpacing="6" VerticalSpacing="6" />
 
                             <TextBlock
                                 Style="{StaticResource SettingTitleTextStyle}"
@@ -237,7 +237,7 @@
                                     Click="AddExcludedExtensionButton_Click"
                                     svc:Localized.Key="DesktopOrganization.Common.Add" />
                             </Grid>
-                            <StackPanel x:Name="ExcludedExtensionChips" Orientation="Horizontal" Spacing="6" />
+                            <toolkit:WrapPanel x:Name="ExcludedExtensionChips" HorizontalSpacing="6" VerticalSpacing="6" />
                         </StackPanel>
                     </toolkit:SettingsCard>
                 </toolkit:SettingsExpander.Items>

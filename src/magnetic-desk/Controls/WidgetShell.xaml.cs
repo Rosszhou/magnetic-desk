@@ -2360,13 +2360,12 @@ public sealed partial class WidgetShell : UserControl
     public void CompleteCompactTransition(bool collapsed, string contentMode)
     {
         _isCompactTransitionActive = false;
+        // SetCollapsed updates _isCollapsed before SetBackgroundCornerRadius runs,
+        // avoiding a redundant collapsed -> expanded -> collapsed CornerRadius flip.
+        SetCollapsed(collapsed, contentMode);
         SetBackgroundCornerRadius(collapsed
             ? _compactOuterCornerRadius
             : _expandedOuterCornerRadius);
-        // SetCollapsed performs the single final visual reset. Calling it both
-        // here and there repeatedly resolves/stops the same Composition visuals
-        // at the end of every capsule transition.
-        SetCollapsed(collapsed, contentMode);
     }
 
     public void CancelCompactTransition()
@@ -2932,9 +2931,14 @@ public sealed partial class WidgetShell : UserControl
         }
     }
 
-    private void SetBackgroundCornerRadius(double radius) =>
-        BackgroundPlate.CornerRadius = new CornerRadius(_countdownSeconds is null ? Math.Max(0, radius) :
-            WidgetCapsuleAppearance.CornerRadius(_capsuleStyle, _isCollapsed));
+    private void SetBackgroundCornerRadius(double radius)
+    {
+        double target = _countdownSeconds is null
+            ? Math.Max(0, radius)
+            : WidgetCapsuleAppearance.CornerRadius(_capsuleStyle, _isCollapsed);
+        if (BackgroundPlate.CornerRadius.TopLeft != target)
+            BackgroundPlate.CornerRadius = new CornerRadius(target);
+    }
 
     private void ApplyCompactTextVisibility()
     {

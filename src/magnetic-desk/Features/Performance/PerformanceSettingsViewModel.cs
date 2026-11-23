@@ -268,8 +268,14 @@ public sealed partial class PerformanceSettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool QuiescenceWorkingSetTrimEnabled { get; set; }
 
+    private static readonly string[] ActiveContinuousDecorativeAnimationOptions =
+    [
+        PerformanceOptionKinds.DecorativeAnimationTextMarquee,
+        PerformanceOptionKinds.DecorativeAnimationCompactAmbient
+    ];
+
     public IReadOnlyList<string> AvailableContinuousDecorativeAnimationOptions =>
-        PerformanceOptionKinds.SupportedDecorativeAnimationOptions;
+        ActiveContinuousDecorativeAnimationOptions;
 
     public string ContinuousDecorativeAnimationsSummaryText
     {

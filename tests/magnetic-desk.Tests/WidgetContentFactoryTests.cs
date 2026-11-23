@@ -125,7 +125,6 @@ public sealed class WidgetContentFactoryTests
             WidgetKind.QuickCapture,
             WidgetKind.Clipboard,
             WidgetKind.Todo,
-            WidgetKind.Search,
         ], descriptors.Select(descriptor => descriptor.WidgetKind));
         Assert.DoesNotContain(descriptors, descriptor => descriptor.WidgetKind == WidgetKind.File);
         Assert.DoesNotContain(descriptors, descriptor => descriptor.IsPlanned);

@@ -10,11 +10,29 @@ public sealed class DesktopOrganizationTests : IDisposable
 
     [Theory]
     [InlineData("report.pdf", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Pdf)]
+    [InlineData("invoice.ofd", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Pdf)]
+    [InlineData("thesis.caj", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Pdf)]
+    [InlineData("draft.wps", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Word)]
+    [InlineData("book.epub", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Word)]
+    [InlineData("sheet.et", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Excel)]
+    [InlineData("slides.dps", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.PowerPoint)]
+    [InlineData("mind.xmind", DesktopOrganizationCategoryIds.Documents, DesktopOrganizationSubtypeIds.Text)]
     [InlineData("photo.webp", DesktopOrganizationCategoryIds.Images, null)]
+    [InlineData("photo.avif", DesktopOrganizationCategoryIds.Images, null)]
+    [InlineData("camera.dng", DesktopOrganizationCategoryIds.Images, null)]
+    [InlineData("mockup.fig", DesktopOrganizationCategoryIds.Images, null)]
     [InlineData("movie.mp4", DesktopOrganizationCategoryIds.Media, DesktopOrganizationSubtypeIds.Video)]
     [InlineData("music.flac", DesktopOrganizationCategoryIds.Media, DesktopOrganizationSubtypeIds.Audio)]
+    [InlineData("voice.opus", DesktopOrganizationCategoryIds.Media, DesktopOrganizationSubtypeIds.Audio)]
     [InlineData("app.lnk", DesktopOrganizationCategoryIds.Shortcuts, null)]
-    [InlineData("setup.msix", DesktopOrganizationCategoryIds.Packages, null)]
+    [InlineData("setup.msix", DesktopOrganizationCategoryIds.Packages, DesktopOrganizationSubtypeIds.Installers)]
+    [InlineData("app.apk", DesktopOrganizationCategoryIds.Packages, DesktopOrganizationSubtypeIds.Installers)]
+    [InlineData("bundle.zst", DesktopOrganizationCategoryIds.Packages, DesktopOrganizationSubtypeIds.Archives)]
+    [InlineData("movie.torrent", DesktopOrganizationCategoryIds.Packages, DesktopOrganizationSubtypeIds.Archives)]
+    [InlineData("Program.cs", DesktopOrganizationCategoryIds.Code, null)]
+    [InlineData("script.py", DesktopOrganizationCategoryIds.Code, null)]
+    [InlineData("config.json", DesktopOrganizationCategoryIds.Code, null)]
+    [InlineData("deploy.ps1", DesktopOrganizationCategoryIds.Code, null)]
     [InlineData("unknown.xyz", DesktopOrganizationCategoryIds.Other, null)]
     public void Classifier_UsesStableTypeIds(
         string fileName,
@@ -67,12 +85,15 @@ public sealed class DesktopOrganizationTests : IDisposable
         DesktopOrganizationScanResult result = await scanner.ScanAsync();
 
         Assert.Equal(4, result.TotalCount);
-        Assert.Equal(1, result.EligibleCount);
+        Assert.Equal(2, result.EligibleCount);
         Assert.Contains(result.Items, item =>
             item.Name == "folder" &&
-            item.ExclusionReason == DesktopOrganizationExclusionReason.Folder &&
-            item.IsDirectory &&
-            item.CanOptIn);
+            item.CategoryId == DesktopOrganizationCategoryIds.Folders &&
+            item.ExclusionReason == DesktopOrganizationExclusionReason.None &&
+            item.IsDirectory);
+        Assert.Equal(
+            DesktopOrganizationExclusionReason.Folder,
+            scanner.CreateAutoOrganizationSnapshot(Path.Combine(_root, "folder")).ExclusionReason);
         Assert.Contains(result.Items, item =>
             item.Name == "download.crdownload" &&
             item.ExclusionReason == DesktopOrganizationExclusionReason.TemporaryOrDownloading);
@@ -600,7 +621,7 @@ public sealed class DesktopOrganizationTests : IDisposable
 
         DesktopOrganizationRule rule = Assert.Single(settings.Settings.DesktopOrganizationRules);
         Assert.Equal(
-            [DesktopOrganizationCategoryIds.Documents, DesktopOrganizationCategoryIds.Images],
+            [DesktopOrganizationCategoryIds.Other],
             rule.CategoryIds);
     }
 
@@ -1094,6 +1115,176 @@ public sealed class DesktopOrganizationTests : IDisposable
             File.Exists(Path.Combine(desktopPath, "first (2).txt")),
             "the retry must never duplicate the restored item");
         Assert.Single(Directory.GetFiles(desktopPath, "first*.txt"));
+    }
+
+    [Fact]
+    public async Task Scanner_ClassifiesDottedFoldersAsFoldersAndPreservesAvailablePath()
+    {
+        Directory.CreateDirectory(_root);
+        string dottedFolder = Path.Combine(_root, "Project.v1.2");
+        Directory.CreateDirectory(dottedFolder);
+
+        var scanner = new DesktopOrganizationScanner(
+            new DesktopOrganizationClassifier(),
+            () => _root,
+            () => string.Empty);
+
+        DesktopOrganizationScanResult result = await scanner.ScanAsync();
+        DesktopOrganizationFileSnapshot item = Assert.Single(result.Items);
+
+        Assert.True(item.IsDirectory);
+        Assert.Equal(DesktopOrganizationCategoryIds.Folders, item.CategoryId);
+        Assert.Equal(string.Empty, item.Extension);
+        Assert.Equal(DesktopOrganizationExclusionReason.None, item.ExclusionReason);
+        Assert.Equal(
+            DesktopOrganizationExclusionReason.Folder,
+            scanner.CreateAutoOrganizationSnapshot(dottedFolder).ExclusionReason);
+
+        string available = FileService.GetAvailablePath(dottedFolder, isDirectory: true);
+        Assert.Equal(Path.Combine(_root, "Project.v1.2 (2)"), available);
+    }
+
+    [Fact]
+    public async Task Scanner_ExcludesOfficeLocksSidecarsAndExtraDownloadTempFiles()
+    {
+        Directory.CreateDirectory(_root);
+        File.WriteAllText(Path.Combine(_root, "~$Report.docx"), "lock");
+        File.WriteAllText(Path.Combine(_root, ".~lock.Sheet.xlsx#"), "lock");
+        File.WriteAllText(Path.Combine(_root, "movie.mp4.!qB"), "partial");
+        File.WriteAllText(Path.Combine(_root, "archive.zip.td"), "partial");
+        File.WriteAllText(Path.Combine(_root, "video.mp4"), "downloading");
+        File.WriteAllText(Path.Combine(_root, "video.mp4.aria2"), "sidecar");
+        File.WriteAllText(Path.Combine(_root, "Thumbs.db"), "sys");
+
+        var scanner = new DesktopOrganizationScanner(
+            new DesktopOrganizationClassifier(),
+            () => _root,
+            () => string.Empty);
+
+        DesktopOrganizationScanResult result = await scanner.ScanAsync();
+
+        Assert.Equal(0, result.EligibleCount);
+        Assert.Contains(result.Items, item =>
+            item.Name == "video.mp4" &&
+            item.ExclusionReason == DesktopOrganizationExclusionReason.TemporaryOrDownloading);
+        Assert.Contains(result.Items, item =>
+            item.Name == "~$Report.docx" &&
+            item.ExclusionReason == DesktopOrganizationExclusionReason.TemporaryOrDownloading);
+        Assert.Contains(result.Items, item =>
+            item.Name == "Thumbs.db" &&
+            item.ExclusionReason == DesktopOrganizationExclusionReason.HiddenOrSystem);
+    }
+
+    [Fact]
+    public void Scanner_CloudPlaceholderAndReparseTagDetection_AllowsHydratedCloudTags()
+    {
+        Assert.True(DesktopOrganizationScanner.IsCloudReparseTag(0x9000001A));
+        Assert.True(DesktopOrganizationScanner.IsCloudReparseTag(0x9000301A));
+        Assert.False(DesktopOrganizationScanner.IsCloudReparseTag(0xA000000C)); // symlink
+        Assert.False(DesktopOrganizationScanner.IsCloudReparseTag(0xA0000003)); // mount point
+
+        Assert.True(DesktopOrganizationScanner.IsOfflineOrCloudPlaceholder(FileAttributes.Offline));
+        Assert.True(DesktopOrganizationScanner.IsOfflineOrCloudPlaceholder((FileAttributes)0x00400000));
+        Assert.True(DesktopOrganizationScanner.IsOfflineOrCloudPlaceholder((FileAttributes)0x00040000));
+        Assert.False(DesktopOrganizationScanner.IsOfflineOrCloudPlaceholder(FileAttributes.Normal));
+    }
+
+    [Fact]
+    public void Classifier_ParseExtensions_SplitsAndNormalizesBatchInput()
+    {
+        IReadOnlyList<string> parsed = DesktopOrganizationClassifier.ParseExtensions(
+            "*.dwg, .blend; STEP  *.dwg /bad");
+
+        Assert.Equal([".dwg", ".blend", ".step"], parsed);
+    }
+
+    [Fact]
+    public async Task Planner_ShowsStandaloneCodeAndFoldersCardsImmediately()
+    {
+        string desktopPath = Path.Combine(_root, "desktop");
+        string storagePath = Path.Combine(_root, "storage");
+        Directory.CreateDirectory(desktopPath);
+        Directory.CreateDirectory(storagePath);
+        File.WriteAllText(Path.Combine(desktopPath, "app.lnk"), "lnk");
+        File.WriteAllText(Path.Combine(desktopPath, "doc.pdf"), "pdf");
+        File.WriteAllText(Path.Combine(desktopPath, "pic.png"), "png");
+        File.WriteAllText(Path.Combine(desktopPath, "clip.mp4"), "mp4");
+        File.WriteAllText(Path.Combine(desktopPath, "pkg.zip"), "zip");
+        File.WriteAllText(Path.Combine(desktopPath, "script.py"), "print(1)");
+        Directory.CreateDirectory(Path.Combine(desktopPath, "MyProject"));
+
+        var scanner = new DesktopOrganizationScanner(
+            new DesktopOrganizationClassifier(),
+            () => desktopPath,
+            () => string.Empty);
+        DesktopOrganizationScanResult scan = await scanner.ScanAsync();
+        DesktopOrganizationPlan plan = new DesktopOrganizationPlanner(new DesktopOrganizationRuleResolver())
+            .CreatePlan(scan, storagePath, [], []);
+
+        Assert.Contains(plan.Targets, t => t.CategoryId == DesktopOrganizationCategoryIds.Code && t.Items.Count == 1);
+        Assert.Contains(plan.Targets, t => t.CategoryId == DesktopOrganizationCategoryIds.Folders && t.Items.Count == 1);
+        Assert.Equal(7, plan.Targets.Count);
+    }
+
+    [Fact]
+    public async Task Transaction_NewOtherWidgetRule_DoesNotPoisonMergedSmallCategories()
+    {
+        string desktopPath = Path.Combine(_root, "desktop-other");
+        string storagePath = Path.Combine(_root, "storage-other");
+        Directory.CreateDirectory(desktopPath);
+        Directory.CreateDirectory(storagePath);
+        string singleImage = Path.Combine(desktopPath, "solo.png");
+        string singleOther = Path.Combine(desktopPath, "misc.xyz");
+        File.WriteAllText(singleImage, "png");
+        File.WriteAllText(singleOther, "xyz");
+        var imgInfo = new FileInfo(singleImage);
+        var otherInfo = new FileInfo(singleOther);
+
+        var settings = new SettingsService(Path.Combine(_root, "settings-other.json"));
+        await settings.LoadAsync();
+        var plan = new DesktopOrganizationPlan
+        {
+            DesktopPath = desktopPath,
+            StorageRootPath = storagePath,
+            Targets =
+            [
+                new DesktopOrganizationTargetPlan
+                {
+                    TargetWidgetId = "other-merged",
+                    CategoryId = DesktopOrganizationCategoryIds.Other,
+                    SuggestedDisplayName = "Other",
+                    TargetDirectoryPath = Path.Combine(storagePath, "Other"),
+                    CreatesWidget = true,
+                    Items =
+                    [
+                        Snapshot("solo.png", DesktopOrganizationCategoryIds.Images, null, singleImage, imgInfo.Length, imgInfo.LastWriteTimeUtc),
+                        Snapshot("misc.xyz", DesktopOrganizationCategoryIds.Other, null, singleOther, otherInfo.Length, otherInfo.LastWriteTimeUtc)
+                    ]
+                }
+            ]
+        };
+
+        var transaction = new DesktopOrganizationTransaction(
+            settings,
+            new FileService(),
+            new DesktopOrganizationRecoveryStore(Path.Combine(_root, "recovery-other.json")));
+        await transaction.ExecuteAsync(plan);
+
+        DesktopOrganizationRule otherRule = Assert.Single(settings.Settings.DesktopOrganizationRules);
+        Assert.Equal([DesktopOrganizationCategoryIds.Other], otherRule.CategoryIds);
+        Assert.DoesNotContain(DesktopOrganizationCategoryIds.Images, otherRule.CategoryIds);
+    }
+
+    [Fact]
+    public void MagneticLayoutSettings_DoesNotSnapshotSliderWidthAndDefinesUndoColumns()
+    {
+        string xaml = File.ReadAllText(TestPaths.FromRepository(
+            "src/magnetic-desk/Views/SettingsSections/MagneticLayoutSettingsSection.xaml"));
+
+        Assert.DoesNotContain("Path=ActualWidth", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("SettingsCardCornerRadius", xaml, StringComparison.Ordinal);
+        Assert.Contains("Grid.Column=\"1\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Settings.WidgetSnap.Spacing.Description", xaml, StringComparison.Ordinal);
     }
 
     private DesktopOrganizationFileSnapshot Snapshot(

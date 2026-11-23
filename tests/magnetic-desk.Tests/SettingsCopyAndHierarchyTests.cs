@@ -424,17 +424,10 @@ public sealed class SettingsCopyAndHierarchyTests
             root,
             "src/magnetic-desk/Views/ContentWidgetWindow.Commands.cs"));
 
-        int trayMapEntry = traySource.IndexOf(
-            "contextMenu.Items.Add(mapFolderItem)",
-            StringComparison.Ordinal);
-        int trayFeatureEntry = traySource.IndexOf(
-            "contextMenu.Items.Add(addFeatureWidgetItem)",
-            StringComparison.Ordinal);
-
-        Assert.True(trayMapEntry >= 0);
-        Assert.True(trayFeatureEntry > trayMapEntry);
-        Assert.Contains("OpenFeatureWidgetsFromTray", traySource, StringComparison.Ordinal);
-        Assert.Contains("ShowSettings(\"FeatureWidgets\")", traySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("contextMenu.Items.Add(mapFolderItem)", traySource, StringComparison.Ordinal);
+        Assert.Contains("contextMenu.Items.Add(addFeatureWidgetItem)", traySource, StringComparison.Ordinal);
+        Assert.DoesNotContain("CreateFolderWidgetFromPickerAsync", widgetCommands, StringComparison.Ordinal);
+        Assert.DoesNotContain("Common.NewFolderMapping", widgetCommands, StringComparison.Ordinal);
 
         Assert.DoesNotContain("contentCanAdd", widgetCommands, StringComparison.Ordinal);
         Assert.DoesNotContain("if (_config.WidgetKind == WidgetKind.File)", widgetCommands, StringComparison.Ordinal);
@@ -442,9 +435,7 @@ public sealed class SettingsCopyAndHierarchyTests
         Assert.Contains("actions.Contains(SettingsService.WidgetHoverActionAdd)", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("ShowWidgetCreateFlyout();", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("Common.NewWidget", widgetCommands, StringComparison.Ordinal);
-        Assert.Contains("Common.NewFolderMapping", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("Common.AddFeatureWidget", widgetCommands, StringComparison.Ordinal);
-        Assert.Contains("CreateFolderWidgetFromPickerAsync", widgetCommands, StringComparison.Ordinal);
         Assert.Contains("CreateWidgetOfKindAsync(entry.Kind)", widgetCommands, StringComparison.Ordinal);
     }
 

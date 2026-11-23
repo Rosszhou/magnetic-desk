@@ -76,4 +76,64 @@ public sealed class WidgetMagneticMouseLeaveTests
         Assert.Contains("HasMouseLeaveAutoCollapse(this)", source[schedule..]);
         Assert.Contains("ArmMouseLeaveAutoCollapse(this)", source);
     }
+
+    [Fact]
+    public void PreArmLeadWindow_ActivatesOnlyJustBeforeFiveSecondExpiry()
+    {
+        var policy = new WidgetMouseLeaveCollapsePolicy();
+        Assert.False(policy.ShouldPreArmCollapse(TimeSpan.Zero));
+        Assert.False(policy.Update(TimeSpan.Zero, false));
+        Assert.False(policy.ShouldPreArmCollapse(TimeSpan.FromMilliseconds(4499)));
+        Assert.True(policy.ShouldPreArmCollapse(TimeSpan.FromMilliseconds(4500)));
+        Assert.True(policy.ShouldPreArmCollapse(TimeSpan.FromMilliseconds(4999)));
+        Assert.False(policy.Update(TimeSpan.FromMilliseconds(4999), true));
+        Assert.False(policy.ShouldPreArmCollapse(TimeSpan.FromMilliseconds(4999)));
+    }
+
+    [Fact]
+    public void MouseLeaveCountdown_BlocksQuiescenceTrimAndPreArmsFrameClock()
+    {
+        var manager = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Services/WidgetManager.cs"));
+        var mouseLeave = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Services/WidgetManager.MouseLeaveCollapse.cs"));
+        int visualWork = manager.IndexOf("internal bool HasActiveVisualWork =>", StringComparison.Ordinal);
+        int ambientWork = manager.IndexOf("internal bool HasAmbientVisualWork =>", visualWork, StringComparison.Ordinal);
+        Assert.Contains("HasActiveMouseLeaveCountdown", manager[visualWork..ambientWork]);
+        Assert.Contains("ShouldPreArmCollapse(now)", mouseLeave);
+        Assert.Contains("PreArmCompactAnimationClock()", mouseLeave);
+        Assert.Contains("HideMouseLeaveCountdownForCollapse()", mouseLeave);
+    }
+
+    [Fact]
+    public void CollapseSettle_UsesTwoPhasePerVsyncHostShrinkAndDynamicRefreshBudget()
+    {
+        var compositionBounds = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Views/WidgetWindowBase.CompositionBounds.cs"));
+        var windowClip = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Platform/Win32Helper.WindowClip.cs"));
+        var coordinator = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Services/WidgetCompactAnimationCoordinator.cs"));
+        var shell = File.ReadAllText(TestPaths.FromRepository("src/magnetic-desk/Controls/WidgetShell.xaml.cs"));
+
+        Assert.Contains("TryBeginTwoPhaseCollapseSettle", compositionBounds);
+        Assert.Contains("followsCollapse", compositionBounds);
+        Assert.Contains("SetRoundedAnimationWindowClip", compositionBounds);
+        Assert.Contains("ScheduleDeferredCollapseClipClear", compositionBounds);
+        Assert.Contains("keepDestinationSizeLocked: true", compositionBounds);
+        Assert.Contains("EnqueueDeferredBoundsSettle", compositionBounds);
+        Assert.Contains("ReleaseLockedDestinationSize(", compositionBounds);
+        Assert.Contains("sizeOnly:", compositionBounds);
+        Assert.Contains("DisposeCompositionBoundsBackground", compositionBounds);
+        Assert.Contains("Math.Clamp(effectiveBudget, 4, 17)", compositionBounds);
+
+        Assert.Contains("CreateRoundRectRgn", windowClip);
+        Assert.Contains("SetRoundedAnimationWindowClip", windowClip);
+
+        Assert.Contains("DeferredBoundsSettles", coordinator);
+        Assert.Contains("EnqueueDeferredBoundsSettle", coordinator);
+        Assert.Contains("DeferredBoundsSettles.Count > 0", coordinator);
+
+        int completeIndex = shell.IndexOf("public void CompleteCompactTransition", StringComparison.Ordinal);
+        int cancelIndex = shell.IndexOf("public void CancelCompactTransition", completeIndex, StringComparison.Ordinal);
+        string completeBody = shell[completeIndex..cancelIndex];
+        Assert.True(
+            completeBody.IndexOf("SetCollapsed(", StringComparison.Ordinal) <
+            completeBody.IndexOf("SetBackgroundCornerRadius(", StringComparison.Ordinal));
+    }
 }

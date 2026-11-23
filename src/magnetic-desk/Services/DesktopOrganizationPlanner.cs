@@ -4,9 +4,9 @@ namespace MagneticDesk.Services;
 
 public sealed class DesktopOrganizationPlanner
 {
-    public const int MaxNewWidgetCount = 4;
+    public const int MaxNewWidgetCount = 8;
     public const int MinimumRecommendedItemCount = 5;
-    public const int MinimumStandaloneCategoryItemCount = 2;
+    public const int MinimumStandaloneCategoryItemCount = 1;
 
     private readonly DesktopOrganizationRuleResolver _ruleResolver;
 

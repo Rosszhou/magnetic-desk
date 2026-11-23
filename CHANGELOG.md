@@ -1,5 +1,33 @@
 ﻿# Changelog
 
+## 1.6.0 - 2026-11-23
+
+### English
+
+#### New features & improvements
+
+- **Refined Settings UI and streamlined widget creation.** Removed the standalone Search widget and "New folder mapping" entry; moved feature widget toggles out of the Content & Files settings page to keep it focused; collapsed low-level memory/cache tuning parameters into an expandable Advanced section while keeping a simple Balanced / Memory Saver mode upfront; changed the default widget display behavior to Hover to auto-expand (`Smart`); aligned section headings, breadcrumbs, and hover-delay controls.
+- **Upgraded Desktop Auto-Organization rules and safety guards.** Expanded built-in file format recognition (including WPS, `.ofd`, `.caj`, `.avif`, `.jxl`, camera RAW, design files, e-books, mind maps, `.opus`, `.zst`, `.apk`, `.torrent`, etc.); split packages into Installers and Archives; added standalone **Code & Scripts** and **Folders** categories shown directly in Organize Desktop; hardened auto-organization against OneDrive cloud placeholders, downloader temp/sidecar files, Office lock files, dotted folder names, and Chinese ` - 副本` drag-out copies.
+
+#### Fixes
+
+- **Eliminated collapse square-capsule flash and high-refresh-rate stutter (adaptive across 60Hz–240Hz+).** Fixed the rectangular flash and dropped frames when collapsing widgets on high-refresh-rate displays while adapting cleanly to any monitor refresh rate.
+- **Fixed magnetic group top-row alignment drift after collapse and expand.** Resizing widgets in a magnetic group to align their top edges (or closing vertical gaps) no longer shifts a top widget upward on the next collapse/expand cycle.
+- **Fixed Settings window failing to open** due to a missing `SettingsCardCornerRadius` static resource on the Layout & Magnetic section.
+
+### 中文
+
+#### 新功能与体验优化
+
+- **设置页与入口精简优化。** 移除独立搜索格子与「新建文件夹映射」入口；将功能格子开关从「内容与文件」设置页隐藏以减少干扰；将 6 项底层内存与缓存参数折叠进「高级内存与缓存策略」，首页保留直观的「性能模式（均衡 / 省内存）」；默认显示方式调整为「悬停自动展开」；统一侧栏导航、页面主标题与控件排版。
+- **桌面整理与自动整理规则全面升级。** 扩充常用中文及现代文件格式识别（WPS、`.ofd`、`.caj`、`.avif`、`.jxl`、相机 RAW、设计稿、电子书、思维导图、`.opus`、`.zst`、`.apk`、`.torrent` 等）；拆分安装包与压缩包；新增独立的「代码与脚本」和「文件夹」分类并在「整理桌面」直接呈现；加固 OneDrive 占位文件、下载临时文件、Office 锁文件、含点文件夹名及中文 ` - 副本` 拖出抑制等安全策略。
+
+#### 修复
+
+- **彻底消除收起时的方形胶囊闪现与高刷屏掉帧。** 适配 60Hz–240Hz+ 全刷新率显示器，展开与收起动画均流畅无闪烁。
+- **修复磁吸组合调齐后收起再展开变不平的问题。** 在磁吸组合中调整格子大小对齐顶边或收拢纵向间隙后，再次收起展开不再被旧吸附基准顶偏。
+- **修复点击文件格子设置无法打开设置页的问题**（修复缺失静态资源 `SettingsCardCornerRadius` 导致的界面加载异常）。
+
 ## 1.5.9 - 2026-10-23
 
 ### English

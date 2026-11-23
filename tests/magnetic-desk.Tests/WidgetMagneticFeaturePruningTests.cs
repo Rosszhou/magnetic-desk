@@ -12,6 +12,7 @@ public sealed class WidgetMagneticFeaturePruningTests
     [InlineData(WidgetKind.Weather)]
     [InlineData(WidgetKind.Music)]
     [InlineData(WidgetKind.Glance)]
+    [InlineData(WidgetKind.Search)]
     public void LegacyWidgets_AreReadableAndCannotBeActivated(WidgetKind kind)
     {
         var widget = new WidgetConfig { WidgetKind = kind };

@@ -635,7 +635,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
             2200,
             mergedProfile.Surfaces["surface-a"].X);
         Assert.Equal(["tomb-removed"], second.Settings.DeletedWidgetIds);
-        Assert.True(second.Settings.FeatureWidgetEnabledStates["Search"]);
+        Assert.False(second.Settings.FeatureWidgetEnabledStates.ContainsKey("Search"));
 
         JsonObject restripped = await ReadObjectAsync(SettingsPath);
         foreach (string key in WidgetLayoutStore.SettingsWireKeys)
